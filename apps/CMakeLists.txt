@@ -19,6 +19,7 @@ foreach(APPDIR
     drawRRT
     testBed
     sdfLoader
+    vehicle
     )
     add_subdirectory(${APPDIR})
     if(WIN32)
