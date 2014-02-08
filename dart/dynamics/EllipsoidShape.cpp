@@ -5,7 +5,7 @@
  * Author(s): Sehoon Ha <sehoon.ha@gmail.com>,
  *            Jeongseok Lee <jslee02@gmail.com>
  *
- * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -42,11 +42,10 @@
 namespace dart {
 namespace dynamics {
 
-EllipsoidShape::EllipsoidShape(const Eigen::Vector3d _dim)
+EllipsoidShape::EllipsoidShape(const Eigen::Vector3d& _size)
   : Shape(ELLIPSOID) {
-  mBoundingBoxDim = _dim;
+  setSize(_size);
   initMeshes();
-  computeVolume();
 }
 
 EllipsoidShape::~EllipsoidShape() {

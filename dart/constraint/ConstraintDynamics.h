@@ -6,7 +6,7 @@
  *            Jeongseok Lee <jslee02@gmail.com>
  * Date:
  *
- * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -58,7 +58,8 @@ class BodyNode;
 namespace dart {
 namespace constraint {
 
-class ConstraintDynamics {
+class ConstraintDynamics
+{
 public:
   ConstraintDynamics(const std::vector<dynamics::Skeleton*>& _skels,
                      double _dt, double _mu = 1.0, int _d = 4,
@@ -82,22 +83,22 @@ public:
   int getNumContacts() const;
   Constraint* getConstraint(int _index) const;
 
-private:
+protected:
   void initialize();
 
   void computeConstraintWithoutContact();
-  void fillMatrices();
-  void fillMatricesODE();
+  virtual void fillMatrices();
+  virtual void fillMatricesODE();
   bool solve();
-  void applySolution();
-  void applySolutionODE();
+  virtual void applySolution();
+  virtual void applySolutionODE();
 
   void updateMassMat();
   void updateTauStar();
-  void updateNBMatrices();
-  void updateNBMatricesODE();
-  Eigen::MatrixXd getJacobian(dynamics::BodyNode* node,
-                              const Eigen::Vector3d& p);
+  virtual void updateNBMatrices();
+  virtual void updateNBMatricesODE();
+  virtual Eigen::MatrixXd getJacobian(dynamics::BodyNode* node,
+                                      const Eigen::Vector3d& p);
   // gets a matrix of tangent dirs.
   Eigen::MatrixXd getTangentBasisMatrix(const Eigen::Vector3d& p,
                                         const Eigen::Vector3d& n);
