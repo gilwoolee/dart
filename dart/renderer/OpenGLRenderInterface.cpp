@@ -4,7 +4,7 @@
  *
  * Author(s): Jie (Jay) Tan <jtan34@cc.gatech.edu>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -244,7 +244,7 @@ void OpenGLRenderInterface::drawCylinder(double _radius, double _height) {
     gluDisk(quadObj, 0, radius, slices, stacks);
 }
 
-void OpenGLRenderInterface::color4_to_float4(const aiColor4D *c, float f[4])
+void color4_to_float4(const aiColor4D *c, float f[4])
 {
     f[0] = c->r;
     f[1] = c->g;
@@ -252,7 +252,7 @@ void OpenGLRenderInterface::color4_to_float4(const aiColor4D *c, float f[4])
     f[3] = c->a;
 }
 
-void OpenGLRenderInterface::set_float4(float f[4], float a, float b, float c, float d)
+void set_float4(float f[4], float a, float b, float c, float d)
 {
     f[0] = a;
     f[1] = b;
@@ -261,7 +261,7 @@ void OpenGLRenderInterface::set_float4(float f[4], float a, float b, float c, fl
 }
 
 // This function is taken from the examples coming with assimp
-void OpenGLRenderInterface::applyMaterial(const struct aiMaterial *mtl)
+void applyMaterial(const struct aiMaterial *mtl)
 {
     float c[4];
 
@@ -328,7 +328,7 @@ void OpenGLRenderInterface::applyMaterial(const struct aiMaterial *mtl)
 
 
 // This function is taken from the examples coming with assimp
-void OpenGLRenderInterface::recursiveRender(const struct aiScene *sc, const struct aiNode* nd) {
+void recursiveRender (const Eigen::Vector3d& _scale, const struct aiScene *sc, const struct aiNode* nd) {
     unsigned int i;
     unsigned int n = 0, t;
     aiMatrix4x4 m = nd->mTransformation;
@@ -369,6 +369,7 @@ void OpenGLRenderInterface::recursiveRender(const struct aiScene *sc, const stru
                     glColor4fv((GLfloat*)&mesh->mColors[0][index]);
                 if(mesh->mNormals != NULL)
                     glNormal3fv(&mesh->mNormals[index].x);
+                glScalef((GLfloat)_scale[0], (GLfloat)_scale[1], (GLfloat)_scale[2]);
                 glVertex3fv(&mesh->mVertices[index].x);
             }
 
@@ -379,19 +380,15 @@ void OpenGLRenderInterface::recursiveRender(const struct aiScene *sc, const stru
 
     // draw all children
     for (n = 0; n < nd->mNumChildren; ++n) {
-        recursiveRender(sc, nd->mChildren[n]);
+        recursiveRender(_scale, sc, nd->mChildren[n]);
     }
 
     glPopMatrix();
 }
 
 void OpenGLRenderInterface::drawMesh(const Eigen::Vector3d& _scale, const aiScene *_mesh) {
-    if(_mesh) {
-        glPushMatrix();
-        glScaled(_scale(0), _scale(1), _scale(2));
-        recursiveRender(_mesh, _mesh->mRootNode);
-        glPopMatrix();
-    }
+    if(_mesh)
+        recursiveRender(_scale, _mesh, _mesh->mRootNode);
 }
 
 void OpenGLRenderInterface::drawList(GLuint index) {
@@ -437,13 +434,13 @@ void OpenGLRenderInterface::compileList(dynamics::Shape *_shape) {
             if(shapeMesh == 0)
                 return;
 
-            shapeMesh->setDisplayList(compileList(shapeMesh->getScale(), shapeMesh->getMesh()));
+            shapeMesh->setDisplayList(compileList(shapeMesh->getMesh()));
 
             break;
     }
 }
 
-GLuint OpenGLRenderInterface::compileList(const Eigen::Vector3d& _scale, const aiScene *_mesh) {
+GLuint OpenGLRenderInterface::compileList(const aiScene *_mesh) {
     if(!_mesh)
         return 0;
 
@@ -451,7 +448,7 @@ GLuint OpenGLRenderInterface::compileList(const Eigen::Vector3d& _scale, const a
     GLuint index = glGenLists(1);
     // Compile list
     glNewList(index, GL_COMPILE);
-    drawMesh(_scale, _mesh);
+    drawMesh(Eigen::Vector3d::Ones(), _mesh);
     glEndList();
 
     return index;
@@ -545,7 +542,7 @@ void OpenGLRenderInterface::draw(dynamics::Shape *_shape) {
             else if(mesh->getDisplayList())
                 drawList(mesh->getDisplayList());
             else
-                drawMesh(mesh->getScale(), mesh->getMesh());
+                drawMesh(Eigen::Vector3d::Ones(), mesh->getMesh());
 
             break;
         }

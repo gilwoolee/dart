@@ -5,7 +5,7 @@
  * Author(s): Sehoon Ha <sehoon.ha@gmail.com>,
  *            Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -183,18 +183,8 @@ public:
     /// \brief Get mass matrix of the skeleton.
     const Eigen::MatrixXd& getMassMatrix();
 
-    /// \brief Get augmented mass matrix of the skeleton. This matrix is used
-    ///        in ConstraintDynamics to compute constraint forces. The matrix is
-    ///        M + h*D + h*h*K where D is diagonal joint damping coefficient
-    ///        matrix, K is diagonal joint stiffness matrix, and h is simulation
-    ///        time step.
-    const Eigen::MatrixXd& getAugMassMatrix();
-
     /// \brief Get inverse of mass matrix of the skeleton.
     const Eigen::MatrixXd& getInvMassMatrix();
-
-    /// \brief Get inverse of augmented mass matrix of the skeleton.
-    const Eigen::MatrixXd& getInvAugMassMatrix();
 
     /// \brief Get Coriolis force vector of the skeleton.
     const Eigen::VectorXd& getCoriolisForceVector();
@@ -246,12 +236,6 @@ public:
 
     /// \brief
     Eigen::Vector3d getWorldCOM();
-
-    /// \brief Get kinetic energy of this skeleton.
-    virtual double getKineticEnergy() const;
-
-    /// \brief Get potential energy of this skeleton.
-    virtual double getPotentialEnergy() const;
 
     //--------------------------------------------------------------------------
     // Recursive dynamics algorithms
@@ -312,23 +296,11 @@ protected:
     /// \brief Dirty flag for the mass matrix.
     bool mIsMassMatrixDirty;
 
-    /// \brief Mass matrix for the skeleton.
-    Eigen::MatrixXd mAugM;
-
-    /// \brief Dirty flag for the mass matrix.
-    bool mIsAugMassMatrixDirty;
-
     /// \brief Inverse of mass matrix for the skeleton.
-    Eigen::MatrixXd mInvM;
+    Eigen::MatrixXd mMInv;
 
     /// \brief Dirty flag for the inverse of mass matrix.
-    bool mIsInvMassMatrixDirty;
-
-    /// \brief Inverse of augmented mass matrix for the skeleton.
-    Eigen::MatrixXd mInvAugM;
-
-    /// \brief Dirty flag for the inverse of augmented mass matrix.
-    bool mIsInvAugMassMatrixDirty;
+    bool mIsMassInvMatrixDirty;
 
     /// \brief Coriolis vector for the skeleton which is C(q,dq)*dq.
     Eigen::VectorXd mCvec;
@@ -365,31 +337,25 @@ protected:
     bool mIsDampingForceVectorDirty;
 
     /// \brief Update mass matrix of the skeleton.
-    virtual void updateMassMatrix();
-
-    /// \brief Update augmented mass matrix of the skeleton.
-    virtual void updateAugMassMatrix();
+    void updateMassMatrix();
 
     /// \brief Update inverse of mass matrix of the skeleton.
-    virtual void updateInvMassMatrix();
-
-    /// \brief Update inverse of augmented mass matrix of the skeleton.
-    virtual void updateInvAugMassMatrix();
+    void updateInvMassMatrix();
 
     /// \brief Update Coriolis force vector of the skeleton.
-    virtual void updateCoriolisForceVector();
+    void updateCoriolisForceVector();
 
     /// \brief Update gravity force vector of the skeleton.
-    virtual void updateGravityForceVector();
+    void updateGravityForceVector();
 
     /// \brief Update combined vector of the skeletong.
-    virtual void updateCombinedVector();
+    void updateCombinedVector();
 
     /// \brief update external force vector to generalized torques.
-    virtual void updateExternalForceVector();
+    void updateExternalForceVector();
 
     /// \brief Update damping force vector.
-    virtual void updateDampingForceVector();
+    void updateDampingForceVector();
 
 public:
     //

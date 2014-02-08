@@ -5,7 +5,7 @@
  * Author(s): Sehoon Ha <sehoon.ha@gmail.com>,
  *            Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -39,7 +39,6 @@
 
 #include <string>
 
-#include "dart/common/Console.h"
 #include "dart/renderer/RenderInterface.h"
 #include "dart/dynamics/BodyNode.h"
 
@@ -150,36 +149,16 @@ Eigen::VectorXd Joint::getDampingForces() const {
   return dampingForce;
 }
 
-void Joint::setSpringStiffness(int _idx, double _k) {
+void Joint::setSpringStiffness(int _idx, double _k, double _q0) {
   assert(0 <= _idx && _idx < getNumGenCoords());
   assert(_k >= 0.0);
   mSpringStiffness[_idx] = _k;
+  mRestPosition[_idx]    = _q0;
 }
 
-double Joint::getSpringStiffness(int _idx) const {
+double Joint::getSpringStiffness(int _idx) const  {
   assert(0 <= _idx && _idx < getNumGenCoords());
   return mSpringStiffness[_idx];
-}
-
-void Joint::setRestPosition(int _idx, double _q0) {
-  assert(0 <= _idx && _idx < getNumGenCoords());
-
-  if (getGenCoord(_idx)->get_qMin() > _q0
-      || getGenCoord(_idx)->get_qMax() < _q0)
-  {
-    dtwarn << "Rest position of joint[" << getName() << "], " << _q0
-           << ", is out of the limit range["
-           << getGenCoord(_idx)->get_qMin() << ", "
-           << getGenCoord(_idx)->get_qMax() << "] in index[" << _idx
-           << "].\n";
-  }
-
-  mRestPosition[_idx] = _q0;
-}
-
-double Joint::getRestPosition(int _idx) const {
-  assert(0 <= _idx && _idx < getNumGenCoords());
-  return mRestPosition[_idx];
 }
 
 Eigen::VectorXd Joint::getSpringForces(double _timeStep) const {
@@ -192,21 +171,6 @@ Eigen::VectorXd Joint::getSpringForces(double _timeStep) const {
                                 - mRestPosition[i]);
   }
   return springForce;
-}
-
-double Joint::getPotentialEnergy() const {
-  double PE = 0.0;
-  int dof = getNumGenCoords();
-
-  // Spring energy
-  Eigen::VectorXd q = get_q();
-  assert(q.size() == dof);
-  for (int i = 0; i < dof; ++i) {
-    PE += 0.5 * mSpringStiffness[i]
-          * (q[i] - mRestPosition[i]) * (q[i] - mRestPosition[i]);
-  }
-
-  return PE;
 }
 
 }  // namespace dynamics

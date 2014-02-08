@@ -4,7 +4,7 @@
  *
  * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -66,7 +66,6 @@ double            toDouble    (const std::string& _str);
 char              toChar      (const std::string& _str);
 Eigen::Vector2d   toVector2d  (const std::string& _str);
 Eigen::Vector3d   toVector3d  (const std::string& _str);
-Eigen::Vector3i   toVector3i  (const std::string& _str);
 Eigen::Vector6d   toVector6d  (const std::string& _str);
 Eigen::Isometry3d toIsometry3d(const std::string& _str);
 
@@ -79,7 +78,6 @@ double            getValueDouble    (tinyxml2::XMLElement* _parentElement, const
 char              getValueChar      (tinyxml2::XMLElement* _parentElement, const std::string& _name);
 Eigen::Vector2d   getValueVector2d  (tinyxml2::XMLElement* _parentElement, const std::string& _name);
 Eigen::Vector3d   getValueVector3d  (tinyxml2::XMLElement* _parentElement, const std::string& _name);
-Eigen::Vector3i   getValueVector3i  (tinyxml2::XMLElement* _parentElement, const std::string& _name);
 Eigen::Vector6d   getValueVector6d  (tinyxml2::XMLElement* _parentElement, const std::string& _name);
 Eigen::Isometry3d getValueIsometry3d(tinyxml2::XMLElement* _parentElement, const std::string& _name);
 
