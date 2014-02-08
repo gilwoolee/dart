@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2014, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2013, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>
+ * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
+ *            Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -34,7 +35,7 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "apps/vehicle/MyWindow.h"
+#include "apps/cubes/MyWindow.h"
 
 #include "dart/math/Helpers.h"
 #include "dart/simulation/World.h"
@@ -45,44 +46,17 @@
 
 MyWindow::MyWindow()
   : SimWindow() {
-  mBackWheelVelocity = 0.0;
-  mSteeringWheelAngle = 0.0;
-  mK = 0.01;
-  mD = 0.0025;
+  mForce = Eigen::Vector3d::Zero();
 }
 
 MyWindow::~MyWindow() {
 }
 
 void MyWindow::timeStepping() {
-  dart::dynamics::Skeleton* vehicle = mWorld->getSkeleton("car_skeleton");
-  assert(vehicle != 0);
-
-  Eigen::VectorXd q   = vehicle->get_q();
-  Eigen::VectorXd dq  = vehicle->get_dq();
-  Eigen::VectorXd tau = vehicle->get_tau();
-  tau.setZero();
-
-  if (true)
-  {
-    tau[6] = -mK * (q[6] - mSteeringWheelAngle) - mD * dq[6];
-    tau[8] = -mK * (q[8] - mSteeringWheelAngle) - mD * dq[8];
-    tau[10] = -mD * (dq[10] - mBackWheelVelocity);
-    tau[11] = -mD * (dq[11] - mBackWheelVelocity);
-  }
-  else
-  {
-    tau[0] = -mK * (q[0] - mSteeringWheelAngle) - mD * dq[0];
-    tau[2] = -mK * (q[2] - mSteeringWheelAngle) - mD * dq[2];
-    tau[4] = -mD * (dq[4] - mBackWheelVelocity);
-    tau[5] = -mD * (dq[5] - mBackWheelVelocity);
-  }
-  vehicle->setInternalForceVector(tau);
-
-//  std::cout << "mBackWheelVelocity: " << mBackWheelVelocity << std::endl;
-  std::cout << "tau: " << tau.transpose() << std::endl;
-
+  mWorld->getSkeleton(1)->getBodyNode(0)->addExtForce(
+        Eigen::Vector3d(0.0, 0.0, 0.0), mForce);
   mWorld->step();
+  mForce /= 2.0;
 }
 
 void MyWindow::drawSkels() {
@@ -127,23 +101,62 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
     case 'v':  // show or hide markers
       mShowMarkers = !mShowMarkers;
       break;
-    case 'w':  // move forward
-      mBackWheelVelocity = DART_RADIAN * -60.0;
+    case '1':  // upper right force
+      mForce[0] = -500;
       break;
-    case 's':  // stop
-      mBackWheelVelocity = DART_RADIAN * 0.0;
+    case '2':  // upper right force
+      mForce[0] = 500;
       break;
-    case 'x':  // move backward
-      mBackWheelVelocity = DART_RADIAN * +60.0;
+    case '3':  // upper right force
+      mForce[2] = -500;
       break;
-    case 'a':  // rotate steering wheels to left
-      mSteeringWheelAngle += DART_RADIAN * +10;
+    case '4':  // upper right force
+      mForce[2] = 500;
       break;
-    case 'd':  // rotate steering wheels to right
-      mSteeringWheelAngle += DART_RADIAN * -10;
+    case 'q':  // Spawn a cube
+    case 'Q': {  // Spawn a cube
+      Eigen::Vector3d position = Eigen::Vector3d(dart::math::random(-1.0, 1.0),
+                                                 dart::math::random(-1.0, 1.0),
+                                                 dart::math::random(0.5, 1.0));
+      Eigen::Vector3d size = Eigen::Vector3d(dart::math::random(0.01, 0.2),
+                                             dart::math::random(0.01, 0.2),
+                                             dart::math::random(0.01, 0.2));
+      spawnCube(position, size);
       break;
+    }
+    case 'w':    // Spawn a cube
+    case 'W': {  // Spawn a cube
+      if (mWorld->getNumSkeletons() > 4)
+        mWorld->removeSkeleton(mWorld->getSkeleton(4));
+      break;
+    }
     default:
       Win3D::keyboard(_key, _x, _y);
   }
   glutPostRedisplay();
+}
+
+void MyWindow::spawnCube(const Eigen::Vector3d& _position,
+                         const Eigen::Vector3d& _size,
+                         double _mass) {
+  dart::dynamics::Skeleton*  newCubeSkeleton =
+      new dart::dynamics::Skeleton();
+  dart::dynamics::BodyNode*  newBodyNode     =
+      new dart::dynamics::BodyNode("cube_link");
+  dart::dynamics::FreeJoint* newFreeJoint    =
+      new dart::dynamics::FreeJoint("cube_joint");
+  dart::dynamics::BoxShape*  newBoxShape     =
+      new dart::dynamics::BoxShape(_size);
+
+  newBodyNode->addVisualizationShape(newBoxShape);
+  newBodyNode->addCollisionShape(newBoxShape);
+  newBodyNode->setMass(_mass);
+  newBodyNode->setParentJoint(newFreeJoint);
+  newFreeJoint->setTransformFromParentBodyNode(
+        Eigen::Isometry3d(Eigen::Translation3d(_position)));
+  newBoxShape->setColor(Eigen::Vector3d(dart::math::random(0.0, 1.0),
+                                        dart::math::random(0.0, 1.0),
+                                        dart::math::random(0.0, 1.0)));
+  newCubeSkeleton->addBodyNode(newBodyNode);
+  mWorld->addSkeleton(newCubeSkeleton);
 }

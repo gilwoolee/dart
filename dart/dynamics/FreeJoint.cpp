@@ -4,7 +4,7 @@
  *
  * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -66,6 +66,13 @@ FreeJoint::~FreeJoint() {
 }
 
 void FreeJoint::updateTransform() {
+  Eigen::Vector3d q1(mCoordinate[0].get_q(),
+      mCoordinate[1].get_q(),
+      mCoordinate[2].get_q());
+  Eigen::Vector3d q2(mCoordinate[3].get_q(),
+      mCoordinate[4].get_q(),
+      mCoordinate[5].get_q());
+
   // TODO(JS): This is workaround for Issue #122.
   mT_Joint = math::expMap(get_q());
 
@@ -86,8 +93,8 @@ void FreeJoint::updateTransform_Issue122(double _timeStep) {
 
 void FreeJoint::updateJacobian() {
   Eigen::Vector3d q(mCoordinate[0].get_q(),
-                    mCoordinate[1].get_q(),
-                    mCoordinate[2].get_q());
+      mCoordinate[1].get_q(),
+      mCoordinate[2].get_q());
 
   Eigen::Matrix3d J = math::expMapJac(q);
 
@@ -142,11 +149,11 @@ void FreeJoint::updateJacobian_Issue122() {
 
 void FreeJoint::updateJacobianTimeDeriv() {
   Eigen::Vector3d q(mCoordinate[0].get_q(),
-                    mCoordinate[1].get_q(),
-                    mCoordinate[2].get_q());
+      mCoordinate[1].get_q(),
+      mCoordinate[2].get_q());
   Eigen::Vector3d dq(mCoordinate[0].get_dq(),
-                     mCoordinate[1].get_dq(),
-                     mCoordinate[2].get_dq());
+      mCoordinate[1].get_dq(),
+      mCoordinate[2].get_dq());
 
   Eigen::Matrix3d dJ = math::expMapJacDot(q, dq);
 

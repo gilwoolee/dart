@@ -4,7 +4,7 @@
  *
  * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -41,6 +41,7 @@
 #include <Eigen/Dense>
 
 #include "dart/common/Console.h"
+#include "dart/collision/bullet/BulletCollisionDetector.h"
 #include "dart/collision/dart/DARTCollisionDetector.h"
 #include "dart/collision/fcl/FCLCollisionDetector.h"
 #include "dart/collision/fcl_mesh/FCLMeshCollisionDetector.h"
@@ -139,6 +140,9 @@ simulation::World* SkelParser::readWorld(tinyxml2::XMLElement* _worldElement) {
       } else if (strCD == "dart") {
         newWorld->getConstraintHandler()->setCollisionDetector(
               new collision::DARTCollisionDetector());
+      } else if (strCD == "bullet") {
+        newWorld->getConstraintHandler()->setCollisionDetector(
+              new collision::BulletCollisionDetector());
       } else {
         dtwarn << "Unknown collision detector[" << strCD << "]. "
                << "Default collision detector[fcl] will be loaded."

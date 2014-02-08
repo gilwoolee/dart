@@ -5,7 +5,7 @@
  * Author(s): Karen Liu
  * Date:
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -49,8 +49,7 @@ namespace constraint {
 PointConstraint::PointConstraint(dynamics::BodyNode* _body,
                                  const Eigen::Vector3d& _offset,
                                  const Eigen::Vector3d& _target,
-                                 int _skelIndex)
-{
+                                 int _skelIndex) {
   mBody = _body;
   mOffset = _offset;
   mTarget = _target;
@@ -59,15 +58,13 @@ PointConstraint::PointConstraint(dynamics::BodyNode* _body,
   mNumRows = 3;
 }
 
-PointConstraint::~PointConstraint()
-{
+PointConstraint::~PointConstraint() {
 }
 
 void PointConstraint::updateDynamics(std::vector<Eigen::MatrixXd>* _J,
                                      Eigen::VectorXd* _C,
                                      Eigen::VectorXd* _CDot,
-                                     int _rowIndex)
-{
+                                     int _rowIndex) {
   getJacobian();
   dynamics::Skeleton *skel = mBody->getSkeleton();
   _J->at(mSkelIndex).block(_rowIndex, 0, 3, skel->getNumGenCoords()) = mJ;
@@ -77,13 +74,11 @@ void PointConstraint::updateDynamics(std::vector<Eigen::MatrixXd>* _J,
   _CDot->segment(_rowIndex, 3) = mJ * qDot;
 }
 
-void PointConstraint::getJacobian()
-{
+void PointConstraint::getJacobian() {
   Eigen::MatrixXd JBody =
       mBody->getWorldJacobian(
         mOffset - mBody->getWorldTransform().translation()).bottomRows<3>();
-  for (int i = 0; i < mBody->getNumDependentGenCoords(); i++)
-  {
+  for (int i = 0; i < mBody->getNumDependentGenCoords(); i++) {
     int dofIndex = mBody->getDependentGenCoord(i);
     mJ.col(dofIndex) = JBody.col(i);
   }

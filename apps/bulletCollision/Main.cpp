@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2014, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2013, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>
+ * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
+ *            Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -34,42 +35,39 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <iostream>
 
-#ifndef APPS_VEHICLE_MYWINDOW_H_
-#define APPS_VEHICLE_MYWINDOW_H_
+#include "dart/collision/bullet/BulletCollisionDetector.h"
+#include "dart/constraint/ConstraintDynamics.h"
+#include "dart/simulation/World.h"
+#include "dart/utils/Paths.h"
+#include "dart/utils/SkelParser.h"
+#include "apps/cubes/MyWindow.h"
 
-#include "dart/gui/SimWindow.h"
+int main(int argc, char* argv[]) {
+  // create and initialize the world
+  dart::simulation::World *myWorld
+      = dart::utils::SkelParser::readSkelFile(
+          DART_DATA_PATH"/skel/bullet_collision.skel");
+  assert(myWorld != NULL);
+  Eigen::Vector3d gravity(0.0, -9.81, 0.0);
+  myWorld->setGravity(gravity);
 
-/// \brief
-class MyWindow : public dart::gui::SimWindow {
-public:
-  /// \brief
-  MyWindow();
+  // create a window and link it to the world
+  MyWindow window;
+  window.setWorld(myWorld);
 
-  /// \brief
-  virtual ~MyWindow();
+  std::cout << "space bar: simulation on/off" << std::endl;
+  std::cout << "'p': playback/stop" << std::endl;
+  std::cout << "'[' and ']': play one frame backward and forward" << std::endl;
+  std::cout << "'v': visualization on/off" << std::endl;
+  std::cout << "'1'--'4': programmed interaction" << std::endl;
+  std::cout << "'q': spawn a random cube" << std::endl;
+  std::cout << "'w': delete a spawned cube" << std::endl;
 
-  /// \brief
-  virtual void timeStepping();
+  glutInit(&argc, argv);
+  window.initWindow(640, 480, "Bullet Collision");
+  glutMainLoop();
 
-  /// \brief
-  virtual void drawSkels();
-
-  /// \brief
-  virtual void keyboard(unsigned char _key, int _x, int _y);
-
-private:
-  /// \brief
-  double mBackWheelVelocity;
-
-  /// \brief
-  double mSteeringWheelAngle;
-
-  /// \brief
-  double mK;
-
-  /// \brief
-  double mD;
-};
-
-#endif  // APPS_VEHICLE_MYWINDOW_H_
+  return 0;
+}

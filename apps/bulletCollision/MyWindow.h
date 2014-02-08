@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2014, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2013, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>
+ * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
+ *            Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -34,45 +35,38 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
+#ifndef APPS_CUBES_MYWINDOW_H_
+#define APPS_CUBES_MYWINDOW_H_
 
-#include "dart/dynamics/Skeleton.h"
-#include "dart/simulation/World.h"
-#include "dart/utils/Paths.h"
-#include "dart/utils/SkelParser.h"
-#include "apps/vehicle/MyWindow.h"
+#include "dart/gui/SimWindow.h"
 
-int main(int argc, char* argv[])
-{
-  using namespace dart;
-  using namespace dynamics;
-  using namespace simulation;
-  using namespace utils;
+/// \brief
+class MyWindow : public dart::gui::SimWindow {
+public:
+  /// \brief
+  MyWindow();
 
-  // create and initialize the world
-  World* myWorld = SkelParser::readSkelFile(DART_DATA_PATH"/skel/vehicle.skel");
-  assert(myWorld != NULL);
-  Eigen::Vector3d gravity(0.0, -9.81, 0.0);
-  myWorld->setGravity(gravity);
+  /// \brief
+  virtual ~MyWindow();
 
-  // create a window and link it to the world
-  MyWindow window;
-  window.setWorld(myWorld);
+  /// \brief
+  virtual void timeStepping();
 
-  std::cout << "space bar: simulation on/off" << std::endl;
-  std::cout << "'p': playback/stop" << std::endl;
-  std::cout << "'[' and ']': play one frame backward and forward" << std::endl;
-  std::cout << "'v': visualization on/off" << std::endl;
-  std::cout << "'1'--'4': programmed interaction" << std::endl;
-  std::cout << "'w': move forward" << std::endl;
-  std::cout << "'s': stop" << std::endl;
-  std::cout << "'x': move backward" << std::endl;
-  std::cout << "'a': rotate steering wheels to left" << std::endl;
-  std::cout << "'d': rotate steering wheels to right" << std::endl;
+  /// \brief
+  virtual void drawSkels();
 
-  glutInit(&argc, argv);
-  window.initWindow(640, 480, "Vehicle");
-  glutMainLoop();
+  /// \brief
+  virtual void keyboard(unsigned char _key, int _x, int _y);
 
-  return 0;
-}
+  /// \brief
+  void spawnCube(
+      const Eigen::Vector3d& _position = Eigen::Vector3d(0.0, 1.0, 0.0),
+      const Eigen::Vector3d& _size     = Eigen::Vector3d(0.1, 0.1, 0.1),
+      double _mass = 1.0);
+
+private:
+  /// \brief
+  Eigen::Vector3d mForce;
+};
+
+#endif  // APPS_CUBES_MYWINDOW_H_

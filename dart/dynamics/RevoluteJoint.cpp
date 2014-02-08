@@ -4,7 +4,7 @@
  *
  * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -72,9 +72,8 @@ const Eigen::Vector3d&RevoluteJoint::getAxis() const {
 
 void RevoluteJoint::updateTransform() {
   mT = mT_ParentBodyToJoint
-       * Eigen::AngleAxisd(mCoordinate.get_q(), mAxis)
+       * math::expAngular(mAxis * mCoordinate.get_q())
        * mT_ChildBodyToJoint.inverse();
-
   assert(math::verifyTransform(mT));
 }
 

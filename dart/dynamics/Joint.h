@@ -5,7 +5,7 @@
  * Author(s): Sehoon Ha <sehoon.ha@gmail.com>
  *            Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -170,20 +170,15 @@ public:
   /// \brief Set spring stiffness for spring force.
   /// \param[in] _idx Index of joint axis.
   /// \param[in] _k Spring stiffness.
-  void setSpringStiffness(int _idx, double _k);
+  /// \param[in] _q0 Rest position.
+  void setSpringStiffness(int _idx, double _k, double _q0 = 0.0);
 
   /// \brief Get spring stiffnes for spring force.
   /// \param[in] _idx Index of joint axis.
   double getSpringStiffness(int _idx) const;
 
-  /// \brief Set rest position for spring force.
-  /// \param[in] _idx Index of joint axis.
-  /// \param[in] _q0 Rest position.
-  void setRestPosition(int _idx, double _q0);
-
   /// \brief Get rest position for spring force.
   /// \param[in] _idx Index of joint axis.
-  /// \return Rest position.
   double getRestPosition(int _idx) const;
 
   /// \brief Get spring force.
@@ -200,9 +195,6 @@ public:
   ///
   /// \param[in] _timeStep Time step used for approximating q(k+1).
   Eigen::VectorXd getSpringForces(double _timeStep) const;
-
-  /// \brief Get potential energy.
-  double getPotentialEnergy() const;
 
   /// \brief
   void applyGLTransform(renderer::RenderInterface* _ri);

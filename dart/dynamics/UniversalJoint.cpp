@@ -4,7 +4,7 @@
  *
  * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -83,8 +83,8 @@ const Eigen::Vector3d& UniversalJoint::getAxis2() const {
 
 void UniversalJoint::updateTransform() {
   mT = mT_ParentBodyToJoint
-       * Eigen::AngleAxisd(mCoordinate[0].get_q(), mAxis[0])
-       * Eigen::AngleAxisd(mCoordinate[1].get_q(), mAxis[1])
+       * math::expAngular(mAxis[0] * mCoordinate[0].get_q())
+       * math::expAngular(mAxis[1] * mCoordinate[1].get_q())
        * mT_ChildBodyToJoint.inverse();
   assert(math::verifyTransform(mT));
 }

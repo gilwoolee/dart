@@ -5,7 +5,7 @@
  * Author(s): Karen Liu <karenliu@cc.gatech.edu>
  * Date:
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -45,8 +45,7 @@ namespace dart {
 namespace constraint {
 
 /// \brief
-class Constraint
-{
+class Constraint {
 public:
   /// \brief
   Constraint();
