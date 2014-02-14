@@ -1,11 +1,10 @@
 /*
- * Copyright (c) 2011-2013, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Karen Liu
- * Date:
+ * Author(s): Karen Liu <karenliu@cc.gatech.edu>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -41,6 +40,44 @@
 
 namespace dart {
 namespace constraint {
+
+Constraint::Constraint() {
+}
+
+Constraint::~Constraint() {
+}
+
+void Constraint::updateDynamics(Eigen::MatrixXd& _J1, Eigen::MatrixXd& _J2,
+                                Eigen::VectorXd& _C, Eigen::VectorXd& _CDot,
+                                int _rowIndex) {
+}
+
+int Constraint::getNumRows() const {
+  return mNumRows;
+}
+
+Eigen::VectorXd Constraint::getLagrangeMultipliers() const {
+  return mLagrangeMultipliers;
+}
+
+void Constraint::setLagrangeMultipliers(const Eigen::VectorXd& _lambda) {
+  mLagrangeMultipliers = _lambda;
+}
+
+dart::dynamics::BodyNode*Constraint::getBodyNode1() {
+  return mBodyNode1;
+}
+
+dart::dynamics::BodyNode*Constraint::getBodyNode2() {
+  return mBodyNode2;
+}
+
+void Constraint::getJacobian() {
+}
+
+void Constraint::updateDynamics(Eigen::MatrixXd& _J1, Eigen::VectorXd& _C,
+                                Eigen::VectorXd& _CDot, int _rowIndex) {
+}
 
 }  // namespace constraint
 }  // namespace dart

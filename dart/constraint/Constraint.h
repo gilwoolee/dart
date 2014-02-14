@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2011, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Karen Liu
- * Date:
+ * Author(s): Karen Liu <karenliu@cc.gatech.edu>
  *
  * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -42,39 +41,71 @@
 #include <Eigen/Dense>
 
 namespace dart {
-
 namespace dynamics {
 class BodyNode;
-}
+}  // namespace dyanmics
+}  // namespace dart
 
+namespace dart {
 namespace constraint {
 
 class Constraint {
 public:
-  Constraint() {}
-  virtual ~Constraint() {}
+  /// \brief Default contructor
+  Constraint();
 
-  virtual void updateDynamics(Eigen::MatrixXd & _J1, Eigen::VectorXd & _C, Eigen::VectorXd & _CDot, int _rowIndex) {}
-  virtual void updateDynamics(Eigen::MatrixXd & _J1, Eigen::MatrixXd & _J2, Eigen::VectorXd & _C, Eigen::VectorXd & _CDot, int _rowIndex) {}
-  inline int getNumRows() const { return mNumRows; }
-  inline Eigen::VectorXd getLagrangeMultipliers() const { return mLagrangeMultipliers; }
-  inline void setLagrangeMultipliers(const Eigen::VectorXd& _lambda) { mLagrangeMultipliers = _lambda; }
-  inline dynamics::BodyNode* getBodyNode1() { return mBodyNode1; }
-  inline dynamics::BodyNode* getBodyNode2() { return mBodyNode2; }
+  /// \brief Default destructor
+  virtual ~Constraint();
+
+  /// \brief
+  virtual void updateDynamics(Eigen::MatrixXd & _J1, Eigen::VectorXd & _C,
+                              Eigen::VectorXd & _CDot, int _rowIndex);
+
+  /// \brief
+  virtual void updateDynamics(Eigen::MatrixXd & _J1, Eigen::MatrixXd & _J2,
+                              Eigen::VectorXd & _C, Eigen::VectorXd & _CDot,
+                              int _rowIndex);
+
+  /// \brief
+  int getNumRows() const;
+
+  /// \brief
+  Eigen::VectorXd getLagrangeMultipliers() const;
+
+  /// \brief
+  void setLagrangeMultipliers(const Eigen::VectorXd& _lambda);
+
+  /// \brief
+  dynamics::BodyNode* getBodyNode1();
+
+  /// \brief
+  dynamics::BodyNode* getBodyNode2();
 
 protected:
-  virtual void getJacobian() {}
+  /// \brief
+  virtual void getJacobian();
+
+  /// \brief
   int mNumRows;
+
+  /// \brief
   Eigen::VectorXd mLagrangeMultipliers;
 
+  /// \brief
   dynamics::BodyNode* mBodyNode1;
+
+  /// \brief
   dynamics::BodyNode* mBodyNode2;
+
+  /// \brief
   Eigen::MatrixXd mJ1;
+
+  /// \brief
   Eigen::MatrixXd mJ2;
 };
 
 } // namespace constraint
 } // namespace dart
 
-#endif // #ifndef DART_CONSTRAINT_CONSTRAINT_H
+#endif  // DART_CONSTRAINT_CONSTRAINT_H
 
