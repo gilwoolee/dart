@@ -204,6 +204,21 @@ Eigen::Vector6d BodyNode::getWorldVelocity(
   return math::AdT(T, mV);
 }
 
+Eigen::Vector3d BodyNode::getWorldLinearVelocity(
+    const Eigen::Vector3d& _offset, bool _isLocal) const {
+  if (_isLocal) {
+    return (mW.linear() * mV.head<3>()).cross(mW.linear() * _offset)
+        + mW.linear() * mV.tail<3>();
+  } else {
+    return (mW.linear() * mV.head<3>()).cross(_offset)
+        + mW.linear() * mV.tail<3>();
+  }
+}
+
+Eigen::Vector3d BodyNode::getWorldAngularVelocity() const {
+  return mW.linear() * mV.head<3>();
+}
+
 const Eigen::Vector6d& BodyNode::getBodyAcceleration() const {
   return mdV;
 }
@@ -220,6 +235,15 @@ Eigen::Vector6d BodyNode::getWorldAcceleration(
   dV.tail<3>() += mV.head<3>().cross(mV.tail<3>());
 
   return math::AdT(T, dV);
+}
+
+Eigen::Vector3d BodyNode::getWorldLinearAcceleration(
+    const Eigen::Vector3d &_offset, bool _isLocal) const {
+
+}
+
+Eigen::Vector3d BodyNode::getWorldAngularAcceleration() const {
+
 }
 
 const math::Jacobian& BodyNode::getBodyJacobian() {
@@ -412,7 +436,7 @@ void BodyNode::updateVelocity() {
     mV.noalias() = mParentJoint->getLocalJacobian() * mParentJoint->get_dq();
     if (mParentBodyNode) {
       mV += math::AdInvT(mParentJoint->getLocalTransform(),
-                         mParentBodyNode->getBodyVelocity());
+                         mParentBodyNode->mV);
     }
   }
 
@@ -456,7 +480,7 @@ void BodyNode::updateAcceleration() {
     mdV.noalias() += mParentJoint->getLocalJacobian() * mParentJoint->get_ddq();
     if (mParentBodyNode) {
       mdV += math::AdInvT(mParentJoint->getLocalTransform(),
-                          mParentBodyNode->getBodyAcceleration());
+                          mParentBodyNode->mdV);
     }
   }
 
@@ -804,7 +828,7 @@ void BodyNode::update_ddq() {
     ddq.noalias() =
         mImplicitPsi * (mAlpha - mImplicitAI_S.transpose() *
                         math::AdInvT(mParentJoint->getLocalTransform(),
-                                     mParentBodyNode->getBodyAcceleration()));
+                                     mParentBodyNode->mdV));
   } else {
     ddq.noalias() = mImplicitPsi * mAlpha;
   }

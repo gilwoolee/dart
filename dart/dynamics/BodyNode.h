@@ -78,6 +78,7 @@ Runge-Kutta and fourth-order Runge Kutta.
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 
+#include "dart/common/Deprecated.h"
 #include "dart/math/Geometry.h"
 
 namespace dart {
@@ -246,20 +247,32 @@ public:
 
   /// \brief Get the generalized velocity at the origin of this body node
   ///        where the velocity is expressed in this body node frame.
-  const Eigen::Vector6d& getBodyVelocity() const;
+  DEPRECATED const Eigen::Vector6d& getBodyVelocity() const;
 
   /// \brief Get the generalized velocity at a point on this body node where
   ///        the velocity is expressed in the world frame.
   /// \param[in] _offset Position vector relative to the origin the body frame.
   /// \param[in] _isLocal True if _offset is expressed in the body frame.
   ///                     False if _offset is expressed in the world frame.
-  Eigen::Vector6d getWorldVelocity(
+  DEPRECATED Eigen::Vector6d getWorldVelocity(
       const Eigen::Vector3d& _offset = Eigen::Vector3d::Zero(),
       bool _isLocal                  = false) const;
 
+  /// \brief Get the linear velocity at a point on this body node where
+  ///        the velocity is expressed in the world frame.
+  /// \param[in] _offset Position vector relative to the origin the body frame.
+  /// \param[in] _isLocal True if _offset is expressed in the body frame.
+  ///                     False if _offset is expressed in the world frame.
+  Eigen::Vector3d getWorldLinearVelocity(
+      const Eigen::Vector3d& _offset = Eigen::Vector3d::Zero(),
+      bool _isLocal                  = false) const;
+
+  /// \brief Get angular velocity expressed in the world frame.
+  Eigen::Vector3d getWorldAngularVelocity() const;
+
   /// \brief Get generalized acceleration at the origin of this body node
   /// where the acceleration is expressed in this body node frame.
-  const Eigen::Vector6d& getBodyAcceleration() const;
+  DEPRECATED const Eigen::Vector6d& getBodyAcceleration() const;
 
   /// \brief Get generalized acceleration at a point on this body node where
   ///        the acceleration is expressed in the world frame.
@@ -269,6 +282,18 @@ public:
   Eigen::Vector6d getWorldAcceleration(
       const Eigen::Vector3d& _offset = Eigen::Vector3d::Zero(),
       bool _isOffsetLocal            = false) const;
+
+  /// \brief Get the linear acceleration at a point on this body node where
+  ///        the acceleration is expressed in the world frame.
+  /// \param[in] _offset Position vector relative to the origin the body frame.
+  /// \param[in] _isLocal True if _offset is expressed in the body frame.
+  ///                     False if _offset is expressed in the world frame.
+  Eigen::Vector3d getWorldLinearAcceleration(
+      const Eigen::Vector3d& _offset = Eigen::Vector3d::Zero(),
+      bool _isLocal                  = false) const;
+
+  /// \brief Get angular acceleration expressed in the world frame.
+  Eigen::Vector3d getWorldAngularAcceleration() const;
 
   /// \brief Get generalized Jacobian at the origin of this body node where
   ///        the Jacobian is expressed in this body node frame.
