@@ -281,6 +281,9 @@ public:
     /// \brief (q, dq, tau) --> (ddq)
     void computeForwardDynamics();
 
+    /// \brief
+    void computeImpulseBasedForwardDynamics();
+
     //--------------------------------------------------------------------------
     // Rendering
     //--------------------------------------------------------------------------

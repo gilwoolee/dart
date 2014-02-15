@@ -2,7 +2,8 @@
  * Copyright (c) 2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>
+ * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
+ *            Jeongseok Lee <jslee02@gmail.com>
  *
  * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -34,35 +35,24 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dart/constraint/Community.h"
+#ifndef DART_CONSTRAINT_REVOLUTEJOINTCONSTRAINT_H_TEST
+#define DART_CONSTRAINT_REVOLUTEJOINTCONSTRAINT_H_TEST
 
-#include <vector>
+#include "dart/constraint_test/JointConstraint.h"
 
 namespace dart {
 namespace constraint {
 
-Community::Community()
+class RevoluteJointConstraintTEST : public JointConstraintTEST
 {
-}
+public:
+  RevoluteJointConstraintTEST();
 
-Community::~Community()
-{
-}
-
-void Community::addConstraint(ImpulseBasedConstraint* _constraint)
-{
-
-}
-
-void Community::removeAllContraints()
-{
-
-}
-
-void Community::computeConstraintImpulses()
-{
-
-}
+  ~RevoluteJointConstraintTEST();
+};
 
 }  // namespace constraint
 }  // namespace dart
+
+#endif  // DART_CONSTRAINT_REVOLUTEJOINTCONSTRAINT_H_TEST
+

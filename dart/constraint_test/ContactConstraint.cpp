@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014, Georgia Tech Research Corporation
+ * Copyright (c) 2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
@@ -35,63 +35,28 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_CONSTRAINT_IMPULSEBASEDBALLJOINTCONSTRAINT_H
-#define DART_CONSTRAINT_IMPULSEBASEDBALLJOINTCONSTRAINT_H
+#include "dart/constraint_test/ContactConstraint.h"
 
-#include "dart/constraint/ImpulseBasedConstraint.h"
-
-namespace dart {
-namespace dynamics {
-class BodyNode;
-class Skeleton;
-}  // namespace dynamics
-}  // namespace dart
+#include <iostream>
 
 namespace dart {
 namespace constraint {
 
-class ImpulseBasedBallJointConstraint : public ImpulseBasedConstraint {
-public:
-  /// \brief
-  ImpulseBasedBallJointConstraint(
-      dynamics::BodyNode *_body1, dynamics::BodyNode *_body2,
-      Eigen::Vector3d _offset1, Eigen::Vector3d _offset2);
+ContactConstraintTEST::ContactConstraintTEST()
+  : ConstraintTEST()
+{
+}
 
-  /// \brief
-  ImpulseBasedBallJointConstraint(
-      dynamics::BodyNode *_body1, dynamics::BodyNode *_body2,
-      Eigen::Vector3d _jointPosition);
+ContactConstraintTEST::~ContactConstraintTEST()
+{
+}
 
-  /// \brief
-  ImpulseBasedBallJointConstraint(
-      dynamics::BodyNode *_body1, Eigen::Vector3d _offset1,
-      Eigen::Vector3d _target);
-
-  /// \brief
-  virtual ~ImpulseBasedBallJointConstraint();
-
-  /// \brief
-  virtual void updateDynamics(Eigen::MatrixXd & _J1, Eigen::VectorXd & _C,
-                              Eigen::VectorXd & _CDot, int _rowIndex);
-
-  /// \brief
-  virtual void updateDynamics(Eigen::MatrixXd & _J1, Eigen::MatrixXd & _J2,
-                              Eigen::VectorXd & _C, Eigen::VectorXd & _CDot,
-                              int _rowIndex);
-
-private:
-  /// \brief
-  virtual void getJacobian();
-
-  /// \brief
-  Eigen::Vector3d mOffset1;
-
-  /// \brief
-  Eigen::Vector3d mOffset2;
-};
+bool ContactConstraintTEST::isActive()
+{
+  std::cout << "JointConstraintTEST::isActive(): Not implemented."
+            << std::endl;
+  return false;
+}
 
 }  // namespace constraint
 }  // namespace dart
-
-#endif  // DART_CONSTRAINT_IMPULSEBASEDBALLJOINTCONSTRAINT_H
-

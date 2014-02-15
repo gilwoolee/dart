@@ -60,6 +60,7 @@ class Skeleton;
 }  // namespace dynamics
 namespace constraint {
 class ConstraintDynamics;
+class ConstraintSolverTEST;
 }  // namespace constraint
 }  // namespace dart
 
@@ -89,6 +90,20 @@ public:
   virtual void setControlInput();
 
   virtual Eigen::VectorXd evalDeriv();
+
+  Eigen::VectorXd _evalDerivPrev();
+  Eigen::VectorXd _evalDerivNew();
+
+  void __prestep();                   // clear dynamics terms except user control input and external force (tau, Fext)
+  void __computeForwardDynamics();    // ddq = HybridDynamics(q, dq, tau, Fext)
+  void __updateVelocity();            // dq = dq + dt * ddq
+  void __computeConstraintImpulses(); // imp = ConstraintSolver(q)
+  void __computeVelocityJumps();      // del_dq = ImpulseBasedHybridDynamics(q, imp)
+  void __updateVelocityWithVelJump(); // dq = dq + del_dq
+  void __updateAccelerationWithVelJump(); // ddq = ddq + del_dq / dt
+  void __updatePosition();            // q = q + dt * dq
+  void __updateTauWithImpulse();      // tau = tau + imp / dt
+  void __updateSensors();             //
 
   //--------------------------------------------------------------------------
   // Simulation
@@ -166,6 +181,9 @@ public:
   /// \brief Get the constraint handler.
   constraint::ConstraintDynamics* getConstraintHandler() const;
 
+  /// \brief Get constraint solver.
+  constraint::ConstraintSolverTEST* getConstraintSolver() const;
+
 protected:
   //--------------------------------------------------------------------------
   // Dynamics Algorithms
@@ -196,6 +214,9 @@ protected:
 
   /// \brief The constraint handler.
   constraint::ConstraintDynamics* mConstraintHandler;
+
+  /// \brief Constraint sover.
+  constraint::ConstraintSolverTEST* mConstraintSolver;
 
 private:
 };

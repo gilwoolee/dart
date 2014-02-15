@@ -5,7 +5,7 @@ if(MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
-set(CORE_SUBDIRS common math dynamics renderer collision lcpsolver constraint integration simulation)
+set(CORE_SUBDIRS common math dynamics renderer collision lcpsolver constraint constraint_test integration simulation)
 set(NONCORE_SUBDIRS gui planning utils)
 # optimizer is also a NONCORE_SUBDIR, but it will be handled separately
 

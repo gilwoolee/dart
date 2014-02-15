@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014, Georgia Tech Research Corporation
+ * Copyright (c) 2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
@@ -35,78 +35,31 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_CONSTRAINT_IMPULSEBASEDCONSTRAINT_H
-#define DART_CONSTRAINT_IMPULSEBASEDCONSTRAINT_H
+#ifndef DART_CONSTRAINT_JOINTCONSTRAINT_H_TEST
+#define DART_CONSTRAINT_JOINTCONSTRAINT_H_TEST
 
-#include <vector>
-#include <Eigen/Dense>
-
-namespace dart {
-namespace dynamics {
-class BodyNode;
-}  // namespace dyanmics
-}  // namespace dart
+#include "dart/constraint_test/Constraint.h"
 
 namespace dart {
 namespace constraint {
 
-class ImpulseBasedConstraint {
+class JointConstraintTEST : public ConstraintTEST
+{
 public:
   /// \brief Default contructor
-  ImpulseBasedConstraint();
+  JointConstraintTEST();
 
   /// \brief Default destructor
-  virtual ~ImpulseBasedConstraint();
+  virtual ~JointConstraintTEST();
 
   /// \brief
-  virtual void updateDynamics(Eigen::MatrixXd & _J1, Eigen::VectorXd & _C,
-                              Eigen::VectorXd & _CDot, int _rowIndex);
-
-  /// \brief
-  virtual void updateDynamics(Eigen::MatrixXd & _J1, Eigen::MatrixXd & _J2,
-                              Eigen::VectorXd & _C, Eigen::VectorXd & _CDot,
-                              int _rowIndex);
-
-  /// \brief
-  int getNumRows() const;
-
-  /// \brief
-  Eigen::VectorXd getLagrangeMultipliers() const;
-
-  /// \brief
-  void setLagrangeMultipliers(const Eigen::VectorXd& _lambda);
-
-  /// \brief
-  dynamics::BodyNode* getBodyNode1();
-
-  /// \brief
-  dynamics::BodyNode* getBodyNode2();
+  bool isActive();
 
 protected:
-  /// \brief
-  virtual void getJacobian();
-
-  /// \brief
-  int mNumRows;
-
-  /// \brief
-  Eigen::VectorXd mLagrangeMultipliers;
-
-  /// \brief
-  dynamics::BodyNode* mBodyNode1;
-
-  /// \brief
-  dynamics::BodyNode* mBodyNode2;
-
-  /// \brief
-  Eigen::MatrixXd mJ1;
-
-  /// \brief
-  Eigen::MatrixXd mJ2;
 };
 
 } // namespace constraint
 } // namespace dart
 
-#endif  // DART_CONSTRAINT_IMPULSEBASEDCONSTRAINT_H
+#endif  // DART_CONSTRAINT_CONSTRAINT_H_TEST
 

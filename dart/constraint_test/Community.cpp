@@ -2,7 +2,8 @@
  * Copyright (c) 2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>
+ * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
+ *            Jeongseok Lee <jslee02@gmail.com>
  *
  * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -34,49 +35,74 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_CONSTRAINT_COMMUNITY_H_
-#define DART_CONSTRAINT_COMMUNITY_H_
+#include "dart/constraint_test/Community.h"
 
+#include <iostream>
 #include <vector>
-#include <Eigen/Dense>
 
-namespace dart {
-namespace dynamics {
-class BodyNode;
-}  // namespace dyanmics
-namespace constraint {
-class ImpulseBasedConstraint;
-}
-}  // namespace dart
+#include "dart/lcpsolver/LCPSolver.h"
 
 namespace dart {
 namespace constraint {
 
-/// \brief Community is an unit that consists of skeletons interacting each
-///        other by various kind of constraints.
-class Community
+using namespace lcpsolver;
+
+CommunityTEST::CommunityTEST()
 {
-public:
-  /// \brief Default contructor
-  Community();
+}
 
-  /// \brief Default destructor
-  virtual ~Community();
+CommunityTEST::~CommunityTEST()
+{
+}
 
-  void addConstraint(ImpulseBasedConstraint* _constraint);
+void CommunityTEST::addConstraint(ConstraintTEST* _constraint)
+{
+  assert(_constraint != NULL && "Null constraint pointer is now allowed.");
 
-  void removeAllContraints();
+  std::cout << "CommunityTEST::addConstraint(): Not implemented."
+            << std::endl;
+}
 
-  /// \brief
-  void computeConstraintImpulses();
+void CommunityTEST::removeConstraint(ConstraintTEST* _constraint)
+{
+  std::cout << "CommunityTEST::removeConstraint(): Not implemented."
+            << std::endl;
+}
 
-protected:
+void CommunityTEST::removeAllContraints()
+{
+  std::cout << "CommunityTEST::removeAllContraints(): Not implemented."
+            << std::endl;
+}
 
-private:
-};
+bool CommunityTEST::solveConstraints()
+{
+  std::cout << "CommunityTEST::solveConstraints(): Not implemented."
+            << std::endl;
 
-} // namespace constraint
-} // namespace dart
+//  LCPSolver solver = LCPSolver();
+//  bool result = solver.Solve(mA, mQBar, &mX, getNumContacts(), mMu, mNumDir,
+//                        mUseODELCPSolver);
+//  return result;
 
-#endif  // DART_CONSTRAINT_COMMUNITY_H_
+  return false;
+}
 
+bool CommunityTEST::_containConstraint(ConstraintTEST* _constraint) const
+{
+  std::cout << "CommunityTEST::_containConstraint(): Not implemented."
+            << std::endl;
+
+  return false;
+}
+
+bool CommunityTEST::_checkAndAddConstraint(ConstraintTEST* _constraint)
+{
+  std::cout << "CommunityTEST::_checkAndAddConstraint(): Not implemented."
+            << std::endl;
+
+  return false;
+}
+
+}  // namespace constraint
+}  // namespace dart

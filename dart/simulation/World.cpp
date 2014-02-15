@@ -50,6 +50,7 @@
 #include "dart/dynamics/GenCoord.h"
 #include "dart/dynamics/Skeleton.h"
 #include "dart/constraint/ConstraintDynamics.h"
+#include "dart/constraint_test/ConstraintSolver.h"
 
 namespace dart {
 namespace simulation {
@@ -64,6 +65,9 @@ World::World()
     mConstraintHandler(
       new constraint::ConstraintDynamics(mSkeletons, mTimeStep)) {
   mIndices.push_back(0);
+
+  mConstraintSolver
+      = new constraint::ConstraintSolverTEST(mSkeletons, mTimeStep);
 }
 
 World::~World() {
@@ -102,7 +106,14 @@ void World::setControlInput() {
   }
 }
 
-Eigen::VectorXd World::evalDeriv() {
+Eigen::VectorXd World::evalDeriv()
+{
+//  return _evalDerivPrev();
+  return _evalDerivNew();
+}
+
+Eigen::VectorXd World::_evalDerivPrev()
+{
   // compute constraint (contact/contact, joint limit) forces
   mConstraintHandler->computeConstraintForces();
 
@@ -142,6 +153,104 @@ Eigen::VectorXd World::evalDeriv() {
   }
 
   return deriv;
+}
+
+Eigen::VectorXd World::_evalDerivNew()
+{
+  __prestep();
+  __computeForwardDynamics();
+  __updateVelocity();
+  __computeConstraintImpulses();
+  __computeVelocityJumps();
+  __updateVelocityWithVelJump();
+  __updateAccelerationWithVelJump();
+  __updateTauWithImpulse();
+  __updateSensors();
+
+  // compute derivatives for integration
+  Eigen::VectorXd deriv = Eigen::VectorXd::Zero(mIndices.back() * 2);
+  for (unsigned int i = 0; i < getNumSkeletons(); i++) {
+    // skip immobile objects in forward simulation
+    if (!mSkeletons[i]->isMobile() || mSkeletons[i]->getNumGenCoords() == 0)
+      continue;
+
+    int start = mIndices[i] * 2;
+    int size = getSkeleton(i)->getNumGenCoords();
+
+    // set velocities
+    deriv.segment(start, size) = getSkeleton(i)->get_dq()
+                                 + mTimeStep * getSkeleton(i)->get_ddq();
+
+    // set qddot (accelerations)
+    deriv.segment(start + size, size) = getSkeleton(i)->get_ddq();
+  }
+
+  return deriv;
+}
+
+void World::__prestep()
+{
+
+}
+
+void World::__computeForwardDynamics()
+{
+  // compute forward dynamics
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    (*it)->computeForwardDynamics();
+  }
+}
+
+void World::__updateVelocity()
+{
+  // dq = dq + dt * ddq
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+//    (*it)->set_dq((*it)->get_dq() + (*it)->get_ddq() * mTimeStep);
+  }
+}
+
+void World::__computeConstraintImpulses()
+{
+  mConstraintSolver->solve();
+}
+
+void World::__computeVelocityJumps()
+{
+  // compute forward dynamics
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    (*it)->computeImpulseBasedForwardDynamics();
+  }
+}
+
+void World::__updateVelocityWithVelJump()
+{
+
+}
+
+void World::__updateAccelerationWithVelJump()
+{
+
+}
+
+void World::__updatePosition()
+{
+
+}
+
+void World::__updateTauWithImpulse()
+{
+
+}
+
+void World::__updateSensors()
+{
+
 }
 
 void World::setTimeStep(double _timeStep) {
@@ -271,8 +380,13 @@ bool World::checkCollision(bool _checkAllCollisions) {
         _checkAllCollisions, false);
 }
 
-constraint::ConstraintDynamics*World::getConstraintHandler() const {
+constraint::ConstraintDynamics* World::getConstraintHandler() const {
   return mConstraintHandler;
+}
+
+constraint::ConstraintSolverTEST* World::getConstraintSolver() const
+{
+  return mConstraintSolver;
 }
 
 }  // namespace simulation

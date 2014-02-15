@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014, Georgia Tech Research Corporation
+ * Copyright (c) 2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
@@ -35,53 +35,26 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dart/constraint/ImpulseBasedConstraint.h"
-
-#include <vector>
+#ifndef DART_CONSTRAINT_CONSTRAINT_H_TEST
+#define DART_CONSTRAINT_CONSTRAINT_H_TEST
 
 namespace dart {
 namespace constraint {
 
-ImpulseBasedConstraint::ImpulseBasedConstraint() {
-}
+class ConstraintTEST
+{
+public:
+  /// \brief Default contructor
+  ConstraintTEST();
 
-ImpulseBasedConstraint::~ImpulseBasedConstraint() {
-}
+  /// \brief Default destructor
+  virtual ~ConstraintTEST();
 
-void ImpulseBasedConstraint::updateDynamics(
-    Eigen::MatrixXd& _J1, Eigen::MatrixXd& _J2,
-    Eigen::VectorXd& _C, Eigen::VectorXd& _CDot,
-    int _rowIndex) {
-}
+protected:
+};
 
-int ImpulseBasedConstraint::getNumRows() const {
-  return mNumRows;
-}
+} // namespace constraint
+} // namespace dart
 
-Eigen::VectorXd ImpulseBasedConstraint::getLagrangeMultipliers() const {
-  return mLagrangeMultipliers;
-}
+#endif  // DART_CONSTRAINT_CONSTRAINT_H_TEST
 
-void ImpulseBasedConstraint::setLagrangeMultipliers(
-    const Eigen::VectorXd& _lambda) {
-  mLagrangeMultipliers = _lambda;
-}
-
-dart::dynamics::BodyNode* ImpulseBasedConstraint::getBodyNode1() {
-  return mBodyNode1;
-}
-
-dart::dynamics::BodyNode* ImpulseBasedConstraint::getBodyNode2() {
-  return mBodyNode2;
-}
-
-void ImpulseBasedConstraint::getJacobian() {
-}
-
-void ImpulseBasedConstraint::updateDynamics(
-    Eigen::MatrixXd& _J1, Eigen::VectorXd& _C,
-    Eigen::VectorXd& _CDot, int _rowIndex) {
-}
-
-}  // namespace constraint
-}  // namespace dart
