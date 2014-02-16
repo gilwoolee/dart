@@ -51,9 +51,6 @@ public:
   /// \brief
   virtual ~FCLMeshCollisionDetector();
 
-  /// \brief
-  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode);
-
   // Documentation inherited
   virtual bool detectCollision(bool _checkAllCollisions,
                                bool _calculateContactPoints);
@@ -64,6 +61,10 @@ public:
 
   /// \brief
   void draw();
+
+protected:
+  /// \brief
+  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode);
 };
 
 }  // namespace collision

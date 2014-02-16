@@ -72,11 +72,8 @@ class ConstraintSolverTEST
 {
 public:
   /// \brief
-  ConstraintSolverTEST(
-      const std::vector<dynamics::Skeleton*>& _skeletons,
+  ConstraintSolverTEST(const std::vector<dynamics::Skeleton*>& _skeletons,
       double _timeStep,
-      double _frictionalCoefficient = 1.0,
-      int    _numFrictionConeBasis  = 4,
       bool   _useODE                = true);
 
   /// \brief
@@ -121,18 +118,6 @@ public:
   /// \brief
   double getTimeStep() const;
 
-  /// \brief
-  void setFrictionalCoefficient(double _frictionalCoefficient);
-
-  /// \brief
-  double getFrictionalCoefficient() const;
-
-  /// \brief
-  void setNumFrictionConeBasis(int _numFrictionConeBasis);
-
-  /// \brief
-  int getNumFrictionConeBasis() const;
-
   //----------------------------- Solving --------------------------------------
   /// \brief
   virtual void solve();
@@ -142,8 +127,8 @@ protected:
   /// \brief
   std::vector<dynamics::Skeleton*> mSkeletons;
 
-  /// \brief
-  std::vector<ConstraintTEST*> mBakedConstraints;
+//  /// \brief
+//  std::vector<ConstraintTEST*> mBakedConstraints;
 
   /// \brief
   std::vector<ContactConstraintTEST*> mBakedContactConstraints;
@@ -176,6 +161,10 @@ private:
 
   /// \brief
   void _bakeConstraints();
+  void __bakeContactConstraints();
+  void __bakeJointLimitConstraints();
+  void __bakeClosedLoopConstraints();
+  void __bakeJointConstraints();
 
   /// \brief
   bool _containSkeleton(const dynamics::Skeleton* _skeleton) const;
@@ -203,12 +192,6 @@ private:
 
   /// \brief
   double mTimeStep;
-
-  /// \brief
-  double mFrictionalCofficient;
-
-  /// \brief
-  int mNumFrictionConeBasis;
 
   /// \brief
   bool mUseODE;

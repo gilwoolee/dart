@@ -41,6 +41,38 @@
 namespace dart {
 namespace constraint {
 
+//==============================================================================
+/// \brief LCPTerms class
+class LCPTerms
+{
+public:
+  /// \brief Constructor
+  explicit LCPTerms(int _n);
+
+  /// \brief Destructor
+  ~LCPTerms();
+
+  /// \brief
+  double* A;
+
+  /// \brief
+  double* b;
+
+  /// \brief
+  double* w;
+
+  /// \brief Lower bound of x
+  double* lb;
+
+  /// \brief Upper bound of x
+  double* ub;
+
+  /// \brief Friction index
+  int* frictionIndex;
+};
+
+//==============================================================================
+/// \brief ConstraintTEST class
 class ConstraintTEST
 {
 public:
@@ -50,7 +82,23 @@ public:
   /// \brief Default destructor
   virtual ~ConstraintTEST();
 
+  //----------------- Pure virtual functions for solving -----------------------
+  /// \brief
+  virtual void update() = 0;
+
+  /// \brief
+  virtual void aggreateLCPTerms(LCPTerms* _info, int _idx) = 0;
+
+  //----------------------------------------------------------------------------
+  /// \brief
+  int getDimension() const;
+
 protected:
+//  /// \brief
+//  void impulseTest();
+
+  /// \brief
+  int mDim;
 };
 
 } // namespace constraint

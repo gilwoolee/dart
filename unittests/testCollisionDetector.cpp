@@ -49,7 +49,7 @@ using namespace dart;
 using namespace math;
 //using namespace collision;
 
-class COLLISION : public testing::Test
+class CollisionDetector : public testing::Test
 {
 public:
     void unrotatedTest(fcl::CollisionGeometry* _coll1,
@@ -60,7 +60,7 @@ public:
 	void printResult(const fcl::CollisionResult& _result);
 };
 
-void COLLISION::unrotatedTest(fcl::CollisionGeometry* _coll1,
+void CollisionDetector::unrotatedTest(fcl::CollisionGeometry* _coll1,
                               fcl::CollisionGeometry* _coll2,
                               double expectedContactPoint,
                               int _idxAxis)
@@ -118,7 +118,7 @@ void COLLISION::unrotatedTest(fcl::CollisionGeometry* _coll1,
     }
 }
 
-void COLLISION::dropWithRotation(fcl::CollisionGeometry* _object,
+void CollisionDetector::dropWithRotation(fcl::CollisionGeometry* _object,
                                  double EulerZ, double EulerY, double EulerX)
 {
     // Collision test setting
@@ -197,7 +197,7 @@ void COLLISION::dropWithRotation(fcl::CollisionGeometry* _object,
     }
 }
 
-void COLLISION::printResult(const fcl::CollisionResult& _result)
+void CollisionDetector::printResult(const fcl::CollisionResult& _result)
 {
 	std::cout << "====== [ RESULT ] ======" << std::endl;
 	std::cout << "The number of contacts: " << _result.numContacts() << std::endl;
@@ -378,7 +378,7 @@ void COLLISION::printResult(const fcl::CollisionResult& _result)
 //}
 
 
-TEST_F(COLLISION, DROP)
+TEST_F(CollisionDetector, DROP)
 {
     dtdbg << "Unrotated box\n";
     fcl::Box box1(0.5, 0.5, 0.5);
@@ -397,7 +397,7 @@ TEST_F(COLLISION, DROP)
                      0.0);
 }
 
-TEST_F(COLLISION, FCL_BOX_BOX)
+TEST_F(CollisionDetector, FCL_BOX_BOX)
 {
     double EulerZ = 1;
     double EulerY = 2;

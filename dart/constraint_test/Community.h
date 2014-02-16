@@ -50,7 +50,7 @@ class ConstraintTEST;
 namespace dart {
 namespace constraint {
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 /// \brief Community is an unit that consists of skeletons interacting each
 ///        other by various kind of constraints.
 class CommunityTEST
@@ -71,10 +71,10 @@ public:
   void removeConstraint(ConstraintTEST* _constraint);
 
   /// \brief
-  void removeAllContraints();
+  void removeAllConstraints();
 
   //----------------------------- Solving --------------------------------------
-
+  // TODO(JS): Pass option
   /// \brief Solve constraints and store the results of constraint impulse to
   ///        each skeleton.
   bool solveConstraints();
@@ -89,6 +89,14 @@ private:
 
   /// \brief
   bool _checkAndAddConstraint(ConstraintTEST* _constraint);
+
+  // TODO(JS): more solvers
+  /// \brief
+  bool _solveODE();
+
+  bool _solveLemke();
+
+  bool _solvePGS();
 
 //  // Matrices to pass to solver
 //  Eigen::MatrixXd mA;

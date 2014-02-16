@@ -37,15 +37,54 @@
 
 #include "dart/constraint_test/Constraint.h"
 
+#include <cstring>
+
 namespace dart {
 namespace constraint {
 
+#define dPAD(a) (((a) > 1) ? ((((a)-1)|3)+1) : (a))
+
+//==============================================================================
+LCPTerms::LCPTerms(int _n)
+{
+  int nSkip = dPAD(_n);
+
+  A  = new double[_n * nSkip];
+  b  = new double[_n];
+  w  = new double[_n];
+  lb = new double[_n];
+  ub = new double[_n];
+  frictionIndex = new int[_n];
+
+  std::memset(A, 0, _n * nSkip * sizeof(double));
+}
+
+//==============================================================================
+LCPTerms::~LCPTerms()
+{
+  delete[] A;
+  delete[] b;
+  delete[] w;
+  delete[] lb;
+  delete[] ub;
+  delete[] frictionIndex;
+}
+
+//==============================================================================
 ConstraintTEST::ConstraintTEST()
+  : mDim(0)
 {
 }
 
+//==============================================================================
 ConstraintTEST::~ConstraintTEST()
 {
+}
+
+//==============================================================================
+int ConstraintTEST::getDimension() const
+{
+  return mDim;
 }
 
 }  // namespace constraint

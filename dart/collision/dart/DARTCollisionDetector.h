@@ -52,13 +52,13 @@ public:
   virtual ~DARTCollisionDetector();
 
   // Documentation inherited
-  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode);
-
-  // Documentation inherited
   virtual bool detectCollision(bool _checkAllCollisions,
                                bool _calculateContactPoints);
 
 protected:
+  // Documentation inherited
+  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode);
+
   // Documentation inherited
   virtual bool detectCollision(CollisionNode* _collNode1,
                                CollisionNode* _collNode2,

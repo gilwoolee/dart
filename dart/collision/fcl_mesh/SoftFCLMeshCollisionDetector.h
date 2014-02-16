@@ -59,12 +59,14 @@ public:
   /// \brief
   virtual ~SoftFCLMeshCollisionDetector();
 
-  /// \brief
-  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode);
-
   // Documentation inherited
   virtual bool detectCollision(bool _checkAllCollisions,
                                bool _calculateContactPoints);
+
+protected:
+  /// \brief
+  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode);
+
 private:
   /// \brief Find the nearest point mass from _point in a face, of which id is
   ///        _faceId in _softBodyNode.

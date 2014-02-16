@@ -41,6 +41,9 @@
 #include <vector>
 
 #include "dart/lcpsolver/LCPSolver.h"
+#include "dart/lcpsolver/Lemke.h"
+#include "dart/lcpsolver/lcp.h"
+#include "dart/constraint_test/Constraint.h"
 
 namespace dart {
 namespace constraint {
@@ -58,18 +61,24 @@ CommunityTEST::~CommunityTEST()
 void CommunityTEST::addConstraint(ConstraintTEST* _constraint)
 {
   assert(_constraint != NULL && "Null constraint pointer is now allowed.");
+  assert(_containConstraint(_constraint) == false
+         && "Don't try to add same constraint multiple times into Community.");
 
-  std::cout << "CommunityTEST::addConstraint(): Not implemented."
-            << std::endl;
+  mConstraints.push_back(_constraint);
 }
 
 void CommunityTEST::removeConstraint(ConstraintTEST* _constraint)
 {
-  std::cout << "CommunityTEST::removeConstraint(): Not implemented."
-            << std::endl;
+  assert(_constraint != NULL && "Null constraint pointer is now allowed.");
+  assert(_containConstraint(_constraint) == true
+         && "Don't try to remove a constraint not contained in Community.");
+
+  mConstraints.erase(
+        remove(mConstraints.begin(), mConstraints.end(), _constraint),
+        mConstraints.end());
 }
 
-void CommunityTEST::removeAllContraints()
+void CommunityTEST::removeAllConstraints()
 {
   std::cout << "CommunityTEST::removeAllContraints(): Not implemented."
             << std::endl;
@@ -80,12 +89,7 @@ bool CommunityTEST::solveConstraints()
   std::cout << "CommunityTEST::solveConstraints(): Not implemented."
             << std::endl;
 
-//  LCPSolver solver = LCPSolver();
-//  bool result = solver.Solve(mA, mQBar, &mX, getNumContacts(), mMu, mNumDir,
-//                        mUseODELCPSolver);
-//  return result;
-
-  return false;
+  return _solveODE();
 }
 
 bool CommunityTEST::_containConstraint(ConstraintTEST* _constraint) const
@@ -102,6 +106,55 @@ bool CommunityTEST::_checkAndAddConstraint(ConstraintTEST* _constraint)
             << std::endl;
 
   return false;
+}
+
+bool CommunityTEST::_solveODE()
+{
+  // If there is no constraint, then just return true.
+  if (mConstraints.size() == 0)
+    return true;
+
+  // Count total constraint dimensions and compute offset indices
+  int totalDim = 0;
+  int* offsetIndex = new int[totalDim];
+  for (int i = 0; i < mConstraints.size(); ++i)
+  {
+    offsetIndex[i] = totalDim;
+    totalDim += mConstraints[i]->getDimension();
+  }
+
+  // Build LCP terms by aggregating them from constraints
+  LCPTerms lcp(totalDim);
+  for (int i = 0; i < mConstraints.size(); ++i)
+  {
+    mConstraints[i]->update();
+    mConstraints[i]->aggreateLCPTerms(&lcp, offsetIndex[i]);
+  }
+
+  // Solve LCP using ODE's Dantzig algorithm
+  double* x = new double[totalDim];
+  dSolveLCP(totalDim, lcp.A, x, lcp.b,
+            lcp.w, 0, lcp.lb, lcp.ub, lcp.frictionIndex);
+
+  // Apply constraint impulses
+  for (std::vector<ConstraintTEST*>::const_iterator it = mConstraints.begin();
+       it != mConstraints.end(); ++it)
+  {
+//    n += (*it)->applyConstraintImpulse();
+  }
+
+  // TODO(JS): Do we need to return boolean?
+  return true;
+}
+
+bool CommunityTEST::_solveLemke()
+{
+
+}
+
+bool CommunityTEST::_solvePGS()
+{
+
 }
 
 }  // namespace constraint

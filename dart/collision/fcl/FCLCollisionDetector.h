@@ -57,9 +57,6 @@ public:
   virtual ~FCLCollisionDetector();
 
   // Documentation inherited
-  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode);
-
-  // Documentation inherited
   virtual bool detectCollision(bool _checkAllCollisions,
                                bool _calculateContactPoints);
 
@@ -67,6 +64,9 @@ public:
       const fcl::CollisionGeometry* _fclCollGeom) const;
 
 protected:
+  // Documentation inherited
+  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode);
+
   virtual bool detectCollision(CollisionNode* _node1, CollisionNode* _node2,
                                bool _calculateContactPoints);
 };

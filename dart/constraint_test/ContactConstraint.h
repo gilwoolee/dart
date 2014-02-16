@@ -40,20 +40,80 @@
 
 #include "dart/constraint_test/Constraint.h"
 
+#include "dart/math/MathTypes.h"
+#include "dart/collision/CollisionDetector.h"
+
+// TODO(JS): More meaningful numbers?
+#define MIN_NUM_FRICTION_CONE_BASES 2
+#define MAX_NUM_FRICTION_CONE_BASES 16
+
 namespace dart {
 namespace constraint {
 
+//==============================================================================
+/// \brief The ContactConstraintTEST class
 class ContactConstraintTEST : public ConstraintTEST
 {
 public:
+  //----------------------------------------------------------------------------
   /// \brief Default contructor
-  ContactConstraintTEST();
+  ContactConstraintTEST(int _numBasisDirections = 4);
+
+  /// \brief Constructor
+  explicit ContactConstraintTEST(const collision::Contact& _contact);
 
   /// \brief Default destructor
   virtual ~ContactConstraintTEST();
 
+  //--------------------------- Settings ---------------------------------------
+  /// \brief
+  void setFrictionalCoeff(double _frictionalCoeff);
+
+  /// \brief
+  double getFrictionalCoeff() const;
+
+  /// \brief
+  void setNumFrictionConeBases(int _numFrictionConeBases);
+
+  /// \brief
+  int getNumFrictionConeBases() const;
+
+  //-------------------- Constraint virtual function ---------------------------
+  // Documentaion inherited.
+  virtual void update();
+
+  // Documentaion inherited.
+  virtual void aggreateLCPTerms(LCPTerms* _info, int _idx);
+
+  //----------------------------- Solving --------------------------------------
   /// \brief
   bool isActive();
+
+protected:
+  /// \brief
+  dynamics::Skeleton* mSkeleton1;
+
+  /// \brief
+  dynamics::Skeleton* mSkeleton2;
+
+  /// \brief
+  dynamics::BodyNode* mBodyNode1;
+
+  /// \brief
+  dynamics::BodyNode* mBodyNode2;
+
+  /// \brief Number of friction cone bases
+  int mNumFrictionConeBases;
+
+  /// \brief Frictional coefficient
+  double mFrictionalCoff;
+
+  /// \brief
+  std::vector<Eigen::Vector6d> mJacobians;
+
+private:
+  /// \brief Compute change in velocity due to _idx-th impulse.
+  void _updateVelocityChange(int _idx);
 
 };
 

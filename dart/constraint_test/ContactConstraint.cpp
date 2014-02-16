@@ -42,20 +42,88 @@
 namespace dart {
 namespace constraint {
 
-ContactConstraintTEST::ContactConstraintTEST()
-  : ConstraintTEST()
+//==============================================================================
+ContactConstraintTEST::ContactConstraintTEST(int _numBasisDirections)
+  : ConstraintTEST(),
+    mNumFrictionConeBases(_numBasisDirections)
 {
 }
 
+//==============================================================================
+ContactConstraintTEST::ContactConstraintTEST(const collision::Contact& _contact)
+{
+  std::cout << "ContactConstraintTEST::ContactConstraintTEST(): "
+            << "Not implemented yet."
+            << std::endl;
+}
+
+//==============================================================================
 ContactConstraintTEST::~ContactConstraintTEST()
 {
 }
 
+//==============================================================================
+void ContactConstraintTEST::setFrictionalCoeff(double _frictionalCoeff)
+{
+  assert(_frictionalCoeff >= 0.0
+         && "Frictional coefficient can't be negative value");
+
+  mFrictionalCoff = _frictionalCoeff;
+}
+
+//==============================================================================
+double ContactConstraintTEST::getFrictionalCoeff() const
+{
+  return mFrictionalCoff;
+}
+
+//==============================================================================
+void ContactConstraintTEST::setNumFrictionConeBases(int _numFrictionConeBases)
+{
+  // TODO(JS):
+  assert(MIN_NUM_FRICTION_CONE_BASES <= _numFrictionConeBases
+         && _numFrictionConeBases <= MAX_NUM_FRICTION_CONE_BASES
+         && "Number of friction cone bases is out of range.");
+
+  mNumFrictionConeBases = _numFrictionConeBases;
+}
+
+//==============================================================================
+int ContactConstraintTEST::getNumFrictionConeBases() const
+{
+  return mNumFrictionConeBases;
+}
+
+//==============================================================================
+void ContactConstraintTEST::update()
+{
+  std::cout << "ContactConstraintTEST::update(): "
+            << "Not implemented."
+            << std::endl;
+}
+
+//==============================================================================
+void ContactConstraintTEST::aggreateLCPTerms(LCPTerms* _info, int _idx)
+{
+  std::cout << "ContactConstraintTEST::aggreateLCPTerms(): "
+            << "Not implemented."
+            << std::endl;
+}
+
+//==============================================================================
 bool ContactConstraintTEST::isActive()
 {
-  std::cout << "JointConstraintTEST::isActive(): Not implemented."
+  std::cout << "ContactConstraintTEST::isActive(): "
+            << "Not implemented."
             << std::endl;
-  return false;
+
+  return true;
+}
+
+//==============================================================================
+void ContactConstraintTEST::_updateVelocityChange(int _idx)
+{
+
 }
 
 }  // namespace constraint

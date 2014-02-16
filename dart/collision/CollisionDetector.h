@@ -48,6 +48,7 @@
 namespace dart {
 namespace dynamics {
 class BodyNode;
+class Skeleton;
 }  // namespace dynamics
 }  // namespace dart
 
@@ -90,7 +91,8 @@ struct Contact {
 };
 
 /// \brief
-class CollisionDetector {
+class CollisionDetector
+{
 public:
   /// \brief
   CollisionDetector();
@@ -98,16 +100,25 @@ public:
   /// \brief
   virtual ~CollisionDetector();
 
+  //----------------------------- Setting --------------------------------------
+  /// \brief Add skeleton
+  virtual void addSkeleton(dynamics::Skeleton* _skeleton);
+
+  /// \brief Remove skeleton
+  virtual void removeSkeleton(dynamics::Skeleton* _skeleton);
+
+  /// \brief Remove all skeletons
+  virtual void removeAllSkeletons();
+
+  // TODO(JS): Change accessibility to private
   /// \brief
   virtual void addCollisionSkeletonNode(dynamics::BodyNode* _bodyNode,
                                         bool _isRecursive = false);
 
+  // TODO(JS): Change accessibility to private
   /// \brief
   virtual void removeCollisionSkeletonNode(dynamics::BodyNode* _bodyNode,
                                            bool _isRecursive = false);
-
-  /// \brief
-  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode) = 0;
 
   /// \brief
   void enablePair(dynamics::BodyNode* _node1, dynamics::BodyNode* _node2);
@@ -115,6 +126,13 @@ public:
   /// \brief
   void disablePair(dynamics::BodyNode* _node1, dynamics::BodyNode* _node2);
 
+  /// \brief
+  int getNumMaxContacts() const;
+
+  /// \brief
+  void setNumMaxContacs(int _num);
+
+  //---------------------------- Detection -------------------------------------
   /// \brief
   virtual bool detectCollision(bool _checkAllCollisions,
                                bool _calculateContactPoints) = 0;
@@ -133,13 +151,10 @@ public:
   /// \brief
   void clearAllContacts();
 
-  /// \brief
-  int getNumMaxContacts() const;
-
-  /// \brief
-  void setNumMaxContacs(int _num);
-
 protected:
+  /// \brief
+  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode) = 0;
+
   /// \brief
   virtual bool detectCollision(CollisionNode* _node1, CollisionNode* _node2,
                                bool _calculateContactPoints) = 0;
@@ -156,13 +171,19 @@ protected:
   /// \brief
   int mNumMaxContacts;
 
+  /// \brief
+  std::vector<dynamics::Skeleton*> mSkeletons;
+
 private:
   /// \brief
-  std::vector<bool>::reference getPairCollidable(const CollisionNode* _node1,
+  bool _containSkeleton(const dynamics::Skeleton* _skeleton);
+
+  /// \brief
+  std::vector<bool>::reference _getPairCollidable(const CollisionNode* _node1,
                                                  const CollisionNode* _node2);
 
   /// \brief
-  CollisionNode* getCollisionNode(const dynamics::BodyNode* _bodyNode);
+  CollisionNode* _getCollisionNode(const dynamics::BodyNode* _bodyNode);
 
   /// \brief
   std::map<const dynamics::BodyNode*, CollisionNode*> mBodyCollisionMap;

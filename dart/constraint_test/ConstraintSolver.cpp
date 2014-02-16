@@ -41,6 +41,7 @@
 #include "dart/dynamics/Skeleton.h"
 #include "dart/constraint_test/Community.h"
 #include "dart/collision/fcl_mesh/FCLMeshCollisionDetector.h"
+#include "dart/constraint_test/Community.h"
 #include "dart/constraint_test/BallJointConstraint.h"
 #include "dart/constraint_test/ClosedLoopConstraint.h"
 #include "dart/constraint_test/ContactConstraint.h"
@@ -53,28 +54,24 @@ namespace constraint {
 
 using namespace dynamics;
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 ConstraintSolverTEST::ConstraintSolverTEST(const std::vector<dynamics::Skeleton*>& _skeletons,
     double _timeStep,
-    double _frictionalCoefficient,
-    int    _numFrictionConeBasis,
     bool   _useODE)
   : mTimeStep(_timeStep),
-    mFrictionalCofficient(_frictionalCoefficient),
-    mNumFrictionConeBasis(_numFrictionConeBasis),
     mUseODE(_useODE),
     mCollisionDetector(new collision::FCLMeshCollisionDetector())
 {
   _init();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 ConstraintSolverTEST::~ConstraintSolverTEST()
 {
   delete mCollisionDetector;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::addSkeleton(Skeleton* _skeleton)
 {
   assert(_skeleton != NULL
@@ -92,7 +89,7 @@ void ConstraintSolverTEST::addSkeleton(Skeleton* _skeleton)
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::addSkeletons(const std::vector<Skeleton*>& _skeletons)
 {
   int numAddedSkeletons = 0;
@@ -119,7 +116,7 @@ void ConstraintSolverTEST::addSkeletons(const std::vector<Skeleton*>& _skeletons
     _init();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::removeSkeleton(Skeleton* _skeleton)
 {
   assert(_skeleton != NULL
@@ -138,7 +135,7 @@ void ConstraintSolverTEST::removeSkeleton(Skeleton* _skeleton)
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::removeSkeletons(
     const std::vector<Skeleton*>& _skeletons)
 {
@@ -167,84 +164,56 @@ void ConstraintSolverTEST::removeSkeletons(
     _init();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::removeAllSkeletons()
 {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::addConstraint(ConstraintTEST* _constraint)
 {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::addConstraints(const std::vector<ConstraintTEST*>& _constraints)
 {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::removeConstraint(ConstraintTEST* _constraint)
 {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::removeConstraints(const std::vector<ConstraintTEST*>& _constraints)
 {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::removeAllConstraints()
 {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::setTimeStep(double _timeStep)
 {
   assert(_timeStep > 0.0 && "Time step should be positive value.");
   mTimeStep = _timeStep;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 double ConstraintSolverTEST::getTimeStep() const
 {
   return mTimeStep;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-void ConstraintSolverTEST::setFrictionalCoefficient(double _frictionalCoefficient)
-{
-  assert(_frictionalCoefficient >= 0.0
-         && "Frictional coefficient can't be negative value");
-  mFrictionalCofficient = _frictionalCoefficient;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-double ConstraintSolverTEST::getFrictionalCoefficient() const
-{
-  return mFrictionalCofficient;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void ConstraintSolverTEST::setNumFrictionConeBasis(int _numFrictionConeBasis)
-{
-  assert(0 <= _numFrictionConeBasis
-         && "Number of friction cone basis can't be negative value.");
-  mNumFrictionConeBasis = _numFrictionConeBasis;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-int ConstraintSolverTEST::getNumFrictionConeBasis() const
-{
-  return mNumFrictionConeBasis ;
-}
-
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::solve()
 {
   _updateDynamicConstraints();
@@ -252,7 +221,7 @@ void ConstraintSolverTEST::solve()
   _solveConstrains();
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::_init()
 {
   _bakeConstraints();
@@ -277,16 +246,85 @@ void ConstraintSolverTEST::_init()
   maxNumDynamicConstraints += mBakedJointConstraints.size();
 
   mDynamicConstraints.reserve(maxNumDynamicConstraints);
+
+  //---------------------------- Communities -----------------------------------
+  // TODO(JS): Create one community for test
+  for (std::vector<CommunityTEST*>::iterator it = mCommunities.begin();
+       it != mCommunities.end(); ++it)
+  {
+    delete *it;
+  }
+  mCommunities.clear();
+  mCommunities.resize(1);
+  mCommunities[0] = new CommunityTEST;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::_bakeConstraints()
 {
-  std::cout << "ConstraintSolverTEST::_bakeConstraints(): Not implemented."
+  // Contact constraints
+  __bakeContactConstraints();
+
+  // Joint limit constraints
+  __bakeJointLimitConstraints();
+
+  // closed loop constraints
+  __bakeClosedLoopConstraints();
+
+  // Joint constraints
+  __bakeJointConstraints();
+}
+
+//==============================================================================
+void ConstraintSolverTEST::__bakeContactConstraints()
+{
+  std::cout << "ConstraintSolverTEST::__bakeContactConstraints(): "
+            << "Not implemented yet."
+            << std::endl;
+
+  // Reset backed contact constraints
+  for (std::vector<ContactConstraintTEST*>::iterator it
+           = mBakedContactConstraints.begin();
+       it != mBakedContactConstraints.end(); ++it)
+  {
+    delete *it;
+  }
+  mBakedContactConstraints.clear();
+
+  // TODO():
+  mCollisionDetector->removeAllSkeletons();
+  for (std::vector<Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    mCollisionDetector->addSkeleton(*it);
+  }
+}
+
+//==============================================================================
+void ConstraintSolverTEST::__bakeJointLimitConstraints()
+{
+  std::cout << "ConstraintSolverTEST::__bakeJointLimitConstraints(): "
+            << "Not implemented yet."
             << std::endl;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
+void ConstraintSolverTEST::__bakeClosedLoopConstraints()
+{
+  std::cout << "ConstraintSolverTEST::__bakeClosedLoopConstraints(): "
+            << "Not implemented yet."
+            << std::endl;
+}
+
+//==============================================================================
+void ConstraintSolverTEST::__bakeJointConstraints()
+{
+  std::cout << "ConstraintSolverTEST::__bakeJointConstraints(): "
+            << "Not implemented yet."
+            << std::endl;
+}
+
+//==============================================================================
 bool ConstraintSolverTEST::_containSkeleton(const Skeleton* _skeleton) const
 {
   assert(_skeleton != NULL && "Now allowed to insert null pointer skeleton.");
@@ -301,7 +339,7 @@ bool ConstraintSolverTEST::_containSkeleton(const Skeleton* _skeleton) const
   return false;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 bool ConstraintSolverTEST::_checkAndAddSkeleton(Skeleton* _skeleton)
 {
   if (!_containSkeleton(_skeleton))
@@ -315,14 +353,14 @@ bool ConstraintSolverTEST::_checkAndAddSkeleton(Skeleton* _skeleton)
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 bool ConstraintSolverTEST::_containConstraint(
     const ConstraintTEST* _constraint) const
 {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 bool ConstraintSolverTEST::_checkAndAddConstraint(ConstraintTEST* _constraint)
 {
   std::cout << "ConstraintSolverTEST::_checkAndAddConstraint(): Not implemented."
@@ -339,16 +377,29 @@ bool ConstraintSolverTEST::_checkAndAddConstraint(ConstraintTEST* _constraint)
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::_updateDynamicConstraints()
 {
-  // TODO: Do some work
+  // TODO(JS): Use warn starting
   mCollisionDetector->clearAllContacts();
   mCollisionDetector->detectCollision(true, true);
 
   mDynamicConstraints.clear();
 
   // Contact constraints
+  for (std::vector<ContactConstraintTEST*>::const_iterator it
+       = mBakedContactConstraints.begin();
+       it != mBakedContactConstraints.end(); ++it)
+  {
+    delete *it;
+  }
+  mBakedContactConstraints.clear();
+  for (int i = 0; i < mCollisionDetector->getNumContacts(); ++i)
+  {
+    const collision::Contact& ct = mCollisionDetector->getContact(i);
+    ContactConstraintTEST* cc = new ContactConstraintTEST(ct);
+    mBakedContactConstraints.push_back(cc);
+  }
   for (std::vector<ContactConstraintTEST*>::const_iterator it
        = mBakedContactConstraints.begin();
        it != mBakedContactConstraints.end(); ++it)
@@ -376,27 +427,34 @@ void ConstraintSolverTEST::_updateDynamicConstraints()
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::_organizeCommunities()
 {
   std::cout << "ConstraintSolverTEST::_organizeCommunities(): Not implemented."
             << std::endl;
+
+  // TODO(JS):
+  mCommunities[0]->removeAllConstraints();
 
   //------------------- Add Constraints to communities -------------------------
   // Static constraints
   for (std::vector<ConstraintTEST*>::iterator it = mStaticConstraints.begin();
        it != mStaticConstraints.end(); ++it)
   {
+    // TODO(JS):
+    mCommunities[0]->addConstraint(*it);
   }
 
   // Dynamics constraints
   for (std::vector<ConstraintTEST*>::iterator it = mDynamicConstraints.begin();
        it != mDynamicConstraints.end(); ++it)
   {
+    // TODO(JS):
+    mCommunities[0]->addConstraint(*it);
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
 void ConstraintSolverTEST::_solveConstrains()
 {
   for (std::vector<CommunityTEST*>::iterator it = mCommunities.begin();
