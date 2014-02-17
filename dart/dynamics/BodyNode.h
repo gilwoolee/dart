@@ -137,6 +137,14 @@ public:
   /// \param[in] _isCollidable True to enable collisions.
   void setCollidable(bool _isCollidable);
 
+  /// \brief Set coefficient of friction in the range of [0, ~].
+  ///        If the frictional coefficient is set to zero, then directional
+  ///        frictional forces also will not be computed.
+  void setFrictionalCoeff(double _cof);
+
+  /// \brief Get frictional coefficient.
+  double getFrictionalCoeff() const;
+
   /// \brief
   void setMass(double _mass);
 
@@ -504,6 +512,9 @@ public:
   double mIxz;
   double mIyz;
   double mMass;
+
+  /// \brief Fictional coefficient
+  double mFrictionalCoeff;
 
   /// \brief
   std::vector<Shape*> mVizShapes;

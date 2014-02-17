@@ -49,6 +49,8 @@
 #include "dart/dynamics/Skeleton.h"
 #include "dart/dynamics/Marker.h"
 
+#define DART_DEFAULT_FRICTIONAL_COEFF 0.4
+
 namespace dart {
 namespace dynamics {
 
@@ -72,6 +74,7 @@ BodyNode::BodyNode(const std::string& _name)
     mIxy(0.0),
     mIxz(0.0),
     mIyz(0.0),
+    mFrictionalCoeff(DART_DEFAULT_FRICTIONAL_COEFF),
     mI(Eigen::Matrix6d::Identity()),
     mW(Eigen::Isometry3d::Identity()),
     mV(Eigen::Vector6d::Zero()),
@@ -128,6 +131,15 @@ bool BodyNode::isCollidable() const {
 
 void BodyNode::setCollidable(bool _isCollidable) {
   mIsCollidable = _isCollidable;
+}
+
+void BodyNode::setFrictionalCoeff(double _cof) {
+  assert(0.0 <= _cof && "Frictional coefficient should be non-negative value.");
+  mFrictionalCoeff = _cof;
+}
+
+double BodyNode::getFrictionalCoeff() const {
+  return mFrictionalCoeff;
 }
 
 void BodyNode::setMass(double _mass) {

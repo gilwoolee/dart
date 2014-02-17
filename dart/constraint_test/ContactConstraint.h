@@ -44,8 +44,10 @@
 #include "dart/collision/CollisionDetector.h"
 
 // TODO(JS): More meaningful numbers?
-#define MIN_NUM_FRICTION_CONE_BASES 2
-#define MAX_NUM_FRICTION_CONE_BASES 16
+#define DART_MIN_NUM_FRICTION_CONE_BASES 4
+#define DART_MAX_NUM_FRICTION_CONE_BASES 16
+#define DART_DEFAULT_NUM_FRICTION_CONE_BASES 2
+#define DART_FRICTION_THRESHOLD 1e-4
 
 namespace dart {
 namespace constraint {
@@ -56,11 +58,11 @@ class ContactConstraintTEST : public ConstraintTEST
 {
 public:
   //----------------------------------------------------------------------------
-  /// \brief Default contructor
-  ContactConstraintTEST(int _numBasisDirections = 4);
-
+  // TODO(JS): One contact constraint is allowed now.
   /// \brief Constructor
-  explicit ContactConstraintTEST(const collision::Contact& _contact);
+  ContactConstraintTEST(
+      const collision::Contact& _contact,
+      int _numFrictionConeBases = DART_DEFAULT_NUM_FRICTION_CONE_BASES);
 
   /// \brief Default destructor
   virtual ~ContactConstraintTEST();
@@ -90,30 +92,43 @@ public:
   bool isActive();
 
 protected:
-  /// \brief
-  dynamics::Skeleton* mSkeleton1;
-
-  /// \brief
-  dynamics::Skeleton* mSkeleton2;
-
-  /// \brief
+  /// \brief Fircst body node
   dynamics::BodyNode* mBodyNode1;
 
-  /// \brief
+  /// \brief Second body node
   dynamics::BodyNode* mBodyNode2;
 
+  /// \brief Contacts between mBodyNode1 and mBodyNode2
+  std::vector<collision::Contact> mContacts;
+
+  /// \brief First frictional direction
+  Eigen::Vector3d mFirstFrictionalDirection;
+
+  // TODO(JS): Not implemented use of mNumFrictionConeBases.
   /// \brief Number of friction cone bases
   int mNumFrictionConeBases;
 
   /// \brief Frictional coefficient
   double mFrictionalCoff;
 
-  /// \brief
-  std::vector<Eigen::Vector6d> mJacobians;
-
 private:
   /// \brief Compute change in velocity due to _idx-th impulse.
   void _updateVelocityChange(int _idx);
+
+  /// \brief
+  void _updateFirstFrictionalDirection();
+
+  /// \brief
+  Eigen::MatrixXd _getTangentBasisMatrixODE(const Eigen::Vector3d& _n);
+
+  /// \brief Local jacobians for mBodyNode1
+  std::vector<Eigen::Vector6d> mJacobians1;
+
+  /// \brief Local jacobians for mBodyNode1
+  std::vector<Eigen::Vector6d> mJacobians2;
+
+  /// \brief
+  bool mIsFrictionOn;
 
 };
 

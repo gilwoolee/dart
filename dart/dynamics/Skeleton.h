@@ -265,9 +265,7 @@ public:
     /// \brief Get potential energy of this skeleton.
     virtual double getPotentialEnergy() const;
 
-    //--------------------------------------------------------------------------
-    // Recursive dynamics algorithms
-    //--------------------------------------------------------------------------
+    //------------------- Recursive dynamics algorithms ------------------------
     /// \brief
     void init(double _timeStep = 0.001, const Eigen::Vector3d& _gravity =
             Eigen::Vector3d(0.0, 0.0, -9.81));
@@ -281,12 +279,13 @@ public:
     /// \brief (q, dq, tau) --> (ddq)
     void computeForwardDynamics();
 
-    /// \brief
-    void computeImpulseBasedForwardDynamics();
+    //---------------------- Impulse-based dynamics ----------------------------
+    /// \brief Compute changes in generalized coordinate velocities due to
+    ///        impulse, _imp, exerted on a body node, _bodyNode.
+    void applyImpulse(const BodyNode* _bodyNode, const Eigen::Vector6d& _imp);
 
-    //--------------------------------------------------------------------------
-    // Rendering
-    //--------------------------------------------------------------------------
+    //--------------------------- Rendering ------------------------------------
+    /// \brief
     void draw(renderer::RenderInterface* _ri = NULL,
               const Eigen::Vector4d& _color = Eigen::Vector4d::Ones(),
               bool _useDefaultColor = true) const;
