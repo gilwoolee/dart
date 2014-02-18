@@ -279,6 +279,9 @@ public:
     /// \brief (q, dq, tau) --> (ddq)
     void computeForwardDynamics();
 
+    /// \brief
+    void computeImpulseBasedForwardDynamics();
+
     //---------------------- Impulse-based dynamics ----------------------------
     /// \brief Compute changes in generalized coordinate velocities due to
     ///        impulse, _imp, exerted on a body node, _bodyNode.

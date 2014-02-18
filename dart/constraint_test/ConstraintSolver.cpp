@@ -457,6 +457,7 @@ void ConstraintSolverTEST::_organizeCommunities()
 //==============================================================================
 void ConstraintSolverTEST::_solveConstrains()
 {
+  // TODO(JS): Parallel computing is possible here.
   for (std::vector<CommunityTEST*>::iterator it = mCommunities.begin();
       it != mCommunities.end(); ++it)
   {

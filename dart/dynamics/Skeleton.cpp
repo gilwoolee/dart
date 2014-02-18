@@ -746,6 +746,11 @@ void Skeleton::computeForwardDynamics() {
   }
 }
 
+void dart::dynamics::Skeleton::computeImpulseBasedForwardDynamics()
+{
+
+}
+
 void Skeleton::setInternalForceVector(const Eigen::VectorXd& _forces) {
   set_tau(_forces);
 }
