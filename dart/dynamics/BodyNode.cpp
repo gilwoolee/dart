@@ -198,6 +198,17 @@ int BodyNode::getDependentGenCoordIndex(int _arrayIndex) const {
   return mDependentGenCoordIndices[_arrayIndex];
 }
 
+bool BodyNode::isImpulseReponsible() const
+{
+  // Shold be called at BodyNode::init()
+  // TODO(JS): Once hybrid dynamics is implemented, we should consider joint
+  //           type of parent joint.
+  if (mParentJoint->getNumGenCoords() > 0)
+    return true;
+  else
+    return false;
+}
+
 const Eigen::Isometry3d& BodyNode::getWorldTransform() const {
   return mW;
 }
@@ -420,13 +431,14 @@ void BodyNode::updateVelocity() {
   // V(i) = Ad(T(i, i-1), V(i-1)) + S * dq
   //--------------------------------------------------------------------------
 
-  if (mParentJoint->getNumGenCoords() > 0) {
-    mV.noalias() = mParentJoint->getLocalJacobian() * mParentJoint->get_dq();
-    if (mParentBodyNode) {
-      mV += math::AdInvT(mParentJoint->getLocalTransform(),
-                         mParentBodyNode->getBodyVelocity());
-    }
+  if (mParentBodyNode)
+  {
+    mV = math::AdInvT(mParentJoint->getLocalTransform(),
+                      mParentBodyNode->getBodyVelocity());
   }
+
+  if (mParentJoint->getNumGenCoords() > 0)
+    mV.noalias() += mParentJoint->getLocalJacobian() * mParentJoint->get_dq();
 
   assert(!math::isNan(mV));
 }
@@ -463,13 +475,16 @@ void BodyNode::updateAcceleration() {
   //         + eta
   //         + S * ddq
 
-  if (mParentJoint->getNumGenCoords() > 0) {
-    mdV = mEta;
+  if (mParentBodyNode)
+  {
+    mdV = math::AdInvT(mParentJoint->getLocalTransform(),
+                       mParentBodyNode->getBodyAcceleration());
+  }
+
+  if (mParentJoint->getNumGenCoords() > 0)
+  {
+    mdV += mEta;
     mdV.noalias() += mParentJoint->getLocalJacobian() * mParentJoint->get_ddq();
-    if (mParentBodyNode) {
-      mdV += math::AdInvT(mParentJoint->getLocalTransform(),
-                          mParentBodyNode->getBodyAcceleration());
-    }
   }
 
   assert(!math::isNan(mdV));
@@ -831,6 +846,69 @@ void BodyNode::update_F_fs() {
   mF = mB;
   mF.noalias() = mAI * mdV;
   assert(!math::isNan(mF));
+}
+
+void BodyNode::updateImpBiasForce()
+{
+  mImpBiasForce = -mImpFext;
+  for (std::vector<BodyNode*>::const_iterator it = mChildBodyNodes.begin();
+       it != mChildBodyNodes.end(); ++it)
+  {
+    mImpBiasForce
+        += math::dAdInvT((*it)->getParentJoint()->getLocalTransform(),
+                         (*it)->mImpBeta);
+  }
+  assert(!math::isNan(mImpBiasForce));
+
+  // Cache data: _ImpDynB
+  int dof = mParentJoint->getNumGenCoords();
+  if (mParentBodyNode)
+  {
+    mImpBeta = mImpBiasForce;
+    if (dof > 0)
+    {
+      mImpBeta.noalias() += mAI_S_Psi
+                            * mParentJoint->getLocalJacobian().transpose()
+                            * mImpBiasForce;
+    }
+  }
+  assert(!math::isNan(mImpBeta));
+}
+
+void BodyNode::updateVelocityChange()
+{
+  int dof = mParentJoint->getNumGenCoords();
+  if (dof > 0)
+  {
+    Eigen::VectorXd del_dq
+        = mPsi * mParentJoint->getLocalJacobian().transpose() * mImpBiasForce;
+    if (mParentBodyNode)
+    {
+      del_dq -= mAI_S_Psi.transpose()
+                * math::AdInvT(mParentJoint->getLocalTransform(),
+                               mParentBodyNode->mDelV);
+    }
+
+    mParentJoint->set_del_dq(del_dq);
+  }
+
+  if (dof > 0)
+    mDelV = mParentJoint->getLocalJacobian() * mParentJoint->get_del_dq();
+  else
+    mDelV.setZero();
+
+  if (mParentBodyNode)
+  {
+    mDelV += math::AdInvT(mParentJoint->getLocalTransform(),
+                          mParentBodyNode->mDelV);
+  }
+
+  assert(!math::isNan(mDelV));
+}
+
+const Eigen::Vector6d& BodyNode::getBodyVelocityChange() const
+{
+  return mDelV;
 }
 
 void BodyNode::aggregateCoriolisForceVector(Eigen::VectorXd* _C) {
@@ -1213,6 +1291,26 @@ void BodyNode::_updateGeralizedInertia() {
 void BodyNode::clearExternalForces() {
   mFext.setZero();
   mContactForces.clear();
+}
+
+void BodyNode::setConstraintImpulse(const Eigen::Vector6d& _constImp)
+{
+  mConstImp = _constImp;
+}
+
+void BodyNode::addConstraintImpulse(const Eigen::Vector6d& _constImp)
+{
+  mConstImp += _constImp;
+}
+
+void BodyNode::clearConstraintImpulse()
+{
+  mConstImp.setZero();
+}
+
+const Eigen::Vector6d& BodyNode::getConstraintImpulse()
+{
+  return mConstImp;
 }
 
 }  // namespace dynamics

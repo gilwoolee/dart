@@ -43,7 +43,7 @@ namespace dart {
 namespace constraint {
 
 JointConstraintTEST::JointConstraintTEST()
-  : ConstraintTEST()
+  : ConstraintTEST(CT_DYNAMIC)
 {
 }
 

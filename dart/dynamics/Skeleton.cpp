@@ -67,7 +67,9 @@ Skeleton::Skeleton(const std::string& _name)
     mIsGravityForceVectorDirty(true),
     mIsCombinedVectorDirty(true),
     mIsExternalForceVectorDirty(true),
-    mIsDampingForceVectorDirty(true) {
+    mIsDampingForceVectorDirty(true),
+    mIsImpulseTesting(false)
+{
 }
 
 Skeleton::~Skeleton() {
@@ -698,6 +700,16 @@ void Skeleton::updateDampingForceVector() {
   }
 }
 
+void Skeleton::setImpulseTesting(bool _onOff)
+{
+  mIsImpulseTesting = _onOff;
+}
+
+bool Skeleton::getImpulseTesting() const
+{
+  return mIsImpulseTesting;
+}
+
 void Skeleton::computeInverseDynamicsLinear(bool _computeJacobian,
                                             bool _computeJacobianDeriv,
                                             bool _withExternalForces,
@@ -746,9 +758,51 @@ void Skeleton::computeForwardDynamics() {
   }
 }
 
-void dart::dynamics::Skeleton::computeImpulseBasedForwardDynamics()
+void Skeleton::clearImpulseTest()
 {
+  // Clear external impulses
+  for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it)
+  {
+    (*it)->mImpBiasForce.setZero();
+  }
 
+  // Clear velocity change
+  set_del_dq(Eigen::VectorXd::Zero(getNumGenCoords()));
+}
+
+void Skeleton::updateImpBiasForce(BodyNode* _bodyNode,
+                                        const Eigen::Vector6d& _imp)
+{
+  // Assertions
+  assert(_bodyNode != NULL);
+  assert(getNumGenCoords() > 0);
+
+  // Set impulse to _bodyNode
+  _bodyNode->mImpFext = _imp;
+
+  // Prepare cache data
+  BodyNode* it = _bodyNode;
+  while (it != NULL)
+  {
+    it->updateImpBiasForce();
+    it = _bodyNode->getParentBodyNode();
+  }
+}
+
+void Skeleton::updateVelocityChange()
+{
+  for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it)
+  {
+    (*it)->updateVelocityChange();
+  }
+}
+
+void Skeleton::computeImpulseBasedForwardDynamics()
+{
+  std::cout << "Skeleton::computeImpulseBasedForwardDynamics(): "
+            << "Not implemented yet." << std::endl;
 }
 
 void Skeleton::setInternalForceVector(const Eigen::VectorXd& _forces) {

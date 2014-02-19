@@ -36,11 +36,7 @@ foreach(APPDIR
     softSingleBodyTest
     softSinglePendulumTest
 
-
-
-
-
-
+    testImpulseDynamics
     )
     add_subdirectory(${APPDIR})
     if(WIN32)

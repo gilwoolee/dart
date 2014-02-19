@@ -42,21 +42,30 @@ namespace dart {
 namespace constraint {
 
 //==============================================================================
+// TODO(JS): Restricted to ODE LCP solver. Generalize this class for various
+//           types of LCP solvers.
 /// \brief LCPTerms class
-class LCPTerms
+class ODELcp
 {
 public:
   /// \brief Constructor
-  explicit LCPTerms(int _n);
+  explicit ODELcp(int _n);
 
   /// \brief Destructor
-  ~LCPTerms();
+  ~ODELcp();
 
+  //-------------------------- TEST CODE ---------------------------------------
+  void print();
+
+  //----------------------------------------------------------------------------
   /// \brief
   double* A;
 
   /// \brief
   double* b;
+
+  /// \brief
+  double* x;
 
   /// \brief
   double* w;
@@ -69,6 +78,12 @@ public:
 
   /// \brief Friction index
   int* frictionIndex;
+
+  /// \brief Total dimension of contraints
+  int dim;
+
+  /// \brief
+  int nSkip;
 };
 
 //==============================================================================
@@ -76,18 +91,42 @@ public:
 class ConstraintTEST
 {
 public:
+  enum ConstraintType
+  {
+    CT_STATIC,
+    CT_DYNAMIC
+  };
+
   /// \brief Default contructor
-  ConstraintTEST();
+  explicit ConstraintTEST(ConstraintType _type);
 
   /// \brief Default destructor
   virtual ~ConstraintTEST();
 
   //----------------- Pure virtual functions for solving -----------------------
   /// \brief
+  virtual void preprocess() {}
+
+  /// \brief
   virtual void update() = 0;
 
   /// \brief
-  virtual void aggreateLCPTerms(LCPTerms* _info, int _idx) = 0;
+  virtual void fillLcpOde(ODELcp* _lcp, int _idx) = 0;
+
+  /// \brief
+  virtual void applyImpulse(int _idx) {}
+
+  /// \brief
+  virtual void getDelVelocity(double* _delVel, int _idx) = 0;
+
+  /// \brief
+  virtual void excite() {}
+
+  /// \brief
+  virtual void unexcite() {}
+
+  /// \brief
+  virtual void setImpulse(double* _lambda, int _idx) = 0;
 
   //----------------------------------------------------------------------------
   /// \brief
@@ -99,6 +138,9 @@ protected:
 
   /// \brief
   int mDim;
+
+  /// \brief
+  ConstraintType mConstraintType;
 };
 
 } // namespace constraint

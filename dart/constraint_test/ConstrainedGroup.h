@@ -43,6 +43,7 @@
 
 namespace dart {
 namespace constraint {
+class ODELcp;
 class ConstraintTEST;
 }  // namespace constraint
 }  // namespace dart
@@ -51,57 +52,72 @@ namespace dart {
 namespace constraint {
 
 //==============================================================================
-/// \brief Community is an unit that consists of skeletons interacting each
-///        other by various kind of constraints.
-class CommunityTEST
+/// \brief class ConstrainedGroup is a set of skeletons interacting each
+///        other by various kinds of constraints.
+/// \sa class ConstraintSolver
+class ConstrainedGroup
 {
 public:
   //------------------------ Constructor / Desctructor -------------------------
   /// \brief Default contructor
-  CommunityTEST();
+  ConstrainedGroup();
 
   /// \brief Default destructor
-  virtual ~CommunityTEST();
+  virtual ~ConstrainedGroup();
 
   //----------------------------- Setting --------------------------------------
-  /// \brief
+  /// \brief Add constraint
   void addConstraint(ConstraintTEST* _constraint);
 
-  /// \brief
+  /// \brief Remove constraint
   void removeConstraint(ConstraintTEST* _constraint);
 
-  /// \brief
+  /// \brief Remove all constraints
   void removeAllConstraints();
+
+  /// \brief Get total dimension of contraints in this group
+  int getTotalDimension() const;
 
   //----------------------------- Solving --------------------------------------
   // TODO(JS): Pass option
   /// \brief Solve constraints and store the results of constraint impulse to
   ///        each skeleton.
-  bool solveConstraints();
+  bool solve();
 
 protected:
   /// \brief List of constraints
   std::vector<ConstraintTEST*> mConstraints;
 
 private:
-  /// \brief
+  /// \brief Check if _constraint is contained
   bool _containConstraint(ConstraintTEST* _constraint) const;
 
-  /// \brief
+  /// \brief Check if _constraint is contained and, if so, add the constraint
   bool _checkAndAddConstraint(ConstraintTEST* _constraint);
+
+  /// \brief
+  void _fillLCPTermsODE(ODELcp* _lcp);
+
+//  /// \brief
+//  void fillLCPTermsLemke(const LCPTermsODE& _lcp);
+
+//  /// \brief
+//  void fillLCPTermsPGS(const LCPTermsODE& _lcp);
 
   // TODO(JS): more solvers
   /// \brief
-  bool _solveODE();
+  bool _solveODE(ODELcp* _lcp);
 
-  bool _solveLemke();
+//  bool _solveLemke();
 
-  bool _solvePGS();
+//  bool _solvePGS();
 
 //  // Matrices to pass to solver
 //  Eigen::MatrixXd mA;
 //  Eigen::VectorXd mQBar;
 //  Eigen::VectorXd mX;
+
+
 };
 
 } // namespace constraint

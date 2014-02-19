@@ -40,6 +40,8 @@
 #include <iostream>
 
 #include "dart/dynamics/BodyNode.h"
+#include "dart/dynamics/Skeleton.h"
+#include "dart/lcpsolver/lcp.h"
 
 #define DART_CONTACT_CONSTRAIN_EPSILON 1e-6
 
@@ -47,79 +49,36 @@ namespace dart {
 namespace constraint {
 
 //==============================================================================
-ContactConstraintTEST::ContactConstraintTEST(const collision::Contact& _contact,
-                                             int _numFrictionConeBases)
-  : ConstraintTEST(),
-    mNumFrictionConeBases(_numFrictionConeBases),
+ContactConstraintTEST::ContactConstraintTEST(const collision::Contact& _contact)
+  : ConstraintTEST(CT_DYNAMIC),
     mFirstFrictionalDirection(Eigen::Vector3d::UnitZ()),
-    mIsFrictionOn(true)
+    _IsFrictionOn(true)
 {
   mContacts.push_back(_contact);
 
   // TODO(JS):
   mBodyNode1 = _contact.collisionNode1->getBodyNode();
   mBodyNode2 = _contact.collisionNode2->getBodyNode();
-}
 
-//==============================================================================
-ContactConstraintTEST::~ContactConstraintTEST()
-{
-}
-
-//==============================================================================
-void ContactConstraintTEST::setFrictionalCoeff(double _frictionalCoeff)
-{
-  assert(_frictionalCoeff >= 0.0
-         && "Frictional coefficient can't be negative value");
-
-  mFrictionalCoff = _frictionalCoeff;
-}
-
-//==============================================================================
-double ContactConstraintTEST::getFrictionalCoeff() const
-{
-  return mFrictionalCoff;
-}
-
-//==============================================================================
-void ContactConstraintTEST::setNumFrictionConeBases(int _numFrictionConeBases)
-{
-  // TODO(JS):
-  assert(DART_MIN_NUM_FRICTION_CONE_BASES <= _numFrictionConeBases
-         && _numFrictionConeBases <= DART_MAX_NUM_FRICTION_CONE_BASES
-         && "Number of friction cone bases is out of range.");
-
-  mNumFrictionConeBases = _numFrictionConeBases;
-}
-
-//==============================================================================
-int ContactConstraintTEST::getNumFrictionConeBases() const
-{
-  return mNumFrictionConeBases;
-}
-
-//==============================================================================
-void ContactConstraintTEST::update()
-{
   // TODO(JS): Assume the frictional coefficient can be changed during
   //           simulation steps.
   // Update mFrictionalCoff
-  mFrictionalCoff = std::min(mBodyNode1->getFrictionalCoeff(),
+  _frictionalCoff = std::min(mBodyNode1->getFrictionalCoeff(),
                              mBodyNode2->getFrictionalCoeff());
-  if (mFrictionalCoff > DART_FRICTION_THRESHOLD)
+  if (_frictionalCoff > DART_FRICTION_THRESHOLD)
   {
-    mIsFrictionOn = true;
+    _IsFrictionOn = true;
 
     // Update frictional direction
     _updateFirstFrictionalDirection();
   }
   else
   {
-    mIsFrictionOn = false;
+    _IsFrictionOn = false;
   }
 
   // Compute local contact Jacobians expressed in body frame
-  if (mIsFrictionOn)
+  if (_IsFrictionOn)
   {
     // Set the dimension of this constraint. 1 is for Normal direction constraint.
     // TODO(JS): Assumed that the number of contact is not static.
@@ -243,11 +202,228 @@ void ContactConstraintTEST::update()
 }
 
 //==============================================================================
-void ContactConstraintTEST::aggreateLCPTerms(LCPTerms* _info, int _idx)
+ContactConstraintTEST::~ContactConstraintTEST()
 {
-  std::cout << "ContactConstraintTEST::aggreateLCPTerms(): "
+}
+
+//==============================================================================
+void ContactConstraintTEST::setFirstFrictionDir(
+    const Eigen::Vector3d& _dir)
+{
+  mFirstFrictionalDirection = _dir.normalized();
+}
+
+//==============================================================================
+const Eigen::Vector3d&ContactConstraintTEST::getFirstFrictionlDir() const
+{
+  return mFirstFrictionalDirection;
+}
+
+//==============================================================================
+void ContactConstraintTEST::preprocess()
+{
+}
+
+//==============================================================================
+void ContactConstraintTEST::update()
+{
+}
+
+//==============================================================================
+void ContactConstraintTEST::fillLcpOde(ODELcp* _lcp, int _idx)
+{
+  // Fill w, where the LCP form is Ax + b = w (x >= 0, w >= 0, x^T w = 0)
+  getRelVelocity(_lcp->w, _idx);
+
+  //----------------------------- Friction case --------------------------------
+  if (_IsFrictionOn)
+  {
+    for (int i = 0; i < mContacts.size(); ++i)
+    {
+      // Bias term, b
+      _lcp->b[_idx] = 0.0;
+      _lcp->b[_idx + 1] = 0.0;
+      _lcp->b[_idx + 2] = 0.0;
+
+      // Upper and lower bounds of normal impulsive force
+      _lcp->lb[_idx] = 0.0;
+      _lcp->ub[_idx] = dInfinity;
+
+      // Upper and lower bounds of tangential direction-1 impulsive force
+      _lcp->lb[_idx + 1] = -_frictionalCoff;
+      _lcp->ub[_idx + 1] =  _frictionalCoff;
+      _lcp->frictionIndex[_idx + 1] = _idx;
+
+      // Upper and lower bounds of tangential direction-2 impulsive force
+      _lcp->lb[_idx + 2] = -_frictionalCoff;
+      _lcp->ub[_idx + 2] =  _frictionalCoff;
+      _lcp->frictionIndex[_idx + 2] = _idx;
+
+      // TODO(JS): Penetration correction should be here
+
+      // TODO(JS): Bounce condition should be here
+
+      // TODO(JS): Initial guess
+
+      // Increase index
+      _idx += 3;
+    }
+  }
+  //--------------------------- Non-friction case ------------------------------
+  else
+  {
+    for (int i = 0; i < mContacts.size(); ++i)
+    {
+      // Bias term, b
+      _lcp->b[_idx] = 0.0;
+
+      // Upper and lower bounds of normal impulsive force
+      _lcp->lb[_idx] = 0.0;
+      _lcp->ub[_idx] = dInfinity;
+
+      // TODO(JS): Penetration correction should be here
+
+      // TODO(JS): Bounce condition should be here
+
+      // TODO(JS): Initial guess
+
+      // Increase index
+      _idx++;
+    }
+  }
+}
+
+//==============================================================================
+void ContactConstraintTEST::applyImpulse(int _idx)
+{
+  assert(0 <= _idx && _idx < mDim && "Invalid Index.");
+
+  // TODO(JS): Better naming
+  if (mBodyNode1->getSkeleton() == mBodyNode2->getSkeleton())
+  {
+    mBodyNode1->getSkeleton()->clearImpulseTest();
+    mBodyNode1->getSkeleton()->updateImpBiasForce(mBodyNode1, mJacobians1[_idx]);
+    mBodyNode1->getSkeleton()->updateImpBiasForce(mBodyNode2, mJacobians2[_idx]);
+    mBodyNode1->getSkeleton()->updateVelocityChange();
+    return;
+  }
+
+  if (mBodyNode1->isImpulseReponsible())
+  {
+    mBodyNode1->getSkeleton()->clearImpulseTest();
+    mBodyNode1->getSkeleton()->updateImpBiasForce(mBodyNode1, mJacobians1[_idx]);
+    mBodyNode1->getSkeleton()->updateVelocityChange();
+  }
+
+  if (mBodyNode2->isImpulseReponsible())
+  {
+    mBodyNode2->getSkeleton()->clearImpulseTest();
+    mBodyNode2->getSkeleton()->updateImpBiasForce(mBodyNode2, mJacobians2[_idx]);
+    mBodyNode2->getSkeleton()->updateVelocityChange();
+  }
+}
+
+//==============================================================================
+void ContactConstraintTEST::getDelVelocity(double* _delVel, int _idx)
+{
+  assert(_delVel != NULL && "Null pointer is not allowed.");
+
+  for (int i = 0; i < mDim; ++i)
+  {
+    _delVel[i + _idx] = 0.0;
+
+    if (mBodyNode1->isImpulseReponsible())
+    {
+      _delVel[i + _idx]
+          += mJacobians1[i].dot(mBodyNode1->getBodyVelocityChange());
+    }
+
+    if (mBodyNode2->isImpulseReponsible())
+    {
+      _delVel[i + _idx]
+          += mJacobians2[i].dot(mBodyNode2->getBodyVelocityChange());
+    }
+  }
+}
+
+//==============================================================================
+void ContactConstraintTEST::excite()
+{
+  _exciteSystem1();
+  _exciteSystem2();
+  _exciteSystem1And2();
+}
+
+//==============================================================================
+void ContactConstraintTEST::unexcite()
+{
+  std::cout << "ContactConstraintTEST::unexcite(): "
             << "Not implemented."
             << std::endl;
+}
+
+//==============================================================================
+void ContactConstraintTEST::setImpulse(double* _lambda, int _idx)
+{
+  //---------------------------- Friction case ---------------------------------
+  if (_IsFrictionOn)
+  {
+    for (int i = 0; i < mContacts.size(); ++i)
+    {
+      // Normal impulsive force
+//      mContacts[i]->lambda[0] = _lambda[_idx];
+      mBodyNode1->addConstraintImpulse(mJacobians1[i] * _lambda[_idx]);
+      mBodyNode2->addConstraintImpulse(mJacobians2[i] * _lambda[_idx]);
+      _idx++;
+
+      // Tangential direction-1 impulsive force
+//      mContacts[i]->lambda[1] = _lambda[_idx];
+      mBodyNode1->addConstraintImpulse(mJacobians1[i] * _lambda[_idx]);
+      mBodyNode2->addConstraintImpulse(mJacobians2[i] * _lambda[_idx]);
+      _idx++;
+
+      // Tangential direction-2 impulsive force
+//      mContacts[i]->lambda[2] = _lambda[_idx];
+      mBodyNode1->addConstraintImpulse(mJacobians1[i] * _lambda[_idx]);
+      mBodyNode2->addConstraintImpulse(mJacobians2[i] * _lambda[_idx]);
+      _idx++;
+    }
+  }
+  //-------------------------- Non-friction case -------------------------------
+  else
+  {
+    for (int i = 0; i < mContacts.size(); ++i)
+    {
+      // Normal impulsive force
+//			pContactPts[i]->lambda[0] = _lambda[i];
+      mBodyNode1->addConstraintImpulse(mJacobians1[i] * _lambda[_idx]);
+      mBodyNode2->addConstraintImpulse(mJacobians2[i] * _lambda[_idx]);
+      _idx++;
+    }
+  }
+}
+
+//==============================================================================
+void ContactConstraintTEST::getRelVelocity(double* _relVel, int _idx)
+{
+  assert(_relVel != NULL && "Null pointer is not allowed.");
+
+  for (int i = 0; i < mDim; ++i)
+  {
+    _relVel[i + _idx] = 0.0;
+
+    if (mBodyNode1->isImpulseReponsible())
+    {
+      _relVel[i + _idx]
+          -= mJacobians1[i].dot(mBodyNode1->getBodyVelocityChange());
+    }
+
+    if (mBodyNode2->isImpulseReponsible())
+    {
+      _relVel[i + _idx]
+          -= mJacobians2[i].dot(mBodyNode2->getBodyVelocityChange());
+    }
+  }
 }
 
 //==============================================================================
@@ -259,6 +435,26 @@ bool ContactConstraintTEST::isActive()
 
   return true;
 }
+
+//==============================================================================
+void ContactConstraintTEST::_exciteSystem1()
+{
+
+}
+
+//==============================================================================
+void ContactConstraintTEST::_exciteSystem2()
+{
+
+}
+
+//==============================================================================
+void ContactConstraintTEST::_exciteSystem1And2()
+{
+
+}
+
+
 
 //==============================================================================
 void ContactConstraintTEST::_updateVelocityChange(int _idx)

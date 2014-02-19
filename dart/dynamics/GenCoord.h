@@ -75,6 +75,8 @@ public:
   double get_dq() const { return dq; }          ///< Velocity
   double get_ddq() const { return ddq; }        ///< Acceleration
   double get_tau() const { return tau; }        ///< torque or force
+  double get_del_dq() const { return del_dq; }  ///< Velocity change
+  double get_imp_tau() const { return imp_tau; }///< Velocity change
 
   double get_qMin() const { return qMin; }      ///< Minimum value of q
   double get_dqMin() const { return dqMin; }    ///< Minimum value of dq
@@ -90,6 +92,8 @@ public:
   void set_dq(double _dq) { assert(_dq == _dq); dq = _dq; }
   void set_ddq(double _ddq) { assert(_ddq == _ddq); ddq = _ddq; }
   void set_tau(double _tau) { assert(_tau == _tau); tau = _tau; }
+  void set_del_dq(double _del_dq) { assert(_del_dq == _del_dq); del_dq = _del_dq; }
+  void set_imp_tau(double _imp_tau) { assert(_imp_tau == _imp_tau); imp_tau = _imp_tau; }
 
   void set_qMin(double _qMin) { qMin = _qMin; }
   void set_dqMin(double _dqMin) { dqMin = _dqMin; }
@@ -142,6 +146,12 @@ protected:
   double tauMin;    ///< Min value allowed.
   double tauMax;    ///< Max value allowed.
   double DtauDp;    ///< derivatives w.r.t. an arbitrary scalr variable p
+
+  //--------------------------------------------------------------------------
+  // Impulse-based Dynamics
+  //--------------------------------------------------------------------------
+  double del_dq;
+  double imp_tau;
 };
 
 }  // namespace dynamics

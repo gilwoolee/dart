@@ -730,7 +730,7 @@ void SoftBodyNode::aggregateGravityForceVector(Eigen::VectorXd* _g,
   for (std::vector<BodyNode*>::const_iterator it = mChildBodyNodes.begin();
        it != mChildBodyNodes.end(); ++it)
   {
-    mG_F += math::dAdInvT((*it)->mParentJoint->getLocalTransform(),
+    mG_F += math::dAdInvT((*it)->getParentJoint()->getLocalTransform(),
                           (*it)->mG_F);
   }
 
@@ -812,7 +812,7 @@ void SoftBodyNode::aggregateExternalForces(Eigen::VectorXd* _Fext)
   for (std::vector<BodyNode*>::const_iterator it = mChildBodyNodes.begin();
        it != mChildBodyNodes.end(); ++it)
   {
-    mFext_F += math::dAdInvT((*it)->mParentJoint->getLocalTransform(),
+    mFext_F += math::dAdInvT((*it)->getParentJoint()->getLocalTransform(),
                              (*it)->mFext_F);
   }
 

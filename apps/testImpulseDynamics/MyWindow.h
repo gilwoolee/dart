@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2014, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2013, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
  *            Jeongseok Lee <jslee02@gmail.com>
  *
- * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -35,21 +35,38 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dart/constraint_test/ClosedLoopConstraint.h"
+#ifndef APPS_CUBES_MYWINDOW_H_
+#define APPS_CUBES_MYWINDOW_H_
 
-namespace dart {
-namespace constraint {
+#include "dart/gui/SimWindow.h"
 
-ClosedLoopConstraintTEST::ClosedLoopConstraintTEST()
-  : ConstraintTEST(CT_STATIC)
-{
+/// \brief
+class MyWindow : public dart::gui::SimWindow {
+public:
+  /// \brief
+  MyWindow();
 
-}
+  /// \brief
+  virtual ~MyWindow();
 
-ClosedLoopConstraintTEST::~ClosedLoopConstraintTEST()
-{
+  /// \brief
+  virtual void timeStepping();
 
-}
+  /// \brief
+  virtual void drawSkels();
 
-} // namespace constraint
-} // namespace dart
+  /// \brief
+  virtual void keyboard(unsigned char _key, int _x, int _y);
+
+  /// \brief
+  void spawnCube(
+      const Eigen::Vector3d& _position = Eigen::Vector3d(0.0, 1.0, 0.0),
+      const Eigen::Vector3d& _size     = Eigen::Vector3d(0.1, 0.1, 0.1),
+      double _mass = 1.0);
+
+private:
+  /// \brief
+  Eigen::Vector3d mForce;
+};
+
+#endif  // APPS_CUBES_MYWINDOW_H_

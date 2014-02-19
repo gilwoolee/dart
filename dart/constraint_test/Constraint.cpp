@@ -38,6 +38,7 @@
 #include "dart/constraint_test/Constraint.h"
 
 #include <cstring>
+#include <iostream>
 
 namespace dart {
 namespace constraint {
@@ -45,33 +46,96 @@ namespace constraint {
 #define dPAD(a) (((a) > 1) ? ((((a)-1)|3)+1) : (a))
 
 //==============================================================================
-LCPTerms::LCPTerms(int _n)
+ODELcp::ODELcp(int _n)
 {
-  int nSkip = dPAD(_n);
+  nSkip = dPAD(_n);
 
   A  = new double[_n * nSkip];
   b  = new double[_n];
   w  = new double[_n];
+  x  = new double[_n];
   lb = new double[_n];
   ub = new double[_n];
   frictionIndex = new int[_n];
+  dim = _n;
 
   std::memset(A, 0, _n * nSkip * sizeof(double));
+  std::memset(frictionIndex, -1, _n * sizeof(int));
 }
 
 //==============================================================================
-LCPTerms::~LCPTerms()
+ODELcp::~ODELcp()
 {
   delete[] A;
   delete[] b;
   delete[] w;
+  delete[] x;
   delete[] lb;
   delete[] ub;
   delete[] frictionIndex;
 }
 
 //==============================================================================
-ConstraintTEST::ConstraintTEST()
+void ODELcp::print()
+{
+  std::cout << "A: " << std::endl;
+  for (int i = 0; i < nSkip; ++i)
+  {
+    for (int j = 0; j < dim; ++j)
+    {
+      std::cout << A[i * dim + j] << " ";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
+
+  std::cout << "b: " << std::endl;
+  for (int i = 0; i < dim; ++i)
+  {
+    std::cout << b[i] << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "w: " << std::endl;
+  for (int i = 0; i < dim; ++i)
+  {
+    std::cout << w[i] << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "x: " << std::endl;
+  for (int i = 0; i < dim; ++i)
+  {
+    std::cout << x[i] << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "lb: " << std::endl;
+  for (int i = 0; i < dim; ++i)
+  {
+    std::cout << lb[i] << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "ub: " << std::endl;
+  for (int i = 0; i < dim; ++i)
+  {
+    std::cout << ub[i] << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "frictionIndex: " << std::endl;
+  for (int i = 0; i < dim; ++i)
+  {
+    std::cout << frictionIndex[i] << " ";
+  }
+  std::cout << std::endl;
+
+
+}
+
+//==============================================================================
+ConstraintTEST::ConstraintTEST(ConstraintType _type)
   : mDim(0)
 {
 }

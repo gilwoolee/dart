@@ -98,6 +98,26 @@ void GenCoordSystem::set_tau(const Eigen::VectorXd& _tau) {
     mGenCoords[i]->set_tau(_tau[i]);
 }
 
+void GenCoordSystem::set_del_dq(const Eigen::VectorXd& _del_dq)
+{
+  assert(_del_dq.size() == getNumGenCoords());
+
+  int size = getNumGenCoords();
+
+  for (int i = 0; i < size; ++i)
+    mGenCoords[i]->set_del_dq(_del_dq[i]);
+}
+
+void GenCoordSystem::set_imp_tau(const Eigen::VectorXd& _imp_tau)
+{
+  assert(_imp_tau.size() == getNumGenCoords());
+
+  int size = getNumGenCoords();
+
+  for (int i = 0; i < size; ++i)
+    mGenCoords[i]->set_imp_tau(_imp_tau[i]);
+}
+
 void GenCoordSystem::set_qMin(const Eigen::VectorXd& _qMin) {
   assert(_qMin.size() == getNumGenCoords());
 
@@ -213,6 +233,30 @@ Eigen::VectorXd GenCoordSystem::get_tau() const {
   }
 
   return tau;
+}
+
+Eigen::VectorXd GenCoordSystem::get_del_dq() const
+{
+  int size = getNumGenCoords();
+  Eigen::VectorXd del_dq = Eigen::VectorXd::Zero(size);
+
+  for (int i = 0; i < size; ++i) {
+    del_dq(i) = mGenCoords[i]->get_del_dq();
+  }
+
+  return del_dq;
+}
+
+Eigen::VectorXd GenCoordSystem::get_imp_tau() const
+{
+  int size = getNumGenCoords();
+  Eigen::VectorXd imp_tau = Eigen::VectorXd::Zero(size);
+
+  for (int i = 0; i < size; ++i) {
+    imp_tau(i) = mGenCoords[i]->get_imp_tau();
+  }
+
+  return imp_tau;
 }
 
 Eigen::VectorXd GenCoordSystem::get_qMax() const {

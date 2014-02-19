@@ -44,9 +44,9 @@
 #include "dart/collision/CollisionDetector.h"
 
 // TODO(JS): More meaningful numbers?
-#define DART_MIN_NUM_FRICTION_CONE_BASES 4
-#define DART_MAX_NUM_FRICTION_CONE_BASES 16
-#define DART_DEFAULT_NUM_FRICTION_CONE_BASES 2
+//#define DART_MIN_NUM_FRICTION_CONE_BASES 4
+//#define DART_MAX_NUM_FRICTION_CONE_BASES 16
+//#define DART_DEFAULT_NUM_FRICTION_CONE_BASES 2
 #define DART_FRICTION_THRESHOLD 1e-4
 
 namespace dart {
@@ -60,38 +60,60 @@ public:
   //----------------------------------------------------------------------------
   // TODO(JS): One contact constraint is allowed now.
   /// \brief Constructor
-  ContactConstraintTEST(
-      const collision::Contact& _contact,
-      int _numFrictionConeBases = DART_DEFAULT_NUM_FRICTION_CONE_BASES);
+  ContactConstraintTEST(const collision::Contact& _contact);
 
   /// \brief Default destructor
   virtual ~ContactConstraintTEST();
 
   //--------------------------- Settings ---------------------------------------
-  /// \brief
-  void setFrictionalCoeff(double _frictionalCoeff);
+  /// \brief Set first frictional direction
+  void setFirstFrictionDir(const Eigen::Vector3d& _dir);
 
-  /// \brief
-  double getFrictionalCoeff() const;
-
-  /// \brief
-  void setNumFrictionConeBases(int _numFrictionConeBases);
-
-  /// \brief
-  int getNumFrictionConeBases() const;
+  /// \brief Get first frictional direction
+  const Eigen::Vector3d& getFirstFrictionlDir() const;
 
   //-------------------- Constraint virtual function ---------------------------
+  // Documentaion inherited.
+  virtual void preprocess();
+
   // Documentaion inherited.
   virtual void update();
 
   // Documentaion inherited.
-  virtual void aggreateLCPTerms(LCPTerms* _info, int _idx);
+  virtual void fillLcpOde(ODELcp* _lcp, int _idx);
+
+  // Documentaion inherited.
+  virtual void applyImpulse(int _idx);
+
+  // Documentaion inherited.
+  virtual void getDelVelocity(double* _delVel, int _idx);
+
+  // Documentaion inherited.
+  virtual void excite();
+
+  // Documentaion inherited.
+  virtual void unexcite();
+
+  // Documentaion inherited.
+  virtual void setImpulse(double* _lambda, int _idx);
 
   //----------------------------- Solving --------------------------------------
+  /// \brief Get change in relative velocity at contact point due to external
+  ///        impulse
+  /// \param[out] _relVel Change in relative velocity at contact point of the
+  ///                     two colliding bodies
+  /// \param[in] _idx Index the relative velocity change will be stored
+  void getRelVelocity(double* _relVel, int _idx);
+
   /// \brief
   bool isActive();
 
 protected:
+
+  void	_exciteSystem1();
+  void	_exciteSystem2();
+  void	_exciteSystem1And2();
+
   /// \brief Fircst body node
   dynamics::BodyNode* mBodyNode1;
 
@@ -104,12 +126,8 @@ protected:
   /// \brief First frictional direction
   Eigen::Vector3d mFirstFrictionalDirection;
 
-  // TODO(JS): Not implemented use of mNumFrictionConeBases.
-  /// \brief Number of friction cone bases
-  int mNumFrictionConeBases;
-
   /// \brief Frictional coefficient
-  double mFrictionalCoff;
+  double _frictionalCoff;
 
 private:
   /// \brief Compute change in velocity due to _idx-th impulse.
@@ -128,7 +146,7 @@ private:
   std::vector<Eigen::Vector6d> mJacobians2;
 
   /// \brief
-  bool mIsFrictionOn;
+  bool _IsFrictionOn;
 
 };
 

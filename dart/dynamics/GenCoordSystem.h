@@ -80,6 +80,12 @@ public:
   /// \brief Set generalized force vector (internal forces)
   void set_tau(const Eigen::VectorXd& _tau);
 
+  /// \brief Set generalized force vector (internal forces)
+  void set_del_dq(const Eigen::VectorXd& _del_dq);
+
+  /// \brief
+  void set_imp_tau(const Eigen::VectorXd& _imp_tau);
+
   void set_qMin(const Eigen::VectorXd& _qMin);
   void set_dqMin(const Eigen::VectorXd& _dqMin);
   void set_ddqMin(const Eigen::VectorXd& _ddqMin);
@@ -97,6 +103,8 @@ public:
   Eigen::VectorXd get_dq() const;
   Eigen::VectorXd get_ddq() const;
   Eigen::VectorXd get_tau() const;
+  Eigen::VectorXd get_del_dq() const;
+  Eigen::VectorXd get_imp_tau() const;
 
   Eigen::VectorXd get_qMin() const;
   Eigen::VectorXd get_dqMin() const;

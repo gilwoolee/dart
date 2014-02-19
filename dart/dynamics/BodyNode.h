@@ -35,40 +35,6 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*! \mainpage Dynamic Animation and Robotics Toolkits
-
-DART is an open source library for developing kinematic and dynamic
-applications in robotics and computer animation. DART features two
-main components: a multibody dynamic simulator developed by Georgia
-Tech Graphics Lab and a variety of motion planning algorithms
-developed by Georgia Tech Humanoid Robotics Lab. This document focuses
-only on the dynamic simulator.
-
-The multibody dynamics simulator in DART is designed to aid
-development of motion control algorithms. DART uses generalized
-coordinates to represent articulated rigid body systems and computes
-Lagrange’s equations derived from D’Alembert’s principle to describe
-the dynamics of motion. In contrast to many popular physics engines
-which view the simulator as a black box, DART provides full access to
-internal kinematic and dynamic quantities, such as mass matrix,
-Coriolis and centrifugal force, transformation matrices and their
-derivatives, etc. DART also provides efficient computation of Jacobian
-matrices for arbitrary body points and coordinate frames.
-
-The contact and collision are handled using an implicit time-stepping,
-velocity-based LCP (linear-complementarity problem) to guarantee
-non-penetration, directional friction, and approximated Coulombs
-friction cone conditions. The LCP problem is solved efficiently by
-Lemke's algorithm. For the collision detection, DART directly uses FCL
-package developed by UNC Gamma Lab.
-
-In addition, DART supports various joint types (ball-and-socket,
-universal, hinge, and prismatic joints) and arbitrary meshes. DART
-also provides two explicit integration methods: first-order
-Runge-Kutta and fourth-order Runge Kutta.
-
-*/
-
 #ifndef DART_DYNAMICS_BODYNODE_H_
 #define DART_DYNAMICS_BODYNODE_H_
 
@@ -245,6 +211,10 @@ public:
   ///        (< getNumDependentDofs).
   int getDependentGenCoordIndex(int _arrayIndex) const;
 
+  //-------------------------- Impulse Test ------------------------------------
+  /// \brief
+  bool isImpulseReponsible() const;
+
   //--------------------------------------------------------------------------
   // Properties updated by dynamics (kinematics)
   //--------------------------------------------------------------------------
@@ -306,6 +276,9 @@ public:
       const Eigen::Vector3d& _offset = Eigen::Vector3d::Zero(),
       bool _isOffsetLocal            = false);
 
+  /// \brief
+  const Eigen::Vector6d& getBodyVelocityChange() const;
+
   /// \brief Set whether this body node is colliding with others.
   /// \param[in] True if this body node is colliding.
   void setColliding(bool _isColliding);
@@ -348,6 +321,22 @@ public:
   /// Called from @Skeleton::clearExternalForces.
   virtual void clearExternalForces();
 
+  //------------------- Impulse-based constraint dynamics ----------------------
+  // Following functions are called by class ConstraintSolver.
+
+  /// \brief Set constraint impulse
+  void setConstraintImpulse(const Eigen::Vector6d& _constImp);
+
+  /// \brief Add constraint impulse
+  void addConstraintImpulse(const Eigen::Vector6d& _constImp);
+
+  /// \brief Add constraint impulse
+  void clearConstraintImpulse();
+
+  /// \brief Get constraint impulse
+  const Eigen::Vector6d& getConstraintImpulse();
+
+  //----------------------------------------------------------------------------
   /// \brief
   void addContactForce(const Eigen::Vector6d& _contactForce);
 
@@ -395,9 +384,7 @@ public:
                    const Eigen::Vector4d& _color = Eigen::Vector4d::Ones(),
                    bool _useDefaultColor = true) const;
 
-// TODO(JS): Temporary change for soft body dynamics
-// protected:
-public:
+protected:
   /// \brief Initialize the vector members with proper sizes.
   virtual void init(Skeleton* _skeleton, int _skeletonIndex);
 
@@ -452,6 +439,14 @@ public:
   /// \brief
   virtual void update_F_fs();
 
+  //------------------------ Impluse-based Dynamics ----------------------------
+  /// \brief
+  void updateImpBiasForce();
+
+  /// \brief
+  void updateVelocityChange();
+
+  //------------------------- Equations of Motion ------------------------------
   /// \brief
   virtual void updateMassMatrix();
   virtual void aggregateMassMatrix(Eigen::MatrixXd* _MCol, int _col);
@@ -655,6 +650,25 @@ public:
   Eigen::VectorXd mInvM_MInvVec;
   Eigen::Vector6d mInvM_U;
 
+  //------------------------- Impulse-based Dyanmics ---------------------------
+  /// \brief Velocity change due to to external impulsive force exerted on
+  ///        bodies of the parent skeleton.
+  Eigen::Vector6d mDelV;
+
+  /// \brief Impulsive external force
+  Eigen::Vector6d mImpFext;
+
+  /// \brief Impulsive bias force due to external impulsive force exerted on
+  ///        bodies of the parent skeleton.
+  Eigen::Vector6d mImpBiasForce;
+
+  /// \brief Cache data for mImpulsiveBiasForce
+  Eigen::Vector6d mImpBeta;
+
+  /// \brief Constraint impluse
+  Eigen::Vector6d mConstImp;
+
+  //----------------------------------------------------------------------------
   /// \brief Update body Jacobian. getBodyJacobian() calls this function if
   ///        mIsBodyJacobianDirty is true.
   void _updateBodyJacobian();

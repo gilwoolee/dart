@@ -50,7 +50,7 @@ namespace dynamics {
 class Skeleton;
 }
 namespace constraint {
-class CommunityTEST;
+class ConstrainedGroup;
 class ConstraintTEST;
 class BallJointContraintTEST;
 class ClosedLoopConstraintTEST;
@@ -150,7 +150,7 @@ protected:
   std::vector<ConstraintTEST*> mDynamicConstraints;
 
   /// \brief List of communities
-  std::vector<CommunityTEST*> mCommunities;
+  std::vector<ConstrainedGroup*> mConstrainedGroups;
 
   /// \brief
 //  std::vector<ClosedLoopContraint_TEST*> mBakedClosedLoopConstraints;
@@ -166,34 +166,34 @@ private:
   void __bakeClosedLoopConstraints();
   void __bakeJointConstraints();
 
-  /// \brief
+  /// \brief Check if the skeleton is contained in this solver
   bool _containSkeleton(const dynamics::Skeleton* _skeleton) const;
 
-  /// \brief
+  /// \brief Add skeleton if the constraint is not contained in this solver
   bool _checkAndAddSkeleton(dynamics::Skeleton* _skeleton);
 
-  /// \brief
+  /// \brief Check if the constraint is contained in this solver
   bool _containConstraint(const ConstraintTEST* _constraint) const;
 
-  /// \brief
+  /// \brief Add constraint if the constraint is not contained in this solver
   bool _checkAndAddConstraint(ConstraintTEST* _constraint);
 
-  /// \brief
+  /// \brief Update dynamic constraints
   void _updateDynamicConstraints();
 
-  /// \brief
-  void _organizeCommunities();
+  /// \brief Build constrained groups
+  void _buildConstrainedGroups();
 
-  /// \brief
-  void _solveConstrains();
+  /// \brief Solve constrained groups
+  void _solveConstrainedGroups();
 
-  /// \brief
+  /// \brief Collision detector
   collision::CollisionDetector* mCollisionDetector;
 
-  /// \brief
+  /// \brief Time step
   double mTimeStep;
 
-  /// \brief
+  /// \brief Flag for using ODE
   bool mUseODE;
 };
 

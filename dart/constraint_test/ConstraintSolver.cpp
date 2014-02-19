@@ -39,9 +39,8 @@
 
 #include "dart/common/Console.h"
 #include "dart/dynamics/Skeleton.h"
-#include "dart/constraint_test/Community.h"
 #include "dart/collision/fcl_mesh/FCLMeshCollisionDetector.h"
-#include "dart/constraint_test/Community.h"
+#include "dart/constraint_test/ConstrainedGroup.h"
 #include "dart/constraint_test/BallJointConstraint.h"
 #include "dart/constraint_test/ClosedLoopConstraint.h"
 #include "dart/constraint_test/ContactConstraint.h"
@@ -167,37 +166,49 @@ void ConstraintSolverTEST::removeSkeletons(
 //==============================================================================
 void ConstraintSolverTEST::removeAllSkeletons()
 {
-
+  std::cout << "ConstraintSolverTEST::removeAllSkeletons(): "
+            << "Not implemented yet."
+            << std::endl;
 }
 
 //==============================================================================
 void ConstraintSolverTEST::addConstraint(ConstraintTEST* _constraint)
 {
-
+  std::cout << "ConstraintSolverTEST::addConstraint(): "
+            << "Not implemented yet."
+            << std::endl;
 }
 
 //==============================================================================
 void ConstraintSolverTEST::addConstraints(const std::vector<ConstraintTEST*>& _constraints)
 {
-
+  std::cout << "ConstraintSolverTEST::addConstraints(): "
+            << "Not implemented yet."
+            << std::endl;
 }
 
 //==============================================================================
 void ConstraintSolverTEST::removeConstraint(ConstraintTEST* _constraint)
 {
-
+  std::cout << "ConstraintSolverTEST::removeConstraint(): "
+            << "Not implemented yet."
+            << std::endl;
 }
 
 //==============================================================================
 void ConstraintSolverTEST::removeConstraints(const std::vector<ConstraintTEST*>& _constraints)
 {
-
+  std::cout << "ConstraintSolverTEST::removeConstraints(): "
+            << "Not implemented yet."
+            << std::endl;
 }
 
 //==============================================================================
 void ConstraintSolverTEST::removeAllConstraints()
 {
-
+  std::cout << "ConstraintSolverTEST::removeAllConstraints(): "
+            << "Not implemented yet."
+            << std::endl;
 }
 
 //==============================================================================
@@ -217,8 +228,8 @@ double ConstraintSolverTEST::getTimeStep() const
 void ConstraintSolverTEST::solve()
 {
   _updateDynamicConstraints();
-  _organizeCommunities();
-  _solveConstrains();
+  _buildConstrainedGroups();
+  _solveConstrainedGroups();
 }
 
 //==============================================================================
@@ -249,14 +260,14 @@ void ConstraintSolverTEST::_init()
 
   //---------------------------- Communities -----------------------------------
   // TODO(JS): Create one community for test
-  for (std::vector<CommunityTEST*>::iterator it = mCommunities.begin();
-       it != mCommunities.end(); ++it)
+  for (std::vector<ConstrainedGroup*>::iterator it = mConstrainedGroups.begin();
+       it != mConstrainedGroups.end(); ++it)
   {
     delete *it;
   }
-  mCommunities.clear();
-  mCommunities.resize(1);
-  mCommunities[0] = new CommunityTEST;
+  mConstrainedGroups.clear();
+  mConstrainedGroups.resize(1);
+  mConstrainedGroups[0] = new ConstrainedGroup;
 }
 
 //==============================================================================
@@ -428,21 +439,21 @@ void ConstraintSolverTEST::_updateDynamicConstraints()
 }
 
 //==============================================================================
-void ConstraintSolverTEST::_organizeCommunities()
+void ConstraintSolverTEST::_buildConstrainedGroups()
 {
   std::cout << "ConstraintSolverTEST::_organizeCommunities(): Not implemented."
             << std::endl;
 
   // TODO(JS):
-  mCommunities[0]->removeAllConstraints();
+  mConstrainedGroups[0]->removeAllConstraints();
 
-  //------------------- Add Constraints to communities -------------------------
+  //-------------- Add Constraints to constrained groups -----------------------
   // Static constraints
   for (std::vector<ConstraintTEST*>::iterator it = mStaticConstraints.begin();
        it != mStaticConstraints.end(); ++it)
   {
     // TODO(JS):
-    mCommunities[0]->addConstraint(*it);
+    mConstrainedGroups[0]->addConstraint(*it);
   }
 
   // Dynamics constraints
@@ -450,18 +461,18 @@ void ConstraintSolverTEST::_organizeCommunities()
        it != mDynamicConstraints.end(); ++it)
   {
     // TODO(JS):
-    mCommunities[0]->addConstraint(*it);
+    mConstrainedGroups[0]->addConstraint(*it);
   }
 }
 
 //==============================================================================
-void ConstraintSolverTEST::_solveConstrains()
+void ConstraintSolverTEST::_solveConstrainedGroups()
 {
   // TODO(JS): Parallel computing is possible here.
-  for (std::vector<CommunityTEST*>::iterator it = mCommunities.begin();
-      it != mCommunities.end(); ++it)
+  for (std::vector<ConstrainedGroup*>::iterator it = mConstrainedGroups.begin();
+      it != mConstrainedGroups.end(); ++it)
   {
-    (*it)->solveConstraints();
+    (*it)->solve();
   }
 }
 
