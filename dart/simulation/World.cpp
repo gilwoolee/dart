@@ -163,9 +163,9 @@ Eigen::VectorXd World::_evalDerivNew()
   __computeConstraintImpulses();
   __computeVelocityJumps();
   __updateVelocityWithVelJump();
-  __updateAccelerationWithVelJump();
-  __updateTauWithImpulse();
-  __updateSensors();
+//  __updateAccelerationWithVelJump();
+//  __updateTauWithImpulse();
+//  __updateSensors();
 
   // compute derivatives for integration
   Eigen::VectorXd deriv = Eigen::VectorXd::Zero(mIndices.back() * 2);
@@ -178,8 +178,7 @@ Eigen::VectorXd World::_evalDerivNew()
     int size = getSkeleton(i)->getNumGenCoords();
 
     // set velocities
-    deriv.segment(start, size) = getSkeleton(i)->get_dq()
-                                 + mTimeStep * getSkeleton(i)->get_ddq();
+    deriv.segment(start, size) = getSkeleton(i)->get_dq();
 
     // set qddot (accelerations)
     deriv.segment(start + size, size) = getSkeleton(i)->get_ddq();
@@ -209,7 +208,7 @@ void World::__updateVelocity()
   for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
        it != mSkeletons.end(); ++it)
   {
-//    (*it)->set_dq((*it)->get_dq() + (*it)->get_ddq() * mTimeStep);
+    (*it)->set_dq((*it)->get_dq() + (*it)->get_ddq() * mTimeStep);
   }
 }
 
@@ -224,18 +223,26 @@ void World::__computeVelocityJumps()
   for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
        it != mSkeletons.end(); ++it)
   {
-    (*it)->computeImpulseBasedForwardDynamics();
+    (*it)->computeImpForwardDynamics();
   }
 }
 
 void World::__updateVelocityWithVelJump()
 {
-
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    (*it)->set_dq((*it)->get_dq() + (*it)->get_del_dq());
+  }
 }
 
 void World::__updateAccelerationWithVelJump()
 {
-
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    (*it)->set_ddq((*it)->get_ddq() + (*it)->get_del_dq() / mTimeStep);
+  }
 }
 
 void World::__updatePosition()

@@ -43,10 +43,11 @@
 #include "dart/math/MathTypes.h"
 #include "dart/collision/CollisionDetector.h"
 
-// TODO(JS): More meaningful numbers?
+// Note: ODE's dSolve uses fixed number of friction cone bases as 4
 //#define DART_MIN_NUM_FRICTION_CONE_BASES 4
 //#define DART_MAX_NUM_FRICTION_CONE_BASES 16
 //#define DART_DEFAULT_NUM_FRICTION_CONE_BASES 2
+
 #define DART_FRICTION_THRESHOLD 1e-4
 
 namespace dart {
@@ -98,22 +99,10 @@ public:
   virtual void applyImpulse(double* _lambda, int _idx);
 
   //----------------------------- Solving --------------------------------------
-  /// \brief Get change in relative velocity at contact point due to external
-  ///        impulse
-  /// \param[out] _relVel Change in relative velocity at contact point of the
-  ///                     two colliding bodies
-  /// \param[in] _idx Index the relative velocity change will be stored
-  void getRelVelocity(double* _relVel, int _idx);
-
   /// \brief
   bool isActive();
 
 protected:
-
-  void	_exciteSystem1();
-  void	_exciteSystem2();
-  void	_exciteSystem1And2();
-
   /// \brief Fircst body node
   dynamics::BodyNode* mBodyNode1;
 
@@ -130,6 +119,13 @@ protected:
   double _frictionalCoff;
 
 private:
+  /// \brief Get change in relative velocity at contact point due to external
+  ///        impulse
+  /// \param[out] _relVel Change in relative velocity at contact point of the
+  ///                     two colliding bodies
+  /// \param[in] _idx Index the relative velocity change will be stored
+  void _getRelVelocity(double* _relVel, int _idx);
+
   /// \brief Compute change in velocity due to _idx-th impulse.
   void _updateVelocityChange(int _idx);
 

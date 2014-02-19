@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Georgia Tech Research Corporation
+ * Copyright (c) 2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Jeongseok Lee <jslee02@gmail.com>
@@ -7,6 +7,7 @@
  * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
+ * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
  *
  * This file is provided under the following "BSD-style" License:
  *   Redistribution and use in source and binary forms, with or
@@ -33,67 +34,60 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_DYNAMICS_SOFTSKELETON_H_
-#define DART_DYNAMICS_SOFTSKELETON_H_
+#ifndef DART_DYNAMICS_PARTICLE_H_
+#define DART_DYNAMICS_PARTICLE_H_
 
-#include <string>
 #include <vector>
+#include <Eigen/Dense>
+#include <dart/dynamics/GenCoordSystem.h>
 
-#include <dart/dynamics/Skeleton.h>
+namespace dart {
+namespace renderer {
+class RenderInterface;
+}  // namespace renderer
+}  // namespace dart
 
 namespace dart {
 namespace dynamics {
 
-class SoftBodyNode;
+//class EllipsoidShape;
+//class SoftBodyNode;
 
-/// \brief
-class SoftSkeleton : public Skeleton
+/// \brief class Particle
+/// Particle has mass bug not volume. Particle Collides with rigid/soft body but
+/// not with other particles.
+class Particle : public GenCoordSystem
 {
 public:
   //--------------------------------------------------------------------------
   // Constructor and Desctructor
   //--------------------------------------------------------------------------
-  /// \brief Constructor.
-  explicit SoftSkeleton(const std::string& _name = "Unnamed SoftSkeleton");
+  /// \brief Default constructor
+  explicit Particle();
 
-  /// \brief Destructor.
-  virtual ~SoftSkeleton();
-
-  /// \brief Add a soft body node.
-  void addSoftBodyNode(SoftBodyNode *_body);
-
-  /// \brief Get soft body node.
-  SoftBodyNode* getSoftBodyNode(int _idx) const;
-
-  /// \brief Get soft body node.
-  SoftBodyNode* getSoftBodyNode(const std::string& _name) const;
-
-  /// \brief Get number of soft body nodes.
-  int getNumSoftBodyNodes() const;
-
-  /// \brief Get number of rigid body nodes.
-  int getNumRigidBodyNodes() const;
+  /// \brief Default destructor
+  virtual ~Particle();
 
   /// \brief
-  void init(double _timeStep = 0.001, const Eigen::Vector3d& _gravity =
-      Eigen::Vector3d(0.0, 0.0, -9.81));
+  void setMass(double _mass);
+
+  /// \brief
+  double getMass() const;
+
+  //------------------------------ Draw ----------------------------------------
 
 protected:
-  // Documentation inherited.
-  virtual void updateExternalForceVector();
-
-  // Documentation inherited.
-  virtual void updateDampingForceVector();
-
-  /// \brief Soft body node list.
-  std::vector<SoftBodyNode*> mSoftBodyNodes;
-
-private:
   /// \brief
-  std::vector<GenCoord*> mPointMassGenCoords;
+  GenCoord mCoordinate[3];
+
+  /// \brief Mass
+  double mMass;
+
+public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 }  // namespace dynamics
 }  // namespace dart
 
-#endif  // DART_DYNAMICS_SOFTSKELETON_H_
+#endif  // DART_DYNAMICS_PARTICLE_H_

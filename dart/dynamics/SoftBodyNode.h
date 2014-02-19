@@ -34,8 +34,8 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOFT_DYNAMICS_SOFTBODYNODE_H_
-#define SOFT_DYNAMICS_SOFTBODYNODE_H_
+#ifndef DART_DYNAMICS_SOFTBODYNODE_H_
+#define DART_DYNAMICS_SOFTBODYNODE_H_
 
 #define SOFT_DEFAULT_VERTEX_STIFFNESS (1.0)
 #define SOFT_DEFAULT_EDGE_STIFNESS    (1.0)
@@ -147,10 +147,10 @@ protected:
   virtual void updateEta_Issue122();
 
   // Documentation inherited.
-  virtual void updateAcceleration();
+  virtual void updateBodyAcceleration();
 
   // Documentation inherited.
-  virtual void updateBodyForce(const Eigen::Vector3d& _gravity,
+  virtual void updateBodyForceInvDyn(const Eigen::Vector3d& _gravity,
                                bool _withExternalForces = false);
 
   // Documentation inherited.
@@ -163,10 +163,10 @@ protected:
   virtual void updateBiasForce(double _timeStep, const Eigen::Vector3d& _gravity);
 
   // Documentation inherited.
-  virtual void update_ddq();
+  virtual void updateJointAcceleration();
 
   // Documentation inherited.
-  virtual void update_F_fs();
+  virtual void updateBodyForceFwdDyn();
 
   // Documentation inherited.
   virtual void updateMassMatrix();
@@ -314,4 +314,4 @@ public:
 }  // namespace dynamics
 }  // namespace dart
 
-#endif  // SOFT_DYNAMICS_SOFTBODYNODE_H_
+#endif  // DART_DYNAMICS_SOFTBODYNODE_H_

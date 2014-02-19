@@ -247,15 +247,15 @@ void SoftBodyNode::updateEta_Issue122()
     mPointMasses.at(i)->updateEta();
 }
 
-void SoftBodyNode::updateAcceleration()
+void SoftBodyNode::updateBodyAcceleration()
 {
-  BodyNode::updateAcceleration();
+  BodyNode::updateBodyAcceleration();
 
   for (int i = 0; i < mPointMasses.size(); ++i)
     mPointMasses.at(i)->updateAcceleration();
 }
 
-void SoftBodyNode::updateBodyForce(const Eigen::Vector3d& _gravity,
+void SoftBodyNode::updateBodyForceInvDyn(const Eigen::Vector3d& _gravity,
                                    bool _withExternalForces)
 {
   for (int i = 0; i < mPointMasses.size(); ++i)
@@ -434,17 +434,17 @@ void SoftBodyNode::updateBiasForce(double _timeStep,
   assert(!math::isNan(mBeta));
 }
 
-void SoftBodyNode::update_ddq()
+void SoftBodyNode::updateJointAcceleration()
 {
-  BodyNode::update_ddq();
+  BodyNode::updateJointAcceleration();
 
   for (int i = 0; i < mPointMasses.size(); ++i)
     mPointMasses.at(i)->update_ddq();
 }
 
-void SoftBodyNode::update_F_fs()
+void SoftBodyNode::updateBodyForceFwdDyn()
 {
-  BodyNode::update_F_fs();
+  BodyNode::updateBodyForceFwdDyn();
 
   for (int i = 0; i < mPointMasses.size(); ++i)
     mPointMasses.at(i)->update_F_fs();

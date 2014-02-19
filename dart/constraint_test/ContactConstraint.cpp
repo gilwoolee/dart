@@ -222,18 +222,24 @@ const Eigen::Vector3d&ContactConstraintTEST::getFirstFrictionlDir() const
 //==============================================================================
 void ContactConstraintTEST::preprocess()
 {
+  std::cout << "ContactConstraintTEST::preprocess(): "
+            << "Not implemented."
+            << std::endl;
 }
 
 //==============================================================================
 void ContactConstraintTEST::update()
 {
+  std::cout << "ContactConstraintTEST::update(): "
+            << "Not implemented."
+            << std::endl;
 }
 
 //==============================================================================
 void ContactConstraintTEST::fillLcpOde(ODELcp* _lcp, int _idx)
 {
   // Fill w, where the LCP form is Ax + b = w (x >= 0, w >= 0, x^T w = 0)
-  getRelVelocity(_lcp->w, _idx);
+  _getRelVelocity(_lcp->w, _idx);
 
   //----------------------------- Friction case --------------------------------
   if (_IsFrictionOn)
@@ -349,9 +355,9 @@ void ContactConstraintTEST::getDelVelocity(double* _delVel, int _idx)
 //==============================================================================
 void ContactConstraintTEST::excite()
 {
-  _exciteSystem1();
-  _exciteSystem2();
-  _exciteSystem1And2();
+  std::cout << "ContactConstraintTEST::excite(): "
+            << "Not implemented."
+            << std::endl;
 }
 
 //==============================================================================
@@ -404,7 +410,7 @@ void ContactConstraintTEST::applyImpulse(double* _lambda, int _idx)
 }
 
 //==============================================================================
-void ContactConstraintTEST::getRelVelocity(double* _relVel, int _idx)
+void ContactConstraintTEST::_getRelVelocity(double* _relVel, int _idx)
 {
   assert(_relVel != NULL && "Null pointer is not allowed.");
 
@@ -415,13 +421,13 @@ void ContactConstraintTEST::getRelVelocity(double* _relVel, int _idx)
     if (mBodyNode1->isImpulseReponsible())
     {
       _relVel[i + _idx]
-          -= mJacobians1[i].dot(mBodyNode1->getBodyVelocityChange());
+          -= mJacobians1[i].dot(mBodyNode1->getBodyVelocity());
     }
 
     if (mBodyNode2->isImpulseReponsible())
     {
       _relVel[i + _idx]
-          -= mJacobians2[i].dot(mBodyNode2->getBodyVelocityChange());
+          -= mJacobians2[i].dot(mBodyNode2->getBodyVelocity());
     }
   }
 }
@@ -437,29 +443,11 @@ bool ContactConstraintTEST::isActive()
 }
 
 //==============================================================================
-void ContactConstraintTEST::_exciteSystem1()
-{
-
-}
-
-//==============================================================================
-void ContactConstraintTEST::_exciteSystem2()
-{
-
-}
-
-//==============================================================================
-void ContactConstraintTEST::_exciteSystem1And2()
-{
-
-}
-
-
-
-//==============================================================================
 void ContactConstraintTEST::_updateVelocityChange(int _idx)
 {
-
+  std::cout << "ContactConstraintTEST::_exciteSystem1And2(): "
+            << "Not implemented."
+            << std::endl;
 }
 
 //==============================================================================

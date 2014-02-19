@@ -34,8 +34,8 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOFT_DYNAMICS_SOFTMESHSHAPE_H_
-#define SOFT_DYNAMICS_SOFTMESHSHAPE_H_
+#ifndef DART_DYNAMICS_SOFTMESHSHAPE_H_
+#define DART_DYNAMICS_SOFTMESHSHAPE_H_
 
 #include <vector>
 
@@ -91,4 +91,4 @@ private:
 }  // namespace dynamics
 }  // namespace dart
 
-#endif  // SOFT_DYNAMICS_SOFTMESHSHAPE_H_
+#endif  // DART_DYNAMICS_SOFTMESHSHAPE_H_

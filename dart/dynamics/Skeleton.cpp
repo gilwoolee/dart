@@ -41,6 +41,7 @@
 #include <string>
 #include <vector>
 
+#include "dart/common/Console.h"
 #include "dart/math/Geometry.h"
 #include "dart/math/Helpers.h"
 #include "dart/dynamics/BodyNode.h"
@@ -721,58 +722,68 @@ void Skeleton::computeInverseDynamicsLinear(bool _computeJacobian,
   // Forward recursion
   for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
        it != mBodyNodes.end(); ++it) {
-    (*it)->updateAcceleration();
+    (*it)->updateBodyAcceleration();
   }
 
   // Backward recursion
   for (std::vector<BodyNode*>::reverse_iterator it = mBodyNodes.rbegin();
        it != mBodyNodes.rend(); ++it) {
-    (*it)->updateBodyForce(mGravity, _withExternalForces);
+    (*it)->updateBodyForceInvDyn(mGravity, _withExternalForces);
     (*it)->updateGeneralizedForce(_withDampingForces);
   }
 }
 
-void Skeleton::clearExternalForceVector() {
+//==============================================================================
+void Skeleton::clearExternalForceVector()
+{
   for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
-       it != mBodyNodes.end(); ++it) {
+       it != mBodyNodes.end(); ++it)
+  {
     (*it)->clearExternalForces();
   }
 }
 
-void Skeleton::computeForwardDynamics() {
+//==============================================================================
+void Skeleton::computeForwardDynamics()
+{
   // Skip immobile or 0-dof skeleton
   if (!isMobile() || getNumGenCoords() == 0)
     return;
 
   // Backward recursion
   for (std::vector<BodyNode*>::reverse_iterator it = mBodyNodes.rbegin();
-       it != mBodyNodes.rend(); ++it) {
+       it != mBodyNodes.rend(); ++it)
+  {
     (*it)->updateBiasForce(mTimeStep, mGravity);
   }
 
   // Forward recursion
   for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
-       it != mBodyNodes.end(); ++it) {
-    (*it)->update_ddq();
-    (*it)->update_F_fs();
+       it != mBodyNodes.end(); ++it)
+  {
+    (*it)->updateJointAcceleration();
+    (*it)->updateBodyAcceleration();
+    (*it)->updateBodyForceFwdDyn();
   }
 }
 
+//==============================================================================
 void Skeleton::clearImpulseTest()
 {
   // Clear external impulses
   for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
        it != mBodyNodes.end(); ++it)
   {
-    (*it)->mImpBiasForce.setZero();
+    (*it)->mImpB.setZero();
   }
 
   // Clear velocity change
   set_del_dq(Eigen::VectorXd::Zero(getNumGenCoords()));
 }
 
+//==============================================================================
 void Skeleton::updateImpBiasForce(BodyNode* _bodyNode,
-                                        const Eigen::Vector6d& _imp)
+                                  const Eigen::Vector6d& _imp)
 {
   // Assertions
   assert(_bodyNode != NULL);
@@ -795,14 +806,36 @@ void Skeleton::updateVelocityChange()
   for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
        it != mBodyNodes.end(); ++it)
   {
-    (*it)->updateVelocityChange();
+//    (*it)->updateJointVelocityChange();
+    (*it)->updateBodyVelocityChange();
   }
 }
 
-void Skeleton::computeImpulseBasedForwardDynamics()
+void Skeleton::computeImpForwardDynamics()
 {
-  std::cout << "Skeleton::computeImpulseBasedForwardDynamics(): "
-            << "Not implemented yet." << std::endl;
+  // Skip immobile or 0-dof skeleton
+  if (!isMobile() || getNumGenCoords() == 0)
+    return;
+
+  // Backward recursion
+  for (std::vector<BodyNode*>::reverse_iterator it = mBodyNodes.rbegin();
+       it != mBodyNodes.rend(); ++it)
+  {
+    (*it)->updateImpBiasForce();
+  }
+
+  // Forward recursion
+  for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it)
+  {
+    (*it)->updateJointVelocityChange();
+    (*it)->updateBodyVelocityChange();
+    (*it)->updateBodyImpForceFwdDyn();
+  }
+
+  //DEBUG_CODE//////////////////////////////////////////////////////////////////
+  dtdbg << "Velocity change: " << get_del_dq().transpose() << std::endl;
+  //////////////////////////////////////////////////////////////////////////////
 }
 
 void Skeleton::setInternalForceVector(const Eigen::VectorXd& _forces) {

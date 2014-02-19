@@ -108,12 +108,12 @@ bool ConstrainedGroup::solve()
   // Build LCP terms by aggregating them from constraints
   ODELcp lcp(getTotalDimension());
 
+  // Fill LCP terms
+  _fillLCPTermsODE(&lcp);
+
   //////////////////////////////////////////////////////////////////////////////
   lcp.print();
   //////////////////////////////////////////////////////////////////////////////
-
-  // Fill LCP terms
-  _fillLCPTermsODE(&lcp);
 
   // Solve LCP
   bool result = _solveODE(&lcp);

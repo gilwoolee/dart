@@ -49,7 +49,8 @@
 #include "dart/dynamics/Skeleton.h"
 #include "dart/dynamics/Marker.h"
 
-#define DART_DEFAULT_FRICTIONAL_COEFF 0.4
+// TODO(JS): Testing... The original cor was 0.4
+#define DART_DEFAULT_FRICTIONAL_COEFF 0.0
 
 namespace dart {
 namespace dynamics {
@@ -467,7 +468,7 @@ void BodyNode::updateEta_Issue122() {
   }
 }
 
-void BodyNode::updateAcceleration() {
+void BodyNode::updateBodyAcceleration() {
   // dV(i) = Ad(T(i, i-1), dV(i-1))
   //         + ad(V(i), S * dq) + dS * dq
   //         + S * ddq
@@ -672,8 +673,8 @@ Eigen::Vector3d BodyNode::getAngularMomentum(const Eigen::Vector3d& _pivot) {
   return math::dAdT(T, mI * mV).head<3>();
 }
 
-void BodyNode::updateBodyForce(const Eigen::Vector3d& _gravity,
-                               bool _withExternalForces) {
+void BodyNode::updateBodyForceInvDyn(const Eigen::Vector3d& _gravity,
+                                     bool _withExternalForces) {
   if (mGravityMode == true)
     mFgravity.noalias() = mI * math::AdInvRLinear(mW, _gravity);
   else
@@ -806,6 +807,7 @@ void BodyNode::updateBiasForce(double _timeStep,
              + mParentJoint->getDampingForces();
     for (int i = 0; i < dof; i++) {
       int idx = mParentJoint->getGenCoord(i)->getSkeletonIndex();
+      // TODO(JS): Will be removed once new constraint solver is done.
       mAlpha(i) += mSkeleton->getConstraintForceVector()[idx];
     }
     mAlpha.noalias() -= mImplicitAI_S.transpose() * mEta;
@@ -822,77 +824,96 @@ void BodyNode::updateBiasForce(double _timeStep,
   assert(!math::isNan(mBeta));
 }
 
-void BodyNode::update_ddq() {
+//==============================================================================
+void BodyNode::updateJointAcceleration()
+{
   if (mParentJoint->getNumGenCoords() == 0)
     return;
 
   Eigen::VectorXd ddq;
-  if (mParentBodyNode) {
+  if (mParentBodyNode)
+  {
     ddq.noalias() =
         mImplicitPsi * (mAlpha - mImplicitAI_S.transpose() *
                         math::AdInvT(mParentJoint->getLocalTransform(),
                                      mParentBodyNode->getBodyAcceleration()));
-  } else {
+  }
+  else
+  {
     ddq.noalias() = mImplicitPsi * mAlpha;
   }
 
   mParentJoint->set_ddq(ddq);
   assert(!math::isNan(ddq));
-
-  updateAcceleration();
 }
 
-void BodyNode::update_F_fs() {
+//==============================================================================
+void BodyNode::updateBodyForceFwdDyn()
+{
   mF = mB;
   mF.noalias() = mAI * mdV;
   assert(!math::isNan(mF));
 }
 
+//==============================================================================
 void BodyNode::updateImpBiasForce()
 {
-  mImpBiasForce = -mImpFext;
+  mImpB = -mConstImp - mImpFext;
   for (std::vector<BodyNode*>::const_iterator it = mChildBodyNodes.begin();
        it != mChildBodyNodes.end(); ++it)
   {
-    mImpBiasForce
+    mImpB
         += math::dAdInvT((*it)->getParentJoint()->getLocalTransform(),
                          (*it)->mImpBeta);
   }
-  assert(!math::isNan(mImpBiasForce));
+  assert(!math::isNan(mImpB));
 
-  // Cache data: _ImpDynB
+  // Cache data: mImpAlpha
   int dof = mParentJoint->getNumGenCoords();
+  if (dof > 0)
+  {
+    mImpAlpha = mParentJoint->get_imp_tau()
+                - mParentJoint->getLocalJacobian().transpose() * mImpB;
+  }
+
+  // Cache data: mImpBeta
   if (mParentBodyNode)
   {
-    mImpBeta = mImpBiasForce;
+    mImpBeta = mImpB;
     if (dof > 0)
     {
       mImpBeta.noalias() += mAI_S_Psi
                             * mParentJoint->getLocalJacobian().transpose()
-                            * mImpBiasForce;
+                            * mImpB;
     }
   }
   assert(!math::isNan(mImpBeta));
 }
 
-void BodyNode::updateVelocityChange()
+//==============================================================================
+void BodyNode::updateJointVelocityChange()
 {
-  int dof = mParentJoint->getNumGenCoords();
-  if (dof > 0)
-  {
-    Eigen::VectorXd del_dq
-        = mPsi * mParentJoint->getLocalJacobian().transpose() * mImpBiasForce;
-    if (mParentBodyNode)
-    {
-      del_dq -= mAI_S_Psi.transpose()
-                * math::AdInvT(mParentJoint->getLocalTransform(),
-                               mParentBodyNode->mDelV);
-    }
+  if (mParentJoint->getNumGenCoords() == 0)
+    return;
 
-    mParentJoint->set_del_dq(del_dq);
+  Eigen::VectorXd del_dq
+      = mPsi * (mImpAlpha
+                - mParentJoint->getLocalJacobian().transpose() * mImpB);
+  if (mParentBodyNode)
+  {
+    del_dq -= mAI_S_Psi.transpose()
+              * math::AdInvT(mParentJoint->getLocalTransform(),
+                             mParentBodyNode->mDelV);
   }
 
-  if (dof > 0)
+  mParentJoint->set_del_dq(del_dq);
+  assert(!math::isNan(del_dq));
+}
+
+//==============================================================================
+void BodyNode::updateBodyVelocityChange()
+{
+  if (mParentJoint->getNumGenCoords() > 0)
     mDelV = mParentJoint->getLocalJacobian() * mParentJoint->get_del_dq();
   else
     mDelV.setZero();
@@ -906,6 +927,15 @@ void BodyNode::updateVelocityChange()
   assert(!math::isNan(mDelV));
 }
 
+//==============================================================================
+void BodyNode::updateBodyImpForceFwdDyn()
+{
+  mImpF = mImpB;
+  mImpF.noalias() = mAI * mDelV;
+  assert(!math::isNan(mImpF));
+}
+
+//==============================================================================
 const Eigen::Vector6d& BodyNode::getBodyVelocityChange() const
 {
   return mDelV;

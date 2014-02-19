@@ -258,21 +258,21 @@ public:
   virtual double getPotentialEnergy() const;
 
   //-------------------- Recursive dynamics algorithms -------------------------
-  /// \brief
+  /// \brief Initialize before inverse/forward dynamics compuation
   void init(double _timeStep = 0.001, const Eigen::Vector3d& _gravity =
       Eigen::Vector3d(0.0, 0.0, -9.81));
 
-  /// \brief (q, dq, ddq) --> (tau)
+  /// \brief Compute inverse dynamics
   void computeInverseDynamicsLinear(bool _computeJacobian = true,
                                     bool _computeJacobianDeriv = true,
                                     bool _withExternalForces = false,
                                     bool _withDampingForces = false);
 
-  /// \brief (q, dq, tau) --> (ddq)
+  /// \brief Compute forward dynamics
   void computeForwardDynamics();
 
-  /// \brief
-  void computeImpulseBasedForwardDynamics();
+  /// \brief Compute impulse-based forward dynamics
+  void computeImpForwardDynamics();
 
   //----------------------- Impulse-based dynamics -----------------------------
   /// \brief Clear velocity change and external impulses.

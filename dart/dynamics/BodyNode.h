@@ -44,6 +44,7 @@
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 
+#include "dart/common/Deprecated.h"
 #include "dart/math/Geometry.h"
 
 namespace dart {
@@ -338,16 +339,16 @@ public:
 
   //----------------------------------------------------------------------------
   /// \brief
-  void addContactForce(const Eigen::Vector6d& _contactForce);
+  DEPRECATED void addContactForce(const Eigen::Vector6d& _contactForce);
 
   /// \brief
-  int getNumContactForces() const;
+  DEPRECATED int getNumContactForces() const;
 
   /// \brief
-  const Eigen::Vector6d& getContactForce(int _idx);
+  DEPRECATED const Eigen::Vector6d& getContactForce(int _idx);
 
   /// \brief
-  void clearContactForces();
+  DEPRECATED void clearContactForces();
 
   /// \brief
   const Eigen::Vector6d& getExternalForceLocal() const;
@@ -397,54 +398,60 @@ protected:
   //--------------------------------------------------------------------------
   // Sub-functions for Recursive Kinematics Algorithms
   //--------------------------------------------------------------------------
-  /// \brief Update local transformations and world transformations.
+  /// \brief Update local transformations and world transformations
   virtual void updateTransform();
 
   /// @brief // TODO(JS): This is workaround for Issue #122.
   virtual void updateTransform_Issue122(double _timeStep);
 
-  /// \brief
+  /// \brief Update body velocity
   virtual void updateVelocity();
 
-  /// \brief
+  /// \brief Update eta for forward kinematics algorithm
   /// parentJoint.dS --> dJ
   virtual void updateEta();
 
   /// @brief // TODO(JS): This is workaround for Issue #122.
   virtual void updateEta_Issue122();
 
-  /// \brief
-  /// parentJoint.V, parentJoint.dV, parentBody.dV, V --> dV
-  virtual void updateAcceleration();
+  /// \brief Update body acceleration
+  virtual void updateBodyAcceleration();
 
-  /// \brief
-  /// childBodies.F, V, dV --> F, Fgravity
-  virtual void updateBodyForce(const Eigen::Vector3d& _gravity,
-                               bool _withExternalForces = false);
+  /// \brief Update body force for inverse dynamics algorithm
+  virtual void updateBodyForceInvDyn(const Eigen::Vector3d& _gravity,
+                                     bool _withExternalForces = false);
 
-  /// \brief
-  /// parentJoint.S, F --> tau
+  /// \brief Update generalized force for inverse dynamics algorithm
   virtual void updateGeneralizedForce(bool _withDampingForces = false);
 
-  /// \brief
+  /// \brief Update articulated inertia force for forward dynamics algorithm
   virtual void updateArticulatedInertia(double _timeStep);
 
-  /// \brief
+  /// \brief Update bias force for forward dynamics algorithm
   virtual void updateBiasForce(double _timeStep,
                                const Eigen::Vector3d& _gravity);
 
-  /// \brief
-  virtual void update_ddq();
+  /// \brief Update joint acceleration for forward dynamics algorithm
+  virtual void updateJointAcceleration();
 
-  /// \brief
-  virtual void update_F_fs();
+  /// \brief Update body force for forward dynamics algorithm
+  virtual void updateBodyForceFwdDyn();
 
   //------------------------ Impluse-based Dynamics ----------------------------
-  /// \brief
+  /// \brief Update impulsive bias force for impulse-based forward dynamics
+  ///        algorithm
   void updateImpBiasForce();
 
+  /// \brief Update joint velocity change for impulse-based forward dynamics
+  ///        algorithm
+  void updateJointVelocityChange();
+
+  /// \brief Update body velocity change for impulse-based forward dynamics
+  ///        algorithm
+  void updateBodyVelocityChange();
+
   /// \brief
-  void updateVelocityChange();
+  void updateBodyImpForceFwdDyn();
 
   //------------------------- Equations of Motion ------------------------------
   /// \brief
@@ -636,6 +643,7 @@ public:
   Eigen::Vector6d mFext_F;
 
   /// \brief
+  DEPRECATED
   std::vector<Eigen::Vector6d, Eigen::aligned_allocator<Eigen::Vector6d> >
   mContactForces;
 
@@ -660,13 +668,19 @@ public:
 
   /// \brief Impulsive bias force due to external impulsive force exerted on
   ///        bodies of the parent skeleton.
-  Eigen::Vector6d mImpBiasForce;
+  Eigen::Vector6d mImpB;
 
-  /// \brief Cache data for mImpulsiveBiasForce
+  /// \brief Cache data for mImpB
+  Eigen::Vector6d mImpAlpha;
+
+  /// \brief Cache data for mImpB
   Eigen::Vector6d mImpBeta;
 
   /// \brief Constraint impluse
   Eigen::Vector6d mConstImp;
+
+  /// \brief Generalized impulsive body force w.r.t. body frame.
+  Eigen::Vector6d mImpF;
 
   //----------------------------------------------------------------------------
   /// \brief Update body Jacobian. getBodyJacobian() calls this function if

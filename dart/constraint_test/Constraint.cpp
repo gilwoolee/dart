@@ -59,7 +59,7 @@ ODELcp::ODELcp(int _n)
   frictionIndex = new int[_n];
   dim = _n;
 
-  std::memset(A, 0, _n * nSkip * sizeof(double));
+//  std::memset(A, 0, _n * nSkip * sizeof(double));
   std::memset(frictionIndex, -1, _n * sizeof(int));
 }
 
@@ -79,11 +79,11 @@ ODELcp::~ODELcp()
 void ODELcp::print()
 {
   std::cout << "A: " << std::endl;
-  for (int i = 0; i < nSkip; ++i)
+  for (int i = 0; i < dim; ++i)
   {
-    for (int j = 0; j < dim; ++j)
+    for (int j = 0; j < nSkip; ++j)
     {
-      std::cout << A[i * dim + j] << " ";
+      std::cout << A[i * nSkip + j] << " ";
     }
     std::cout << std::endl;
   }
@@ -130,8 +130,6 @@ void ODELcp::print()
     std::cout << frictionIndex[i] << " ";
   }
   std::cout << std::endl;
-
-
 }
 
 //==============================================================================
