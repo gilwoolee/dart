@@ -83,7 +83,7 @@ public:
   virtual void fillLcpOde(ODELcp* _lcp, int _idx);
 
   // Documentaion inherited.
-  virtual void applyImpulse(int _idx);
+  virtual void applyUnitImpulse(int _idx);
 
   // Documentaion inherited.
   virtual void getDelVelocity(double* _delVel, int _idx);
@@ -95,7 +95,7 @@ public:
   virtual void unexcite();
 
   // Documentaion inherited.
-  virtual void setImpulse(double* _lambda, int _idx);
+  virtual void applyImpulse(double* _lambda, int _idx);
 
   //----------------------------- Solving --------------------------------------
   /// \brief Get change in relative velocity at contact point due to external

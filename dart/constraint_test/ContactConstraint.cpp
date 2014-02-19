@@ -294,7 +294,7 @@ void ContactConstraintTEST::fillLcpOde(ODELcp* _lcp, int _idx)
 }
 
 //==============================================================================
-void ContactConstraintTEST::applyImpulse(int _idx)
+void ContactConstraintTEST::applyUnitImpulse(int _idx)
 {
   assert(0 <= _idx && _idx < mDim && "Invalid Index.");
 
@@ -363,7 +363,7 @@ void ContactConstraintTEST::unexcite()
 }
 
 //==============================================================================
-void ContactConstraintTEST::setImpulse(double* _lambda, int _idx)
+void ContactConstraintTEST::applyImpulse(double* _lambda, int _idx)
 {
   //---------------------------- Friction case ---------------------------------
   if (_IsFrictionOn)

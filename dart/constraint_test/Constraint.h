@@ -105,7 +105,7 @@ public:
 
   //----------------- Pure virtual functions for solving -----------------------
   /// \brief
-  virtual void preprocess() {}
+  virtual void preprocess() = 0;
 
   /// \brief
   virtual void update() = 0;
@@ -113,8 +113,8 @@ public:
   /// \brief
   virtual void fillLcpOde(ODELcp* _lcp, int _idx) = 0;
 
-  /// \brief
-  virtual void applyImpulse(int _idx) {}
+  /// \brief Apply unit impulse to constraint space of _idx
+  virtual void applyUnitImpulse(int _idx) = 0;
 
   /// \brief
   virtual void getDelVelocity(double* _delVel, int _idx) = 0;
@@ -125,8 +125,8 @@ public:
   /// \brief
   virtual void unexcite() {}
 
-  /// \brief
-  virtual void setImpulse(double* _lambda, int _idx) = 0;
+  /// \brief Apply computed constraint impulse to constrained skeletons
+  virtual void applyImpulse(double* _lambda, int _idx) = 0;
 
   //----------------------------------------------------------------------------
   /// \brief

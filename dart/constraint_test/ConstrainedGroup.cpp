@@ -160,7 +160,7 @@ void ConstrainedGroup::_fillLCPTermsODE(ODELcp* _lcp)
 
     for (int j = 0; j < constraint->getDimension(); ++j)
     {
-      constraint->applyImpulse(j);
+      constraint->applyUnitImpulse(j);
 
       // Filling A matrix
       for (int k = i; k < mConstraints.size(); ++k)
