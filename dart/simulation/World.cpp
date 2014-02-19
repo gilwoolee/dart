@@ -108,8 +108,8 @@ void World::setControlInput() {
 
 Eigen::VectorXd World::evalDeriv()
 {
-//  return _evalDerivPrev();
-  return _evalDerivNew();
+  return _evalDerivPrev();
+//  return _evalDerivNew();
 }
 
 Eigen::VectorXd World::_evalDerivPrev()
@@ -345,7 +345,7 @@ void World::addSkeleton(dynamics::Skeleton* _skeleton) {
   _skeleton->init(mTimeStep, mGravity);
   mIndices.push_back(mIndices.back() + _skeleton->getNumGenCoords());
   mConstraintHandler->addSkeleton(_skeleton);
-  mConstraintSolver->addSkeleton(_skeleton);
+//  mConstraintSolver->addSkeleton(_skeleton);
 }
 
 void World::removeSkeleton(dynamics::Skeleton* _skeleton) {

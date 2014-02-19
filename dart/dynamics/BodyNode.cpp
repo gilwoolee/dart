@@ -210,11 +210,13 @@ bool BodyNode::isImpulseReponsible() const
     return false;
 }
 
-const Eigen::Isometry3d& BodyNode::getWorldTransform() const {
+const Eigen::Isometry3d& BodyNode::getWorldTransform() const
+{
   return mW;
 }
 
-const Eigen::Vector6d& BodyNode::getBodyVelocity() const {
+const Eigen::Vector6d& BodyNode::getBodyVelocity() const
+{
   return mV;
 }
 
@@ -425,17 +427,17 @@ void BodyNode::updateTransform_Issue122(double _timeStep) {
   mParentJoint->updateJacobian_Issue122();
 }
 
-void BodyNode::updateVelocity() {
-  //--------------------------------------------------------------------------
-  // Body velocity update
-  //
-  // V(i) = Ad(T(i, i-1), V(i-1)) + S * dq
-  //--------------------------------------------------------------------------
-
+//==============================================================================
+void BodyNode::updateVelocity()
+{
   if (mParentBodyNode)
   {
     mV = math::AdInvT(mParentJoint->getLocalTransform(),
                       mParentBodyNode->getBodyVelocity());
+  }
+  else
+  {
+    mV.setZero();
   }
 
   if (mParentJoint->getNumGenCoords() > 0)
@@ -444,7 +446,8 @@ void BodyNode::updateVelocity() {
   assert(!math::isNan(mV));
 }
 
-void BodyNode::updateEta() {
+void BodyNode::updateEta()
+{
   mParentJoint->updateJacobianTimeDeriv();
 
   if (mParentJoint->getNumGenCoords() > 0) {
@@ -468,18 +471,16 @@ void BodyNode::updateEta_Issue122() {
   }
 }
 
-void BodyNode::updateBodyAcceleration() {
-  // dV(i) = Ad(T(i, i-1), dV(i-1))
-  //         + ad(V(i), S * dq) + dS * dq
-  //         + S * ddq
-  //       = Ad(T(i, i-1), dV(i-1))
-  //         + eta
-  //         + S * ddq
-
+void BodyNode::updateBodyAcceleration()
+{
   if (mParentBodyNode)
   {
     mdV = math::AdInvT(mParentJoint->getLocalTransform(),
                        mParentBodyNode->getBodyAcceleration());
+  }
+  else
+  {
+    mdV.setZero();
   }
 
   if (mParentJoint->getNumGenCoords() > 0)

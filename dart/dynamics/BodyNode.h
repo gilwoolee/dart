@@ -671,7 +671,7 @@ public:
   Eigen::Vector6d mImpB;
 
   /// \brief Cache data for mImpB
-  Eigen::Vector6d mImpAlpha;
+  Eigen::VectorXd mImpAlpha;
 
   /// \brief Cache data for mImpB
   Eigen::Vector6d mImpBeta;

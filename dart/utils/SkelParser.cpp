@@ -356,6 +356,11 @@ dynamics::Shape* SkelParser::readShape(tinyxml2::XMLElement* vizEle) {
     tinyxml2::XMLElement* ellipsoidEle = getElement(geometryEle, "ellipsoid");
     Eigen::Vector3d       size         = getValueVector3d(ellipsoidEle, "size");
     newShape = new dynamics::EllipsoidShape(size);
+  } else if (hasElement(geometryEle, "sphere")) {
+    tinyxml2::XMLElement* sphereEle    = getElement(geometryEle, "sphere");
+    double                radius       = getValueDouble(sphereEle, "radius");
+    Eigen::Vector3d       size         = Eigen::Vector3d(radius, radius, radius);
+    newShape = new dynamics::EllipsoidShape(size);
   } else if (hasElement(geometryEle, "cylinder")) {
     tinyxml2::XMLElement* cylinderEle  = getElement(geometryEle, "cylinder");
     double                radius       = getValueDouble(cylinderEle, "radius");
