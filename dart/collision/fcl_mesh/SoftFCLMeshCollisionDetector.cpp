@@ -150,6 +150,8 @@ bool SoftFCLMeshCollisionDetector::detectCollision(bool _checkAllCollisions,
   nContacts = mContacts.size();
   if (nContacts < 1)
     return true;
+  else
+    return false;
 }
 
 dynamics::PointMass* SoftFCLMeshCollisionDetector::selectCollidingPointMass(

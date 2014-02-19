@@ -356,11 +356,13 @@ bool ConstraintSolverTEST::_checkAndAddSkeleton(Skeleton* _skeleton)
   if (!_containSkeleton(_skeleton))
   {
     mSkeletons.push_back(_skeleton);
+    return true;
   }
   else
   {
     dtwarn << "Skeleton [" << _skeleton->getName()
            << "] is already in ConstraintSolver." << std::endl;
+    return false;
   }
 }
 
@@ -368,13 +370,18 @@ bool ConstraintSolverTEST::_checkAndAddSkeleton(Skeleton* _skeleton)
 bool ConstraintSolverTEST::_containConstraint(
     const ConstraintTEST* _constraint) const
 {
+  std::cout << "ConstraintSolverTEST::_containConstraint(): "
+            << "Not implemented."
+            << std::endl;
 
+  return false;
 }
 
 //==============================================================================
 bool ConstraintSolverTEST::_checkAndAddConstraint(ConstraintTEST* _constraint)
 {
-  std::cout << "ConstraintSolverTEST::_checkAndAddConstraint(): Not implemented."
+  std::cout << "ConstraintSolverTEST::_checkAndAddConstraint(): "
+            << "Not implemented."
             << std::endl;
 
   if (!_containConstraint(_constraint))
@@ -386,6 +393,8 @@ bool ConstraintSolverTEST::_checkAndAddConstraint(ConstraintTEST* _constraint)
 //    dtwarn << "Constraint [" << _constraint->getName()
 //           << "] is already in ConstraintSolver." << std::endl;
   }
+
+  return false;
 }
 
 //==============================================================================

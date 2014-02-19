@@ -42,73 +42,73 @@
 #include "dart/optimizer/ObjectiveBox.h"
 #include "dart/optimizer/snopt/SnoptSolver.h"
 
-/* ********************************************************************************************* *
-class SampleConstraint : public optimizer::Constraint {
-public:
-    SampleConstraint(std::vector<optimizer::Var *>& var, int index, double target)
-        : optimizer::Constraint(var), mIndex(index), mTarget(target) {
-        mNumRows = 1;
+////==============================================================================
+//class SampleConstraint : public optimizer::Constraint {
+//public:
+//    SampleConstraint(std::vector<optimizer::Var *>& var, int index, double target)
+//        : optimizer::Constraint(var), mIndex(index), mTarget(target) {
+//        mNumRows = 1;
 
-        mWeight = Eigen::VectorXd::Ones(1);
-        mConstTerm = Eigen::VectorXd::Zero(1);
-        mCompletion = Eigen::VectorXd::Zero(1);
-    }
+//        mWeight = Eigen::VectorXd::Ones(1);
+//        mConstTerm = Eigen::VectorXd::Zero(1);
+//        mCompletion = Eigen::VectorXd::Zero(1);
+//    }
     
-    virtual Eigen::VectorXd evalCon() {
-        std::vector<optimizer::Var *>& vars = mVariables;
-        Eigen::VectorXd x(1);
-        x(0) = vars[mIndex]->mVal - mTarget;
-        return x;
-    }
+//    virtual Eigen::VectorXd evalCon() {
+//        std::vector<optimizer::Var *>& vars = mVariables;
+//        Eigen::VectorXd x(1);
+//        x(0) = vars[mIndex]->mVal - mTarget;
+//        return x;
+//    }
 
-    virtual void fillJac(optimizer::VVD, int index) {}
-    virtual void fillJac(optimizer::VVD, optimizer::VVB, int index) {}
-    virtual void fillObjGrad(std::vector<double>& dG) {
-        VectorXd dP = evalCon();
+//    virtual void fillJac(optimizer::VVD, int index) {}
+//    virtual void fillJac(optimizer::VVD, optimizer::VVB, int index) {}
+//    virtual void fillObjGrad(std::vector<double>& dG) {
+//        VectorXd dP = evalCon();
 
-        for (unsigned int i = 0; i < mVariables.size(); i++){
-            const optimizer::Var* var = mVariables[i];
-            VectorXd J(1);
-            if (i == mIndex) {
-                J(0) = 1.0;
-            } else {
-                J(1) = 0.0;
-            }
+//        for (unsigned int i = 0; i < mVariables.size(); i++){
+//            const optimizer::Var* var = mVariables[i];
+//            VectorXd J(1);
+//            if (i == mIndex) {
+//                J(0) = 1.0;
+//            } else {
+//                J(1) = 0.0;
+//            }
 
-            J /= var->mWeight;
-            dG.at(i) += dP.dot(J);
-        }
-    }
+//            J /= var->mWeight;
+//            dG.at(i) += dP.dot(J);
+//        }
+//    }
 
-private:
-    int mIndex;
-    double mTarget;
-};
+//private:
+//    int mIndex;
+//    double mTarget;
+//};
 
-/* ********************************************************************************************* *
-TEST(SIMPLE_SNOPT, OPTIMIZER) {
-    using namespace optimizer;
+////==============================================================================
+//TEST(SIMPLE_SNOPT, OPTIMIZER) {
+//    using namespace optimizer;
     
-    Problem prob;
-    prob.addVariable(0.0, -10.0, 10.0);
-    prob.createBoxes();
+//    Problem prob;
+//    prob.addVariable(0.0, -10.0, 10.0);
+//    prob.createBoxes();
 
-    SampleConstraint* c = new SampleConstraint(
-        prob.vars(), 0, 3.0);
-    prob.objBox()->add(c);
+//    SampleConstraint* c = new SampleConstraint(
+//        prob.vars(), 0, 3.0);
+//    prob.objBox()->add(c);
 
-    snopt::SnoptSolver solver(&prob);
-    solver.solve();
+//    snopt::SnoptSolver solver(&prob);
+//    solver.solve();
 
-    Eigen::VectorXd sol = solver.getState();
-    const double TOLERANCE = 0.000001;
-    EXPECT_EQ(sol.size(), 1);
-    EXPECT_NEAR(sol(0), 3.0, TOLERANCE);
-}
+//    Eigen::VectorXd sol = solver.getState();
+//    const double TOLERANCE = 0.000001;
+//    EXPECT_EQ(sol.size(), 1);
+//    EXPECT_NEAR(sol(0), 3.0, TOLERANCE);
+//}
 
-/* ********************************************************************************************* */
+//==============================================================================
 int main(int argc, char* argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
-/* ********************************************************************************************* */
+

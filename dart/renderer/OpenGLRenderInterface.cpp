@@ -43,6 +43,7 @@
 #include "dart/dynamics/BoxShape.h"
 #include "dart/dynamics/CylinderShape.h"
 #include "dart/dynamics/EllipsoidShape.h"
+#include "dart/dynamics/PlaneShape.h"
 #include "dart/dynamics/MeshShape.h"
 #include "dart/renderer/LoadOpengl.h"
 #include "dart/renderer/OpenGLRenderInterface.h"
@@ -429,6 +430,10 @@ void OpenGLRenderInterface::compileList(dynamics::Shape *_shape) {
             break;
         case dynamics::Shape::ELLIPSOID:
             break;
+        case dynamics::Shape::PLANE:
+           break;
+        case dynamics::Shape::SOFT_MESH:
+            break;
         case dynamics::Shape::MESH:
             //FIXME: Separate these calls once BodyNode is refactored to contain
             // both a col Shape and vis Shape.
@@ -535,6 +540,13 @@ void OpenGLRenderInterface::draw(dynamics::Shape *_shape) {
             drawEllipsoid(ellipsoid->getSize());
             break;
         }
+        case dynamics::Shape::PLANE: {
+            //FIXME: We are not in a glut instance
+            dynamics::PlaneShape* plane = static_cast<dynamics::PlaneShape*>(_shape);
+            //TODO(JS): We don't have drawer function for plane shape
+//            drawPlane(plane->getPoint());
+            break;
+        }
         case dynamics::Shape::MESH: {
             glDisable(GL_COLOR_MATERIAL); // Use mesh colors to draw
 
@@ -547,6 +559,11 @@ void OpenGLRenderInterface::draw(dynamics::Shape *_shape) {
             else
                 drawMesh(mesh->getScale(), mesh->getMesh());
 
+            break;
+        }
+        case dynamics::Shape::SOFT_MESH: {
+            //FIXME: We are not in a glut instance
+            //TODO(JS): Not implemented yet.
             break;
         }
     }
