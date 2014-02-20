@@ -775,10 +775,13 @@ void Skeleton::clearImpulseTest()
        it != mBodyNodes.end(); ++it)
   {
     (*it)->mImpB.setZero();
+    (*it)->mImpFext.setZero();
+    (*it)->mConstImp.setZero();
   }
 
   // Clear velocity change
   set_del_dq(Eigen::VectorXd::Zero(getNumGenCoords()));
+  set_imp_tau(Eigen::VectorXd::Zero(getNumGenCoords()));
 }
 
 //==============================================================================

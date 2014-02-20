@@ -112,6 +112,8 @@ private:
 
 //  bool _solvePGS();
 
+  void _applyODE(ODELcp* _lcp);
+
 //  // Matrices to pass to solver
 //  Eigen::MatrixXd mA;
 //  Eigen::VectorXd mQBar;

@@ -40,6 +40,7 @@
 #include <iostream>
 #include <vector>
 
+#include "dart/common/Console.h"
 #include "dart/lcpsolver/LCPSolver.h"
 #include "dart/lcpsolver/Lemke.h"
 #include "dart/lcpsolver/lcp.h"
@@ -112,11 +113,18 @@ bool ConstrainedGroup::solve()
   _fillLCPTermsODE(&lcp);
 
   //////////////////////////////////////////////////////////////////////////////
+  dtmsg << "Before solve" << std::endl;
   lcp.print();
   //////////////////////////////////////////////////////////////////////////////
 
   // Solve LCP
   bool result = _solveODE(&lcp);
+
+  dtmsg << "After solve" << std::endl;
+  lcp.print();
+
+  // Apply impulse
+  _applyODE(&lcp);
 
   return result;
 }
@@ -182,6 +190,8 @@ void ConstrainedGroup::_fillLCPTermsODE(ODELcp* _lcp)
       }
     }
   }
+
+  delete[] offsetIndex;
 }
 
 //==============================================================================
@@ -196,15 +206,24 @@ bool ConstrainedGroup::_solveODE(ODELcp* _lcp)
   dSolveLCP(_lcp->dim, _lcp->A, _lcp->x, _lcp->b,
             _lcp->w, 0, _lcp->lb, _lcp->ub, _lcp->frictionIndex);
 
-  // Apply constraint impulses
-  for (std::vector<ConstraintTEST*>::const_iterator it = mConstraints.begin();
-       it != mConstraints.end(); ++it)
-  {
-//    n += (*it)->applyConstraintImpulse();
-  }
-
   // TODO(JS): Do we need to return boolean?
   return true;
+}
+
+//==============================================================================
+void ConstrainedGroup::_applyODE(ODELcp* _lcp)
+{
+  // Compute offset indices
+  int* offsetIndex = new int[_lcp->dim];
+  offsetIndex[0] = 0;
+  for (int i = 1; i < mConstraints.size(); ++i)
+    offsetIndex[i] = offsetIndex[i - 1] + mConstraints[i - 1]->getDimension();
+
+  // Apply constraint impulses
+  for (int i = 0; i < mConstraints.size(); ++i)
+    mConstraints[i]->applyConstraintImpulse(_lcp->x, offsetIndex[i]);
+
+  delete[] offsetIndex;
 }
 
 //==============================================================================

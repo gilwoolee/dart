@@ -126,7 +126,7 @@ public:
   virtual void unexcite() {}
 
   /// \brief Apply computed constraint impulse to constrained skeletons
-  virtual void applyImpulse(double* _lambda, int _idx) = 0;
+  virtual void applyConstraintImpulse(double* _lambda, int _idx) = 0;
 
   //----------------------------------------------------------------------------
   /// \brief

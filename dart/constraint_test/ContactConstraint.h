@@ -96,7 +96,7 @@ public:
   virtual void unexcite();
 
   // Documentaion inherited.
-  virtual void applyImpulse(double* _lambda, int _idx);
+  virtual void applyConstraintImpulse(double* _lambda, int _idx);
 
   //----------------------------- Solving --------------------------------------
   /// \brief
@@ -135,10 +135,10 @@ private:
   /// \brief
   Eigen::MatrixXd _getTangentBasisMatrixODE(const Eigen::Vector3d& _n);
 
-  /// \brief Local jacobians for mBodyNode1
+  /// \brief Local body jacobians for mBodyNode1
   std::vector<Eigen::Vector6d> mJacobians1;
 
-  /// \brief Local jacobians for mBodyNode1
+  /// \brief Local body jacobians for mBodyNode2
   std::vector<Eigen::Vector6d> mJacobians2;
 
   /// \brief

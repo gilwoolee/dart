@@ -48,6 +48,8 @@ GenCoord::GenCoord()
     dq(0.0),
     ddq(0.0),
     tau(0.0),
+    del_dq(0.0),
+    imp_tau(0.0),
     qMin(-std::numeric_limits<double>::infinity()),
     dqMin(-std::numeric_limits<double>::infinity()),
     ddqMin(-std::numeric_limits<double>::infinity()),

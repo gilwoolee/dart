@@ -859,7 +859,9 @@ void BodyNode::updateBodyForceFwdDyn()
 //==============================================================================
 void BodyNode::updateImpBiasForce()
 {
-  mImpB = -mConstImp - mImpFext;
+  // Update impulsive bias force
+  mImpB = -mConstImp;// - mImpFext;
+//  assert(mImpFext == Eigen::Vector6d::Zero());
   for (std::vector<BodyNode*>::const_iterator it = mChildBodyNodes.begin();
        it != mChildBodyNodes.end(); ++it)
   {
@@ -906,6 +908,8 @@ void BodyNode::updateJointVelocityChange()
               * math::AdInvT(mParentJoint->getLocalTransform(),
                              mParentBodyNode->mDelV);
   }
+
+  std::cout << "del_dq: " << del_dq.transpose() << std::endl;
 
   mParentJoint->set_del_dq(del_dq);
   assert(!math::isNan(del_dq));

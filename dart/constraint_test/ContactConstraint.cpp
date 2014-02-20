@@ -113,9 +113,9 @@ ContactConstraintTEST::ContactConstraintTEST(const collision::Contact& _contact)
           = mBodyNode2->getWorldTransform().linear().transpose() * -ct.normal;
 
       bodyPoint1.noalias()
-          = mBodyNode1->getWorldTransform().linear() * ct.point;
+          = mBodyNode1->getWorldTransform().inverse() * ct.point;
       bodyPoint2.noalias()
-          = mBodyNode2->getWorldTransform().linear() * ct.point;
+          = mBodyNode2->getWorldTransform().inverse() * ct.point;
 
       mJacobians1[idx].head<3>().noalias() = bodyPoint1.cross(bodyDirection1);
       mJacobians2[idx].head<3>().noalias() = bodyPoint2.cross(bodyDirection2);
@@ -132,9 +132,9 @@ ContactConstraintTEST::ContactConstraintTEST(const collision::Contact& _contact)
           = mBodyNode2->getWorldTransform().linear().transpose() * -D.col(0);
 
       bodyPoint1.noalias()
-          = mBodyNode1->getWorldTransform().linear() * ct.point;
+          = mBodyNode1->getWorldTransform().inverse() * ct.point;
       bodyPoint2.noalias()
-          = mBodyNode2->getWorldTransform().linear() * ct.point;
+          = mBodyNode2->getWorldTransform().inverse() * ct.point;
 
       mJacobians1[idx].head<3>().noalias() = bodyPoint1.cross(bodyDirection1);
       mJacobians2[idx].head<3>().noalias() = bodyPoint2.cross(bodyDirection2);
@@ -151,9 +151,9 @@ ContactConstraintTEST::ContactConstraintTEST(const collision::Contact& _contact)
           = mBodyNode2->getWorldTransform().linear().transpose() * -D.col(1);
 
       bodyPoint1.noalias()
-          = mBodyNode1->getWorldTransform().linear() * ct.point;
+          = mBodyNode1->getWorldTransform().inverse() * ct.point;
       bodyPoint2.noalias()
-          = mBodyNode2->getWorldTransform().linear() * ct.point;
+          = mBodyNode2->getWorldTransform().inverse() * ct.point;
 
       mJacobians1[idx].head<3>().noalias() = bodyPoint1.cross(bodyDirection1);
       mJacobians2[idx].head<3>().noalias() = bodyPoint2.cross(bodyDirection2);
@@ -188,9 +188,9 @@ ContactConstraintTEST::ContactConstraintTEST(const collision::Contact& _contact)
           = mBodyNode2->getWorldTransform().linear().transpose() * -ct.normal;
 
       bodyPoint1.noalias()
-          = mBodyNode1->getWorldTransform().linear() * ct.point;
+          = mBodyNode1->getWorldTransform().inverse() * ct.point;
       bodyPoint2.noalias()
-          = mBodyNode2->getWorldTransform().linear() * ct.point;
+          = mBodyNode2->getWorldTransform().inverse() * ct.point;
 
       mJacobians1[i].head<3>().noalias() = bodyPoint1.cross(bodyDirection1);
       mJacobians2[i].head<3>().noalias() = bodyPoint2.cross(bodyDirection2);
@@ -369,7 +369,7 @@ void ContactConstraintTEST::unexcite()
 }
 
 //==============================================================================
-void ContactConstraintTEST::applyImpulse(double* _lambda, int _idx)
+void ContactConstraintTEST::applyConstraintImpulse(double* _lambda, int _idx)
 {
   //---------------------------- Friction case ---------------------------------
   if (_IsFrictionOn)
