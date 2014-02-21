@@ -151,13 +151,17 @@ public:
   /// \brief
   void setLocalCOM(const Eigen::Vector3d& _com);
 
-  /// \brief Get a point vector from the origin of body frame to the center of
-  ///        mass in the body frame.
+  /// \brief Get body's COM w.r.t. body frame.
   const Eigen::Vector3d& getLocalCOM() const;
 
-  /// \brief Get a point vector from the origin world frame to the center of
-  ///        mass in the world frame.
+  /// \brief Get body's COM w.r.t. world frame.
   Eigen::Vector3d getWorldCOM() const;
+
+  /// \brief Get body's COM velocity w.r.t. world frame.
+  Eigen::Vector3d getWorldCOMVelocity() const;
+
+  /// \brief Get body's COM acceleration w.r.t. world frame.
+  Eigen::Vector3d getWorldCOMAcceleration() const;
 
   /// \brief
   Eigen::Matrix6d getInertia() const;
@@ -222,7 +226,7 @@ public:
   /// \param[in] _genCoordIndex Index of generalized coordinate in the
   ///                           skeleton.
   /// \warning You may want to use getNumDependentGenCoords or
-  ///          getDependentGenCoord for efficiency.
+  ///          getDependentGenCoordIndex for efficiency.
   bool dependsOn(int _genCoordIndex) const;
 
   /// \brief The number of the generalized coordinates by which this node is
@@ -231,7 +235,7 @@ public:
 
   /// \brief Return a generalized coordinate index from the array index
   ///        (< getNumDependentDofs).
-  int getDependentGenCoord(int _arrayIndex) const;
+  int getDependentGenCoordIndex(int _arrayIndex) const;
 
   //--------------------------------------------------------------------------
   // Properties updated by dynamics (kinematics)
@@ -282,7 +286,7 @@ public:
   /// \brief Get time derivative of generalized Jacobian at the origin of this
   ///        body node where the Jacobian is expressed in this body node
   ///        frame.
-  const math::Jacobian& getBodyJacobianTimeDeriv() const;
+  const math::Jacobian& getBodyJacobianTimeDeriv();
 
   /// \brief Get time derivative of generalized Jacobian at a point on this
   ///        body node where the time derivative of Jacobian is expressed in
@@ -292,7 +296,7 @@ public:
   ///                     False if _offset is expressed in the world frame.
   math::Jacobian getWorldJacobianTimeDeriv(
       const Eigen::Vector3d& _offset = Eigen::Vector3d::Zero(),
-      bool _isOffsetLocal            = false) const;
+      bool _isOffsetLocal            = false);
 
   /// \brief Set whether this body node is colliding with others.
   /// \param[in] True if this body node is colliding.
@@ -334,7 +338,7 @@ public:
   ///        mExtForceBody and mExtTorqueBody.
   ///
   /// Called from @Skeleton::clearExternalForces.
-  void clearExternalForces();
+  virtual void clearExternalForces();
 
   /// \brief
   void addContactForce(const Eigen::Vector6d& _contactForce);
@@ -358,7 +362,10 @@ public:
   const Eigen::Vector6d& getBodyForce() const;
 
   /// \brief Get kinetic energy.
-  double getKineticEnergy() const;
+  virtual double getKineticEnergy() const;
+
+  /// \brief Get potential energy.
+  virtual double getPotentialEnergy(const Eigen::Vector3d& _gravity) const;
 
   /// \brief Get linear momentum.
   Eigen::Vector3d getLinearMomentum() const;
@@ -380,7 +387,9 @@ public:
                    const Eigen::Vector4d& _color = Eigen::Vector4d::Ones(),
                    bool _useDefaultColor = true) const;
 
-protected:
+// TODO(JS): Temporary change for soft body dynamics
+// protected:
+public:
   /// \brief Initialize the vector members with proper sizes.
   virtual void init(Skeleton* _skeleton, int _skeletonIndex);
 
@@ -404,10 +413,10 @@ protected:
 
   /// \brief
   /// parentJoint.dS --> dJ
-  virtual void updateEta(bool _updateJacobianDeriv = false);
+  virtual void updateEta();
 
   /// @brief // TODO(JS): This is workaround for Issue #122.
-  virtual void updateEta_Issue122(bool _updateJacobianDeriv = false);
+  virtual void updateEta_Issue122();
 
   /// \brief
   /// parentJoint.V, parentJoint.dV, parentBody.dV, V --> dV
@@ -436,28 +445,33 @@ protected:
   virtual void update_F_fs();
 
   /// \brief
-  void updateMassMatrix();
-  void aggregateMassMatrix(Eigen::MatrixXd* _MCol, int _col);
+  virtual void updateMassMatrix();
+  virtual void aggregateMassMatrix(Eigen::MatrixXd* _MCol, int _col);
+  virtual void aggregateAugMassMatrix(Eigen::MatrixXd* _MCol, int _col,
+                                      double _timeStep);
 
   /// \brief
-  void updateMassInverseMatrix();
-  void aggregateInvMassMatrix(Eigen::MatrixXd* _MInvCol, int _col);
+  virtual void updateInvMassMatrix();
+  virtual void updateInvAugMassMatrix();
+  virtual void aggregateInvMassMatrix(Eigen::MatrixXd* _InvMCol, int _col);
+  virtual void aggregateInvAugMassMatrix(Eigen::MatrixXd* _InvMCol, int _col,
+                                         double _timeStep);
 
   /// \brief
-  void aggregateCoriolisForceVector(Eigen::VectorXd* _C);
+  virtual void aggregateCoriolisForceVector(Eigen::VectorXd* _C);
 
   /// \brief
-  void aggregateGravityForceVector(Eigen::VectorXd* _g,
-                                   const Eigen::Vector3d& _gravity);
+  virtual void aggregateGravityForceVector(Eigen::VectorXd* _g,
+                                           const Eigen::Vector3d& _gravity);
 
   /// \brief
-  void updateCombinedVector();
-  void aggregateCombinedVector(Eigen::VectorXd* _Cg,
-                               const Eigen::Vector3d& _gravity);
+  virtual void updateCombinedVector();
+  virtual void aggregateCombinedVector(Eigen::VectorXd* _Cg,
+                                       const Eigen::Vector3d& _gravity);
 
   /// \brief Aggregate the external forces mFext in the generalized
   ///        coordinates recursively.
-  void aggregateExternalForces(Eigen::VectorXd* _Fext);
+  virtual void aggregateExternalForces(Eigen::VectorXd* _Fext);
 
   //--------------------------------------------------------------------------
   // General properties
@@ -530,14 +544,17 @@ protected:
   /// \brief World transformation.
   Eigen::Isometry3d mW;
 
-  /// \brief
+  /// \brief Body Jacobian.
   math::Jacobian mBodyJacobian;
 
-  /// \brief
+  /// \brief Dirty flag for body Jacobian.
   bool mIsBodyJacobianDirty;
 
-  /// \brief
+  /// \brief Time derivative of body Jacobian.
   math::Jacobian mBodyJacobianTimeDeriv;
+
+  /// \brief Dirty flag for time derivative of body Jacobian.
+  bool mIsBodyJacobianTimeDerivDirty;
 
   /// \brief Generalized body velocity w.r.t. body frame.
   Eigen::Vector6d mV;
@@ -560,6 +577,9 @@ protected:
   /// \brief Articulated inertia
   math::Inertia mAI;
 
+  /// \brief Articulated inertia
+  math::Inertia mImplicitAI;
+
   /// \brief Bias force
   Eigen::Vector6d mB;
 
@@ -567,7 +587,13 @@ protected:
   math::Jacobian mAI_S;
 
   /// \brief
+  math::Jacobian mImplicitAI_S;
+
+  /// \brief
   math::Jacobian mAI_S_Psi;
+
+  /// \brief
+  math::Jacobian mImplicitAI_S_ImplicitPsi;
 
   /// \brief
   Eigen::MatrixXd mPsi;
@@ -579,6 +605,9 @@ public:  // TODO(JS): This will be removed once Node class is implemented.
   /// \brief
   math::Inertia mPi;
 
+  /// \brief
+  math::Inertia mImplicitPi;
+
 protected:  // TODO(JS):
   /// \brief
   Eigen::VectorXd mAlpha;
@@ -587,7 +616,9 @@ public:  // TODO(JS): This will be removed once Node class is implemented.
   /// \brief
   Eigen::Vector6d mBeta;
 
-protected:
+// TODO(JS): Temporary code for soft body dynamics
+// protected:
+public:
   /// \brief Cache data for combined vector of the system.
   Eigen::Vector6d mCg_dV;
   Eigen::Vector6d mCg_F;
@@ -607,14 +638,19 @@ protected:
   Eigen::Vector6d mM_F;
 
   /// \brief Cache data for inverse mass matrix of the system.
-  Eigen::VectorXd mMInv_a;
-  Eigen::Vector6d mMInv_b;
-  Eigen::Vector6d mMInv_c;
-  Eigen::VectorXd mMInv_MInvVec;
-  Eigen::Vector6d mMInv_U;
+  Eigen::VectorXd mInvM_a;
+  Eigen::Vector6d mInvM_b;
+  Eigen::Vector6d mInvM_c;
+  Eigen::VectorXd mInvM_MInvVec;
+  Eigen::Vector6d mInvM_U;
 
-  /// \brief
+  /// \brief Update body Jacobian. getBodyJacobian() calls this function if
+  ///        mIsBodyJacobianDirty is true.
   void _updateBodyJacobian();
+
+  /// \brief Update time derivative of body Jacobian. getBodyJacobianTimeDeriv()
+  ///        calls this function if mIsBodyJacobianTimeDerivDirty is true.
+  void _updateBodyJacobianTimeDeriv();
 
 private:
   /// \brief

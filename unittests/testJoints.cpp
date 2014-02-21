@@ -50,6 +50,7 @@
 #include "dart/dynamics/WeldJoint.h"
 #include "dart/dynamics/EulerJoint.h"
 #include "dart/dynamics/ScrewJoint.h"
+#include "dart/dynamics/PlanarJoint.h"
 #include "dart/dynamics/BodyNode.h"
 #include "dart/dynamics/Skeleton.h"
 #include "dart/simulation/World.h"
@@ -72,6 +73,8 @@ public:
 /******************************************************************************/
 void JOINTS::kinematicsTest(Joint* _joint)
 {
+    int numTests = 100;
+
     BodyNode* bodyNode = new BodyNode();
     bodyNode->setParentJoint(_joint);
 
@@ -191,6 +194,24 @@ void JOINTS::kinematicsTest(Joint* _joint)
             for (int j = 0; j < 6; ++j)
                 EXPECT_NEAR(dJ.col(i)(j), numeric_dJ.col(i)(j), JOINT_TOL);
     }
+
+    // Forward kinematics test with high joint position
+    double posMin = -1e+64;
+    double posMax = +1e+64;
+
+    for (int idxTest = 0; idxTest < numTests; ++idxTest)
+    {
+        for (int i = 0; i < dof; ++i)
+            q(i) = random(posMin, posMax);
+
+        skeleton.setConfig(q);
+
+        if (_joint->getNumGenCoords() == 0)
+            return;
+
+        Eigen::Isometry3d T = _joint->getLocalTransform();
+        EXPECT_TRUE(math::verifyTransform(T));
+    }
 }
 
 // 0-dof joint
@@ -261,6 +282,14 @@ TEST_F(JOINTS, TRANSLATIONAL_JOINT)
     TranslationalJoint* translationalJoint = new TranslationalJoint;
 
     kinematicsTest(translationalJoint);
+}
+
+// 3-dof joint
+TEST_F(JOINTS, PLANAR_JOINT)
+{
+    PlanarJoint* planarJoint = new PlanarJoint;
+
+    kinematicsTest(planarJoint);
 }
 
 // 6-dof joint

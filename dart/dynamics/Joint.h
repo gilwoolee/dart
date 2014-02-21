@@ -70,9 +70,9 @@ public:
     PRISMATIC,      // 1-dof
     SCREW,          // 1-dof
     UNIVERSAL,      // 2-dof
-    PLANAR,         // 2-dof
     TRANSLATIONAL,  // 3-dof
     BALL,           // 3-dof
+    PLANAR,         // 3-dof
     EULER,          // 3-dof
     FREE            // 6-dof
   };
@@ -170,15 +170,20 @@ public:
   /// \brief Set spring stiffness for spring force.
   /// \param[in] _idx Index of joint axis.
   /// \param[in] _k Spring stiffness.
-  /// \param[in] _q0 Rest position.
-  void setSpringStiffness(int _idx, double _k, double _q0 = 0.0);
+  void setSpringStiffness(int _idx, double _k);
 
   /// \brief Get spring stiffnes for spring force.
   /// \param[in] _idx Index of joint axis.
   double getSpringStiffness(int _idx) const;
 
+  /// \brief Set rest position for spring force.
+  /// \param[in] _idx Index of joint axis.
+  /// \param[in] _q0 Rest position.
+  void setRestPosition(int _idx, double _q0);
+
   /// \brief Get rest position for spring force.
   /// \param[in] _idx Index of joint axis.
+  /// \return Rest position.
   double getRestPosition(int _idx) const;
 
   /// \brief Get spring force.
@@ -195,6 +200,9 @@ public:
   ///
   /// \param[in] _timeStep Time step used for approximating q(k+1).
   Eigen::VectorXd getSpringForces(double _timeStep) const;
+
+  /// \brief Get potential energy.
+  double getPotentialEnergy() const;
 
   /// \brief
   void applyGLTransform(renderer::RenderInterface* _ri);

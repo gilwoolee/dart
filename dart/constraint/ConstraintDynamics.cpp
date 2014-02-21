@@ -75,8 +75,7 @@ ConstraintDynamics::ConstraintDynamics(
 
 ConstraintDynamics::~ConstraintDynamics()
 {
-  if (mCollisionDetector)
-    delete mCollisionDetector;
+  delete mCollisionDetector;
 }
 
 void ConstraintDynamics::computeConstraintForces()
@@ -162,10 +161,39 @@ void ConstraintDynamics::computeConstraintForces()
 
 void ConstraintDynamics::addConstraint(Constraint *_constr)
 {
+  // create an entry in the mSkeletonIDMap
+  Eigen::Vector2i id(-1, -1);
+  dynamics::Skeleton *skel1 = _constr->getBodyNode1()->getSkeleton();
+  for (int i = 0; i < mSkeletons.size(); i++) {
+    if (skel1 == mSkeletons[i]) {
+      id[0] = i;
+      break;
+    }
+  }
+  if (id[0] == -1) {
+    std::cout << "Invalid constraint" << std::endl;
+    return;
+  }
+
+  if (_constr->getBodyNode2()) {
+    dynamics::Skeleton *skel2 = _constr->getBodyNode2()->getSkeleton();
+    for (int i = 0; i < mSkeletons.size(); i++) {
+      if (skel2 == mSkeletons[i]) {
+        id[1] = i;
+        break;
+      }
+    }
+    if (id[1] == -1) {
+      std::cout << "Invalid constraint" << std::endl;
+      return;
+    }
+  }
+  mSkeletonIDMap[_constr] = id;
+
+  // extend global structures for the new constraint
   mConstraints.push_back(_constr);
   mTotalRows += _constr->getNumRows();
-  for (int i = 0; i < mSkeletons.size(); i++)
-  {
+  for (int i = 0; i < mSkeletons.size(); i++) {
     mJ[i].conservativeResize(mTotalRows, mSkeletons[i]->getNumGenCoords());
     mJ[i].bottomRows(_constr->getNumRows()).setZero();
   }
@@ -175,18 +203,26 @@ void ConstraintDynamics::addConstraint(Constraint *_constr)
   mTauHat = Eigen::VectorXd(mTotalRows);
 }
 
-void ConstraintDynamics::deleteConstraint(int _index)
+void ConstraintDynamics::deleteConstraint(Constraint* _constr)
 {
-  int count = 0;
-  for (int i = 0; i < _index; i++)
-    count += mConstraints[i]->getNumRows();
-  int shiftRows = mTotalRows - count - mConstraints[_index]->getNumRows();
-  mTotalRows -= mConstraints[_index]->getNumRows();
+  int index = -1;
+  for (int i = 0; i < mConstraints.size(); i++) {
+    if (_constr == mConstraints[i]) {
+      index = i;
+      break;
+    }
+  }
+  if (index == -1)
+    return;
 
-  for (int i = 0; i < mSkeletons.size(); i++)
-  {
-    mJ[i].block(count, 0, shiftRows, mSkeletons[i]->getNumGenCoords()) =
-        mJ[i].bottomRows(shiftRows);
+  int count = 0;
+  for (int i = 0; i < index; i++)
+    count += mConstraints[i]->getNumRows();
+  int shiftRows = mTotalRows - count - mConstraints[index]->getNumRows();
+  mTotalRows -= mConstraints[index]->getNumRows();
+
+  for (int i = 0; i < mSkeletons.size(); i++) {
+    mJ[i].block(count, 0, shiftRows, mSkeletons[i]->getNumGenCoords()) = mJ[i].bottomRows(shiftRows);
     mJ[i].conservativeResize(mTotalRows, mSkeletons[i]->getNumGenCoords());
   }
   mC.resize(mTotalRows);
@@ -194,8 +230,17 @@ void ConstraintDynamics::deleteConstraint(int _index)
   mGInv.resize(mTotalRows, mTotalRows);
   mTauHat.resize(mTotalRows);
 
-  mConstraints.erase(mConstraints.begin() + _index);
-  delete mConstraints[_index];
+  mConstraints.erase(mConstraints.begin() + index);
+  mSkeletonIDMap.erase(_constr);
+  delete _constr;
+}
+
+void dart::constraint::ConstraintDynamics::deleteConstraint()
+{
+  int nConstr = mConstraints.size();
+  for (int i = nConstr - 1; i >= 0; i--) {
+    deleteConstraint(mConstraints[i]);
+  }
 }
 
 void ConstraintDynamics::addSkeleton(dynamics::Skeleton* _skeleton)
@@ -335,11 +380,7 @@ void ConstraintDynamics::setCollisionDetector(
   if (_collisionDetector == mCollisionDetector)
     return;
 
-  if (mCollisionDetector != NULL)
-  {
-    delete mCollisionDetector;
-    mCollisionDetector = NULL;
-  }
+  delete mCollisionDetector;
 
   mCollisionDetector = _collisionDetector;
 
@@ -396,8 +437,8 @@ void ConstraintDynamics::initialize()
     if (mSkeletons[i]->isMobile() && mSkeletons[i]->getNumGenCoords() > 0)
     {
       // Immobile objets have mass of infinity
-      rows += skel->getMassMatrix().rows();
-      cols += skel->getMassMatrix().cols();
+      rows += skel->getAugMassMatrix().rows();
+      cols += skel->getAugMassMatrix().cols();
     }
   }
 
@@ -883,7 +924,8 @@ void ConstraintDynamics::updateMassMat()
     mMInv.block(
           start, start,
           mSkeletons[i]->getNumGenCoords(),
-          mSkeletons[i]->getNumGenCoords()) = mSkeletons[i]->getInvMassMatrix();
+          mSkeletons[i]->getNumGenCoords())
+        = mSkeletons[i]->getInvAugMassMatrix();
     start += mSkeletons[i]->getNumGenCoords();
   }
 }
@@ -900,7 +942,7 @@ void ConstraintDynamics::updateTauStar()
                           + mSkeletons[i]->getInternalForceVector()
                           + mSkeletons[i]->getDampingForceVector();
     Eigen::VectorXd tauStar =
-        (mSkeletons[i]->getMassMatrix() * mSkeletons[i]->get_dq())
+        (mSkeletons[i]->getAugMassMatrix() * mSkeletons[i]->get_dq())
         - (mDt * (mSkeletons[i]->getCombinedVector() - tau));
     mTauStar.block(startRow, 0, tauStar.rows(), 1) = tauStar;
     startRow += tauStar.rows();
@@ -1013,7 +1055,7 @@ Eigen::MatrixXd ConstraintDynamics::getJacobian(dynamics::BodyNode* node,
   for (int dofIndex = 0; dofIndex < node->getNumDependentGenCoords();
        dofIndex++)
   {
-    int i = node->getDependentGenCoord(dofIndex);
+    int i = node->getDependentGenCoordIndex(dofIndex);
     Jt.row(i) = JtBody.row(dofIndex);
   }
 
@@ -1099,7 +1141,11 @@ void ConstraintDynamics::updateConstraintTerms()
   int count = 0;
   for (int i = 0; i < mConstraints.size(); i++)
   {
-    mConstraints[i]->updateDynamics(&mJ, &mC, &mCDot, count);
+    if (mSkeletonIDMap[mConstraints[i]][1] == -1)
+      mConstraints[i]->updateDynamics(mJ[mSkeletonIDMap[mConstraints[i]][0]], mC, mCDot, count);
+    else
+      mConstraints[i]->updateDynamics(mJ[mSkeletonIDMap[mConstraints[i]][0]], mJ[mSkeletonIDMap[mConstraints[i]][1]], mC, mCDot, count);
+
     count += mConstraints[i]->getNumRows();
   }
   // compute JMInv, GInv, Z
@@ -1108,7 +1154,7 @@ void ConstraintDynamics::updateConstraintTerms()
   {
     if (!mSkeletons[i]->isMobile() || mSkeletons[i]->getNumGenCoords() == 0)
       continue;
-    mJMInv[i] = mJ[i] * mSkeletons[i]->getInvMassMatrix();
+    mJMInv[i] = mJ[i] * mSkeletons[i]->getInvAugMassMatrix();
     mGInv.triangularView<Eigen::Lower>() += (mJMInv[i] * mJ[i].transpose());
   }
   mGInv = mGInv.ldlt().solve(Eigen::MatrixXd::Identity(mTotalRows, mTotalRows));
@@ -1143,6 +1189,7 @@ void ConstraintDynamics::updateConstraintTerms()
     mTauHat.noalias() += -(mJ[i] - mPreJ[i]) / mDt * qDot;
     mTauHat.noalias() -= mJMInv[i] * (mSkeletons[i]->getInternalForceVector()
                                       + mSkeletons[i]->getExternalForceVector()
+                                      + mSkeletons[i]->getDampingForceVector()
                                       - mSkeletons[i]->getCombinedVector());
   }
   mTauHat -= ks * mC + kd * mCDot;

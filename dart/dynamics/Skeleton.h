@@ -82,12 +82,13 @@ public:
 
     /// \brief Set whether this skeleton allows self collisions between body
     ///        nodes in this skeleton.
-    /// \param[in] _isSelfCollidable True if self collision is allowed.
+    /// \param[in] _isSelfCollidable True if the skeleton is checked for self
+    ///                              collision.
     void setSelfCollidable(bool _isSelfCollidable);
 
     /// \brief Get whether this skeleton allows self collisions between body
     ///        nodes in this skeleton.
-    /// \return True if self collision is allowed.
+    /// \return True if the skeleton is checked for self collision.
     bool isSelfCollidable() const;
 
     /// \brief Set whether this skeleton will be updated by forward dynamics.
@@ -183,8 +184,18 @@ public:
     /// \brief Get mass matrix of the skeleton.
     const Eigen::MatrixXd& getMassMatrix();
 
+    /// \brief Get augmented mass matrix of the skeleton. This matrix is used
+    ///        in ConstraintDynamics to compute constraint forces. The matrix is
+    ///        M + h*D + h*h*K where D is diagonal joint damping coefficient
+    ///        matrix, K is diagonal joint stiffness matrix, and h is simulation
+    ///        time step.
+    const Eigen::MatrixXd& getAugMassMatrix();
+
     /// \brief Get inverse of mass matrix of the skeleton.
     const Eigen::MatrixXd& getInvMassMatrix();
+
+    /// \brief Get inverse of augmented mass matrix of the skeleton.
+    const Eigen::MatrixXd& getInvAugMassMatrix();
 
     /// \brief Get Coriolis force vector of the skeleton.
     const Eigen::VectorXd& getCoriolisForceVector();
@@ -234,8 +245,26 @@ public:
     /// \brief Set constraint force vector.
     void setConstraintForceVector(const Eigen::VectorXd& _Fc);
 
-    /// \brief
+    /// \brief Get skeleton's COM w.r.t. world frame.
     Eigen::Vector3d getWorldCOM();
+
+    /// \brief Get skeleton's COM velocity w.r.t. world frame.
+    Eigen::Vector3d getWorldCOMVelocity();
+
+    /// \brief Get skeleton's COM acceleration w.r.t. world frame.
+    Eigen::Vector3d getWorldCOMAcceleration();
+
+    /// \brief Get skeleton's COM Jacobian w.r.t. world frame.
+    Eigen::MatrixXd getWorldCOMJacobian();
+
+    /// \brief Get skeleton's COM Jacobian time derivative w.r.t. world frame.
+    Eigen::MatrixXd getWorldCOMJacobianTimeDeriv();
+
+    /// \brief Get kinetic energy of this skeleton.
+    virtual double getKineticEnergy() const;
+
+    /// \brief Get potential energy of this skeleton.
+    virtual double getPotentialEnergy() const;
 
     //--------------------------------------------------------------------------
     // Recursive dynamics algorithms
@@ -296,11 +325,23 @@ protected:
     /// \brief Dirty flag for the mass matrix.
     bool mIsMassMatrixDirty;
 
+    /// \brief Mass matrix for the skeleton.
+    Eigen::MatrixXd mAugM;
+
+    /// \brief Dirty flag for the mass matrix.
+    bool mIsAugMassMatrixDirty;
+
     /// \brief Inverse of mass matrix for the skeleton.
-    Eigen::MatrixXd mMInv;
+    Eigen::MatrixXd mInvM;
 
     /// \brief Dirty flag for the inverse of mass matrix.
-    bool mIsMassInvMatrixDirty;
+    bool mIsInvMassMatrixDirty;
+
+    /// \brief Inverse of augmented mass matrix for the skeleton.
+    Eigen::MatrixXd mInvAugM;
+
+    /// \brief Dirty flag for the inverse of augmented mass matrix.
+    bool mIsInvAugMassMatrixDirty;
 
     /// \brief Coriolis vector for the skeleton which is C(q,dq)*dq.
     Eigen::VectorXd mCvec;
@@ -337,25 +378,31 @@ protected:
     bool mIsDampingForceVectorDirty;
 
     /// \brief Update mass matrix of the skeleton.
-    void updateMassMatrix();
+    virtual void updateMassMatrix();
+
+    /// \brief Update augmented mass matrix of the skeleton.
+    virtual void updateAugMassMatrix();
 
     /// \brief Update inverse of mass matrix of the skeleton.
-    void updateInvMassMatrix();
+    virtual void updateInvMassMatrix();
+
+    /// \brief Update inverse of augmented mass matrix of the skeleton.
+    virtual void updateInvAugMassMatrix();
 
     /// \brief Update Coriolis force vector of the skeleton.
-    void updateCoriolisForceVector();
+    virtual void updateCoriolisForceVector();
 
     /// \brief Update gravity force vector of the skeleton.
-    void updateGravityForceVector();
+    virtual void updateGravityForceVector();
 
     /// \brief Update combined vector of the skeletong.
-    void updateCombinedVector();
+    virtual void updateCombinedVector();
 
     /// \brief update external force vector to generalized torques.
-    void updateExternalForceVector();
+    virtual void updateExternalForceVector();
 
     /// \brief Update damping force vector.
-    void updateDampingForceVector();
+    virtual void updateDampingForceVector();
 
 public:
     //

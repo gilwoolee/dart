@@ -60,7 +60,9 @@ Skeleton::Skeleton(const std::string& _name)
     mTotalMass(0.0),
     mIsMobile(true),
     mIsMassMatrixDirty(true),
-    mIsMassInvMatrixDirty(true),
+    mIsAugMassMatrixDirty(true),
+    mIsInvMassMatrixDirty(true),
+    mIsInvAugMassMatrixDirty(true),
     mIsCoriolisVectorDirty(true),
     mIsGravityForceVectorDirty(true),
     mIsCombinedVectorDirty(true),
@@ -153,7 +155,9 @@ void Skeleton::init(double _timeStep, const Eigen::Vector3d& _gravity) {
   // Set dimension of dynamics quantities
   int dof = getNumGenCoords();
   mM    = Eigen::MatrixXd::Zero(dof, dof);
-  mMInv = Eigen::MatrixXd::Zero(dof, dof);
+  mAugM = Eigen::MatrixXd::Zero(dof, dof);
+  mInvM = Eigen::MatrixXd::Zero(dof, dof);
+  mInvAugM = Eigen::MatrixXd::Zero(dof, dof);
   mCvec = Eigen::VectorXd::Zero(dof);
   mG    = Eigen::VectorXd::Zero(dof);
   mCg   = Eigen::VectorXd::Zero(dof);
@@ -177,7 +181,7 @@ void Skeleton::addBodyNode(BodyNode* _body) {
 }
 
 int Skeleton::getNumBodyNodes() const {
-  return mBodyNodes.size();
+  return static_cast<int>(mBodyNodes.size());
 }
 
 BodyNode* Skeleton::getRootBodyNode() const {
@@ -262,12 +266,20 @@ void Skeleton::setConfig(const std::vector<int>& _id,
   }
 
   mIsMassMatrixDirty = true;
-  mIsMassInvMatrixDirty = true;
+  mIsAugMassMatrixDirty = true;
+  mIsInvMassMatrixDirty = true;
+  mIsInvAugMassMatrixDirty = true;
   mIsCoriolisVectorDirty = true;
   mIsGravityForceVectorDirty = true;
   mIsCombinedVectorDirty = true;
   mIsExternalForceVectorDirty = true;
   // mIsDampingForceVectorDirty = true;
+
+  for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it) {
+    (*it)->mIsBodyJacobianDirty = true;
+    (*it)->mIsBodyJacobianTimeDerivDirty = true;
+  }
 }
 
 void Skeleton::setConfig(const Eigen::VectorXd& _config) {
@@ -286,12 +298,20 @@ void Skeleton::setConfig(const Eigen::VectorXd& _config) {
   }
 
   mIsMassMatrixDirty = true;
-  mIsMassInvMatrixDirty = true;
+  mIsAugMassMatrixDirty = true;
+  mIsInvMassMatrixDirty = true;
+  mIsInvAugMassMatrixDirty = true;
   mIsCoriolisVectorDirty = true;
   mIsGravityForceVectorDirty = true;
   mIsCombinedVectorDirty = true;
   mIsExternalForceVectorDirty = true;
   // mIsDampingForceVectorDirty = true;
+
+  for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it) {
+    (*it)->mIsBodyJacobianDirty = true;
+    (*it)->mIsBodyJacobianTimeDerivDirty = true;
+  }
 }
 
 void Skeleton::setState(const Eigen::VectorXd& _state) {
@@ -319,7 +339,9 @@ void Skeleton::setState(const Eigen::VectorXd& _state) {
   }
 
   mIsMassMatrixDirty = true;
-  mIsMassInvMatrixDirty = true;
+  mIsAugMassMatrixDirty = true;
+  mIsInvMassMatrixDirty = true;
+  mIsInvAugMassMatrixDirty = true;
   mIsCoriolisVectorDirty = true;
   mIsGravityForceVectorDirty = true;
   mIsCombinedVectorDirty = true;
@@ -329,6 +351,7 @@ void Skeleton::setState(const Eigen::VectorXd& _state) {
   for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
        it != mBodyNodes.end(); ++it) {
     (*it)->mIsBodyJacobianDirty = true;
+    (*it)->mIsBodyJacobianTimeDerivDirty = true;
   }
 }
 
@@ -344,10 +367,22 @@ const Eigen::MatrixXd& Skeleton::getMassMatrix() {
   return mM;
 }
 
+const Eigen::MatrixXd& Skeleton::getAugMassMatrix() {
+  if (mIsAugMassMatrixDirty)
+    updateAugMassMatrix();
+  return mAugM;
+}
+
 const Eigen::MatrixXd& Skeleton::getInvMassMatrix() {
-  if (mIsMassInvMatrixDirty)
+  if (mIsInvMassMatrixDirty)
     updateInvMassMatrix();
-  return mMInv;
+  return mInvM;
+}
+
+const Eigen::MatrixXd& Skeleton::getInvAugMassMatrix() {
+  if (mIsInvAugMassMatrixDirty)
+    updateInvAugMassMatrix();
+  return mInvAugM;
 }
 
 const Eigen::VectorXd& Skeleton::getCoriolisForceVector() {
@@ -445,13 +480,58 @@ void Skeleton::updateMassMatrix() {
   mIsMassMatrixDirty = false;
 }
 
-void Skeleton::updateInvMassMatrix() {
-  assert(mMInv.cols() == getNumGenCoords() &&
-         mMInv.rows() == getNumGenCoords());
+void Skeleton::updateAugMassMatrix() {
+  assert(mAugM.cols() == getNumGenCoords() && mAugM.rows() == getNumGenCoords());
   assert(getNumGenCoords() > 0);
 
-  // We don't need to set mMInv as zero matrix as long as the below is correct
-  // mMInv.setZero();
+  mAugM.setZero();
+
+  // Backup the origianl internal force
+  Eigen::VectorXd originalGenAcceleration = get_ddq();
+
+  int dof = getNumGenCoords();
+  Eigen::VectorXd e = Eigen::VectorXd::Zero(dof);
+  for (int j = 0; j < dof; ++j) {
+    e[j] = 1.0;
+    set_ddq(e);
+
+    // Prepare cache data
+    for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+         it != mBodyNodes.end(); ++it) {
+      (*it)->updateMassMatrix();
+    }
+
+    // Mass matrix
+    //    for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+    //         it != mBodyNodes.end(); ++it)
+    for (int i = mBodyNodes.size() - 1; i > -1 ; --i) {
+      mBodyNodes[i]->aggregateAugMassMatrix(&mAugM, j, mTimeStep);
+      int localDof = mBodyNodes[i]->mParentJoint->getNumGenCoords();
+      if (localDof > 0) {
+        int iStart =
+            mBodyNodes[i]->mParentJoint->getGenCoord(0)->getSkeletonIndex();
+        if (iStart + localDof < j)
+          break;
+      }
+    }
+
+    e[j] = 0.0;
+  }
+  mAugM.triangularView<Eigen::StrictlyUpper>() = mAugM.transpose();
+
+  // Restore the origianl internal force
+  set_ddq(originalGenAcceleration);
+
+  mIsAugMassMatrixDirty = false;
+}
+
+void Skeleton::updateInvMassMatrix() {
+  assert(mInvM.cols() == getNumGenCoords() &&
+         mInvM.rows() == getNumGenCoords());
+  assert(getNumGenCoords() > 0);
+
+  // We don't need to set mInvM as zero matrix as long as the below is correct
+  // mInvM.setZero();
 
   // Backup the origianl internal force
   Eigen::VectorXd originalInternalForce = get_tau();
@@ -465,14 +545,14 @@ void Skeleton::updateInvMassMatrix() {
     // Prepare cache data
     for (std::vector<BodyNode*>::reverse_iterator it = mBodyNodes.rbegin();
          it != mBodyNodes.rend(); ++it) {
-      (*it)->updateMassInverseMatrix();
+      (*it)->updateInvMassMatrix();
     }
 
     // Inverse of mass matrix
     //    for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
     //         it != mBodyNodes.end(); ++it)
     for (int i = 0; i < mBodyNodes.size(); ++i) {
-      mBodyNodes[i]->aggregateInvMassMatrix(&mMInv, j);
+      mBodyNodes[i]->aggregateInvMassMatrix(&mInvM, j);
       int localDof = mBodyNodes[i]->mParentJoint->getNumGenCoords();
       if (localDof > 0) {
         int iStart =
@@ -484,12 +564,59 @@ void Skeleton::updateInvMassMatrix() {
 
     e[j] = 0.0;
   }
-  mMInv.triangularView<Eigen::StrictlyLower>() = mMInv.transpose();
+  mInvM.triangularView<Eigen::StrictlyLower>() = mInvM.transpose();
 
   // Restore the origianl internal force
   set_tau(originalInternalForce);
 
-  mIsMassInvMatrixDirty = false;
+  mIsInvMassMatrixDirty = false;
+}
+
+void Skeleton::updateInvAugMassMatrix() {
+  assert(mInvAugM.cols() == getNumGenCoords() &&
+         mInvAugM.rows() == getNumGenCoords());
+  assert(getNumGenCoords() > 0);
+
+  // We don't need to set mInvM as zero matrix as long as the below is correct
+  // mInvM.setZero();
+
+  // Backup the origianl internal force
+  Eigen::VectorXd originalInternalForce = get_tau();
+
+  int dof = getNumGenCoords();
+  Eigen::VectorXd e = Eigen::VectorXd::Zero(dof);
+  for (int j = 0; j < dof; ++j) {
+    e[j] = 1.0;
+    set_tau(e);
+
+    // Prepare cache data
+    for (std::vector<BodyNode*>::reverse_iterator it = mBodyNodes.rbegin();
+         it != mBodyNodes.rend(); ++it) {
+      (*it)->updateInvAugMassMatrix();
+    }
+
+    // Inverse of mass matrix
+    //    for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+    //         it != mBodyNodes.end(); ++it)
+    for (int i = 0; i < mBodyNodes.size(); ++i) {
+      mBodyNodes[i]->aggregateInvAugMassMatrix(&mInvAugM, j, mTimeStep);
+      int localDof = mBodyNodes[i]->mParentJoint->getNumGenCoords();
+      if (localDof > 0) {
+        int iStart =
+            mBodyNodes[i]->mParentJoint->getGenCoord(0)->getSkeletonIndex();
+        if (iStart + localDof > j)
+          break;
+      }
+    }
+
+    e[j] = 0.0;
+  }
+  mInvAugM.triangularView<Eigen::StrictlyLower>() = mInvAugM.transpose();
+
+  // Restore the origianl internal force
+  set_tau(originalInternalForce);
+
+  mIsInvAugMassMatrixDirty = false;
 }
 
 void Skeleton::updateCoriolisForceVector() {
@@ -497,6 +624,10 @@ void Skeleton::updateCoriolisForceVector() {
   assert(getNumGenCoords() > 0);
 
   mCvec.setZero();
+  for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it) {
+    (*it)->updateCombinedVector();
+  }
   for (std::vector<BodyNode*>::reverse_iterator it = mBodyNodes.rbegin();
        it != mBodyNodes.rend(); ++it) {
     (*it)->aggregateCoriolisForceVector(&mCvec);
@@ -644,16 +775,134 @@ void Skeleton::setConstraintForceVector(const Eigen::VectorXd& _Fc) {
 }
 
 Eigen::Vector3d Skeleton::getWorldCOM() {
+  // COM
   Eigen::Vector3d com(0.0, 0.0, 0.0);
 
+  // Compute sum of each body's COM multiplied by body's mass
   const int nNodes = getNumBodyNodes();
   for (int i = 0; i < nNodes; i++) {
     BodyNode* bodyNode = getBodyNode(i);
     com += bodyNode->getMass() * bodyNode->getWorldCOM();
   }
 
+  // Divide the sum by the total mass
   assert(mTotalMass != 0.0);
   return com / mTotalMass;
+}
+
+Eigen::Vector3d Skeleton::getWorldCOMVelocity() {
+  // Velocity of COM
+  Eigen::Vector3d comVel(0.0, 0.0, 0.0);
+
+  // Compute sum of each body's COM velocities multiplied by body's mass
+  const int nNodes = getNumBodyNodes();
+  for (int i = 0; i < nNodes; i++) {
+    BodyNode* bodyNode = getBodyNode(i);
+    comVel += bodyNode->getMass() * bodyNode->getWorldCOMVelocity();
+  }
+
+  // Divide the sum by the total mass
+  assert(mTotalMass != 0.0);
+  return comVel / mTotalMass;
+}
+
+Eigen::Vector3d Skeleton::getWorldCOMAcceleration() {
+  // Acceleration of COM
+  Eigen::Vector3d comAcc(0.0, 0.0, 0.0);
+
+  // Compute sum of each body's COM accelerations multiplied by body's mass
+  const int nNodes = getNumBodyNodes();
+  for (int i = 0; i < nNodes; i++) {
+    BodyNode* bodyNode = getBodyNode(i);
+    comAcc += bodyNode->getMass() * bodyNode->getWorldCOMAcceleration();
+  }
+
+  // Divide the sum by the total mass
+  assert(mTotalMass != 0.0);
+  return comAcc / mTotalMass;
+}
+
+Eigen::MatrixXd Skeleton::getWorldCOMJacobian() {
+  // Jacobian of COM
+  Eigen::MatrixXd J = Eigen::MatrixXd::Zero(3, getNumGenCoords());
+
+  // Compute sum of each body's Jacobian of COM accelerations multiplied by
+  // body's mass
+  const int nNodes = getNumBodyNodes();
+  for (int i = 0; i < nNodes; i++) {
+    // BodyNode iterator
+    BodyNode* bodyNode = getBodyNode(i);
+
+    // Compute weighted Jacobian
+    Eigen::MatrixXd localJ
+        = bodyNode->getMass()
+          * bodyNode->getWorldJacobian(
+              bodyNode->getLocalCOM(), true).bottomRows<3>();
+
+    // Assign the weighted Jacobian to total Jacobian
+    for (int j = 0; j < bodyNode->getNumDependentGenCoords(); ++j) {
+      int idx = bodyNode->getDependentGenCoordIndex(j);
+      J.col(idx) += localJ.col(j);
+    }
+  }
+
+  // Divide the sum by the total mass
+  assert(mTotalMass != 0.0);
+  return J / mTotalMass;
+}
+
+Eigen::MatrixXd Skeleton::getWorldCOMJacobianTimeDeriv() {
+  // Jacobian time derivative of COM
+  Eigen::MatrixXd dJ = Eigen::MatrixXd::Zero(3, getNumGenCoords());
+
+  // Compute sum of each body's Jacobian time derivative of COM accelerations
+  // multiplied by body's mass
+  const int nNodes = getNumBodyNodes();
+  for (int i = 0; i < nNodes; i++) {
+    // BodyNode iterator
+    BodyNode* bodyNode = getBodyNode(i);
+
+    // Compute weighted Jacobian time derivative
+    Eigen::MatrixXd localJ
+        = bodyNode->getMass()
+          * bodyNode->getWorldJacobianTimeDeriv(bodyNode->getLocalCOM(), true).bottomRows<3>();
+
+    // Assign the weighted Jacobian to total Jacobian time derivative
+    for (int j = 0; j < bodyNode->getNumDependentGenCoords(); ++j) {
+      int idx = bodyNode->getDependentGenCoordIndex(j);
+      dJ.col(idx) += localJ.col(j);
+    }
+  }
+
+  // Divide the sum by the total mass
+  assert(mTotalMass != 0.0);
+  return dJ / mTotalMass;
+}
+
+double Skeleton::getKineticEnergy() const {
+  double KE = 0.0;
+
+  for (std::vector<BodyNode*>::const_iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it)
+  {
+    KE += (*it)->getKineticEnergy();
+  }
+
+  assert(KE >= 0.0 && "Kinetic energy should be positive value.");
+  return KE;
+}
+
+double Skeleton::getPotentialEnergy() const {
+  double PE = 0.0;
+
+  for (std::vector<BodyNode*>::const_iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it)
+  {
+    PE += (*it)->getPotentialEnergy(mGravity);
+    PE += (*it)->getParentJoint()->getPotentialEnergy();
+  }
+
+  return PE;
 }
 
 }  // namespace dynamics
