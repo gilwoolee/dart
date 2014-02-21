@@ -50,7 +50,7 @@
 #include "dart/dynamics/Marker.h"
 
 // TODO(JS): Testing... The original cor was 0.4
-#define DART_DEFAULT_FRICTIONAL_COEFF 0.0
+#define DART_DEFAULT_FRICTIONAL_COEFF 0.4
 
 namespace dart {
 namespace dynamics {
@@ -852,7 +852,7 @@ void BodyNode::updateJointAcceleration()
 void BodyNode::updateBodyForceFwdDyn()
 {
   mF = mB;
-  mF.noalias() = mAI * mdV;
+  mF.noalias() += mAI * mdV;
   assert(!math::isNan(mF));
 }
 
@@ -860,7 +860,7 @@ void BodyNode::updateBodyForceFwdDyn()
 void BodyNode::updateImpBiasForce()
 {
   // Update impulsive bias force
-  mImpB = -mConstImp;// - mImpFext;
+  mImpB = -mConstImp - mImpFext;
 //  assert(mImpFext == Eigen::Vector6d::Zero());
   for (std::vector<BodyNode*>::const_iterator it = mChildBodyNodes.begin();
        it != mChildBodyNodes.end(); ++it)
@@ -936,7 +936,7 @@ void BodyNode::updateBodyVelocityChange()
 void BodyNode::updateBodyImpForceFwdDyn()
 {
   mImpF = mImpB;
-  mImpF.noalias() = mAI * mDelV;
+  mImpF.noalias() += mAI * mDelV;
   assert(!math::isNan(mImpF));
 }
 
@@ -1326,6 +1326,7 @@ void BodyNode::_updateGeralizedInertia() {
 void BodyNode::clearExternalForces() {
   mFext.setZero();
   mContactForces.clear();
+  mConstImp.setZero();
 }
 
 void BodyNode::setConstraintImpulse(const Eigen::Vector6d& _constImp)
@@ -1335,6 +1336,7 @@ void BodyNode::setConstraintImpulse(const Eigen::Vector6d& _constImp)
 
 void BodyNode::addConstraintImpulse(const Eigen::Vector6d& _constImp)
 {
+  assert(!math::isNan(_constImp));
   mConstImp += _constImp;
 }
 

@@ -239,7 +239,7 @@ void ContactConstraintTEST::update()
 void ContactConstraintTEST::fillLcpOde(ODELcp* _lcp, int _idx)
 {
   // Fill w, where the LCP form is Ax + b = w (x >= 0, w >= 0, x^T w = 0)
-  _getRelVelocity(_lcp->w, _idx);
+  _getRelVelocity(_lcp->b, _idx);
 
   //----------------------------- Friction case --------------------------------
   if (_IsFrictionOn)
@@ -247,9 +247,9 @@ void ContactConstraintTEST::fillLcpOde(ODELcp* _lcp, int _idx)
     for (int i = 0; i < mContacts.size(); ++i)
     {
       // Bias term, b
-      _lcp->b[_idx] = 0.0;
-      _lcp->b[_idx + 1] = 0.0;
-      _lcp->b[_idx + 2] = 0.0;
+      _lcp->w[_idx] = 0.0;
+      _lcp->w[_idx + 1] = 0.0;
+      _lcp->w[_idx + 2] = 0.0;
 
       // Upper and lower bounds of normal impulsive force
       _lcp->lb[_idx] = 0.0;
@@ -281,7 +281,7 @@ void ContactConstraintTEST::fillLcpOde(ODELcp* _lcp, int _idx)
     for (int i = 0; i < mContacts.size(); ++i)
     {
       // Bias term, b
-      _lcp->b[_idx] = 0.0;
+      _lcp->w[_idx] = 0.0;
 
       // Upper and lower bounds of normal impulsive force
       _lcp->lb[_idx] = 0.0;
@@ -305,7 +305,9 @@ void ContactConstraintTEST::applyUnitImpulse(int _idx)
   assert(0 <= _idx && _idx < mDim && "Invalid Index.");
 
   // TODO(JS): Better naming
-  if (mBodyNode1->getSkeleton() == mBodyNode2->getSkeleton())
+  if (mBodyNode1->getSkeleton() == mBodyNode2->getSkeleton()
+      && mBodyNode1->getSkeleton()->getNumGenCoords() > 0
+      && !mBodyNode1->getSkeleton()->isMobile())
   {
     mBodyNode1->getSkeleton()->clearImpulseTest();
     mBodyNode1->getSkeleton()->updateImpBiasForce(mBodyNode1, mJacobians1[_idx]);
@@ -314,14 +316,19 @@ void ContactConstraintTEST::applyUnitImpulse(int _idx)
     return;
   }
 
-  if (mBodyNode1->isImpulseReponsible())
+  // TODO(JS):
+  if (mBodyNode1->isImpulseReponsible()
+      && mBodyNode1->getSkeleton()->getNumGenCoords() > 0
+      && mBodyNode1->getSkeleton()->isMobile())
   {
     mBodyNode1->getSkeleton()->clearImpulseTest();
     mBodyNode1->getSkeleton()->updateImpBiasForce(mBodyNode1, mJacobians1[_idx]);
     mBodyNode1->getSkeleton()->updateVelocityChange();
   }
 
-  if (mBodyNode2->isImpulseReponsible())
+  if (mBodyNode2->isImpulseReponsible()
+      && mBodyNode2->getSkeleton()->getNumGenCoords() > 0
+      && mBodyNode2->getSkeleton()->isMobile())
   {
     mBodyNode2->getSkeleton()->clearImpulseTest();
     mBodyNode2->getSkeleton()->updateImpBiasForce(mBodyNode2, mJacobians2[_idx]);
@@ -338,13 +345,15 @@ void ContactConstraintTEST::getDelVelocity(double* _delVel, int _idx)
   {
     _delVel[i + _idx] = 0.0;
 
-    if (mBodyNode1->isImpulseReponsible())
+    if (mBodyNode1->getSkeleton()->isImpulseApplied()
+        && mBodyNode1->isImpulseReponsible())
     {
       _delVel[i + _idx]
           += mJacobians1[i].dot(mBodyNode1->getBodyVelocityChange());
     }
 
-    if (mBodyNode2->isImpulseReponsible())
+    if (mBodyNode2->getSkeleton()->isImpulseApplied()
+        && mBodyNode2->isImpulseReponsible())
     {
       _delVel[i + _idx]
           += mJacobians2[i].dot(mBodyNode2->getBodyVelocityChange());
@@ -355,17 +364,21 @@ void ContactConstraintTEST::getDelVelocity(double* _delVel, int _idx)
 //==============================================================================
 void ContactConstraintTEST::excite()
 {
-  std::cout << "ContactConstraintTEST::excite(): "
-            << "Not implemented."
-            << std::endl;
+  if (mBodyNode1->isImpulseReponsible())
+    mBodyNode1->getSkeleton()->setImpulseApplied(true);
+
+  if (mBodyNode2->isImpulseReponsible())
+    mBodyNode2->getSkeleton()->setImpulseApplied(true);
 }
 
 //==============================================================================
 void ContactConstraintTEST::unexcite()
 {
-  std::cout << "ContactConstraintTEST::unexcite(): "
-            << "Not implemented."
-            << std::endl;
+  if (mBodyNode1->isImpulseReponsible())
+    mBodyNode1->getSkeleton()->setImpulseApplied(false);
+
+  if (mBodyNode2->isImpulseReponsible())
+    mBodyNode2->getSkeleton()->setImpulseApplied(false);
 }
 
 //==============================================================================

@@ -46,7 +46,7 @@
 #include <string>
 #include <vector>
 
-#include "dart/integration/EulerIntegrator.h"
+#include "dart/integration/SemiImplicitEulerIntegrator.h"
 #include "dart/dynamics/GenCoord.h"
 #include "dart/dynamics/Skeleton.h"
 #include "dart/constraint/ConstraintDynamics.h"
@@ -61,9 +61,10 @@ World::World()
     mTime(0.0),
     mTimeStep(0.001),
     mFrame(0),
-    mIntegrator(new integration::EulerIntegrator()),
+    mIntegrator(new integration::SemiImplicitEulerIntegrator()),
     mConstraintHandler(
-      new constraint::ConstraintDynamics(mSkeletons, mTimeStep)) {
+      new constraint::ConstraintDynamics(mSkeletons, mTimeStep))
+{
   mIndices.push_back(0);
 
   mConstraintSolver
@@ -163,7 +164,7 @@ Eigen::VectorXd World::_evalDerivNew()
   __computeConstraintImpulses();
   __computeVelocityJumps();
   __updateVelocityWithVelJump();
-//  __updateAccelerationWithVelJump();
+  __updateAccelerationWithVelJump();
 //  __updateTauWithImpulse();
 //  __updateSensors();
 
@@ -219,11 +220,16 @@ void World::__computeConstraintImpulses()
 
 void World::__computeVelocityJumps()
 {
+  // TODO(JS): Parallel computing is possible here
   // compute forward dynamics
   for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
        it != mSkeletons.end(); ++it)
   {
-    (*it)->computeImpForwardDynamics();
+    if ((*it)->isImpulseApplied())
+    {
+      (*it)->computeImpForwardDynamics();
+      (*it)->setImpulseApplied(false);
+    }
   }
 }
 
@@ -241,7 +247,7 @@ void World::__updateAccelerationWithVelJump()
   for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
        it != mSkeletons.end(); ++it)
   {
-    (*it)->set_ddq((*it)->get_ddq() + (*it)->get_del_dq() / mTimeStep);
+//    (*it)->set_ddq((*it)->get_ddq() - (*it)->get_del_dq() / mTimeStep);
   }
 }
 

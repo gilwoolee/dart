@@ -116,31 +116,28 @@ public:
   //--------------------------------------------------------------------------
   // Structueral Properties
   //--------------------------------------------------------------------------
-  /// \brief
+  /// \brief Add body node
   void addBodyNode(BodyNode* _body);
 
-  /// \brief
-  int getNumBodyNodes() const;
-
-  /// \brief
-  BodyNode* getRootBodyNode() const;
-
-  /// \brief
+  /// \brief Get the body node whose id is _idx
   BodyNode* getBodyNode(int _idx) const;
 
-  /// \brief
+  /// \brief Get the body node whose name is _name
   BodyNode* getBodyNode(const std::string& _name) const;
 
-  /// \brief
+  /// \brief Get number of body nodes
+  int getNumBodyNodes() const;
+
+  /// \brief Get the root body node
+  BodyNode* getRootBodyNode() const;
+
+  /// \brief Get the joint whose id is _idx
   Joint* getJoint(int _idx) const;
 
-  /// \brief
+  /// \brief Get the joint whose name is _name
   Joint* getJoint(const std::string& _name) const;
 
-  /// \brief
-  Marker* getMarker(int _i);
-
-  /// \brief
+  /// \brief Get the marker whose name is _name
   Marker* getMarker(const std::string& _name) const;
 
   //--------------------------------------------------------------------------
@@ -286,6 +283,13 @@ public:
   ///        impulse
   void updateVelocityChange();
 
+  /// \brief Set whether this skeleton is constrained
+  /// ConstraintSolver will mark this
+  void setImpulseApplied(bool _val);
+
+  /// \brief Get whether this skeleton is constrained
+  bool isImpulseApplied() const;
+
   //---------------------------- Rendering -------------------------------------
   /// \brief
   void draw(renderer::RenderInterface* _ri = NULL,
@@ -381,7 +385,7 @@ protected:
   bool mIsDampingForceVectorDirty;
 
   /// \brief Flag for status of impulse testing.
-  bool mIsImpulseTesting;
+  bool mIsImpulseApplied;
 
   /// \brief Update mass matrix of the skeleton.
   virtual void updateMassMatrix();
@@ -409,12 +413,6 @@ protected:
 
   /// \brief Update damping force vector.
   virtual void updateDampingForceVector();
-
-  /// \brief Set whether this system is on impulse test.
-  void setImpulseTesting(bool _onOff);
-
-  /// \brief Get whether this system is on impulse test.
-  bool getImpulseTesting() const;
 
 public:
   //

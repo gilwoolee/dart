@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2011-2013, Georgia Tech Research Corporation
+ * Copyright (c) 2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Kristin Siu <kasiu@gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
- * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -34,23 +34,41 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dart/integration/EulerIntegrator.h"
+#include <iostream>
 
-namespace dart {
-namespace integration {
+#include <Eigen/Dense>
+#include <gtest/gtest.h>
 
-EulerIntegrator::EulerIntegrator()
-    : Integrator() {
+#include "dart/common/Console.h"
+#include "dart/math/Helpers.h"
+#include "dart/lcpsolver/LCPSolver.h"
+
+//==============================================================================
+TEST(LCPSolver, ODEdSolve)
+{
+//A:
+//2.40851 2.4097 2.33425 -1.59738
+//2.4097 2.41765 2.33901 6.95335e-310
+//2.33425 2.33901 2.27561 -1.59394
+
+//b:
+//0 0 0
+//w:
+//4.55184 4.55184 4.55184
+//x:
+//6.95335e-310 6.95335e-310 1.58101e-322
+//lb:
+//0 0 0
+//ub:
+//inf inf inf
+//frictionIndex:
+//-1 -1 -1
 }
 
-EulerIntegrator::~EulerIntegrator() {
+//==============================================================================
+int main(int argc, char* argv[])
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
 
-void EulerIntegrator::integrate(IntegrableSystem* _system, double _dt) const {
-    // Explicit Euler Method
-    Eigen::VectorXd deriv = _system->evalDeriv();
-    _system->setState(_system->getState() + (_dt * deriv));
-}
-
-}  // namespace integration
-}  // namespace dart

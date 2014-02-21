@@ -163,21 +163,24 @@ void ConstrainedGroup::_fillLCPTermsODE(ODELcp* _lcp)
     constraint = mConstraints[i];
     constraint->update();
 
-    // Filling lo, hi, b, w
+    // Fill lo, hi, b, w
     constraint->fillLcpOde(_lcp, offsetIndex[i]);
 
+    // Fill A matrix
+    constraint->excite();
     for (int j = 0; j < constraint->getDimension(); ++j)
     {
+      // Apply impulse for mipulse test
       constraint->applyUnitImpulse(j);
 
-      // Filling A matrix
+      // Fill upper triangle blocks of A matrix
       for (int k = i; k < mConstraints.size(); ++k)
       {
         int index = _lcp->nSkip * (offsetIndex[i] + j) + offsetIndex[k];
         mConstraints[k]->getDelVelocity(_lcp->A, index);
       }
 
-      // Filling symmetric part
+      // Filling symmetric part of A matrix
       for (int k = 0; k < i; k++)
       {
         for (int l = 0; l < mConstraints[k]->getDimension(); ++l)
@@ -189,6 +192,7 @@ void ConstrainedGroup::_fillLCPTermsODE(ODELcp* _lcp)
         }
       }
     }
+    constraint->unexcite();
   }
 
   delete[] offsetIndex;
@@ -197,14 +201,16 @@ void ConstrainedGroup::_fillLCPTermsODE(ODELcp* _lcp)
 //==============================================================================
 bool ConstrainedGroup::_solveODE(ODELcp* _lcp)
 {
-  //////////////////////////////////////////////////////////////////////////////
-  // TEST CODE
-  _lcp->print();
-  //////////////////////////////////////////////////////////////////////////////
-
   // Solve LCP using ODE's Dantzig algorithm
-  dSolveLCP(_lcp->dim, _lcp->A, _lcp->x, _lcp->b,
-            _lcp->w, 0, _lcp->lb, _lcp->ub, _lcp->frictionIndex);
+  dSolveLCP(_lcp->dim,
+            _lcp->A,
+            _lcp->x,
+            _lcp->b,
+            _lcp->w,
+            0,
+            _lcp->lb,
+            _lcp->ub,
+            _lcp->frictionIndex);
 
   // TODO(JS): Do we need to return boolean?
   return true;
@@ -221,7 +227,10 @@ void ConstrainedGroup::_applyODE(ODELcp* _lcp)
 
   // Apply constraint impulses
   for (int i = 0; i < mConstraints.size(); ++i)
+  {
     mConstraints[i]->applyConstraintImpulse(_lcp->x, offsetIndex[i]);
+    mConstraints[i]->excite();
+  }
 
   delete[] offsetIndex;
 }

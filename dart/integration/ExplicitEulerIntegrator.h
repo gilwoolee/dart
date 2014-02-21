@@ -34,8 +34,8 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_INTEGRATION_EULERINTEGRATOR_H_
-#define DART_INTEGRATION_EULERINTEGRATOR_H_
+#ifndef DART_INTEGRATION_EXPLICITEULERINTEGRATOR_H_
+#define DART_INTEGRATION_EXPLICITEULERINTEGRATOR_H_
 
 #include "dart/integration/Integrator.h"
 
@@ -43,13 +43,14 @@ namespace dart {
 namespace integration {
 
 /// \brief
-class EulerIntegrator : public Integrator {
+class ExplicitEulerIntegrator : public Integrator
+{
 public:
   /// \brief Default constructor.
-  EulerIntegrator();
+  ExplicitEulerIntegrator();
 
   /// \brief Default destructor.
-  virtual ~EulerIntegrator();
+  virtual ~ExplicitEulerIntegrator();
 
   // Documentation inherited.
   virtual void integrate(IntegrableSystem* _system, double _dt) const;
@@ -58,4 +59,4 @@ public:
 }  // namespace integration
 }  // namespace dart
 
-#endif  // DART_INTEGRATION_EULERINTEGRATOR_H_
+#endif  // DART_INTEGRATION_EXPLICITEULERINTEGRATOR_H_

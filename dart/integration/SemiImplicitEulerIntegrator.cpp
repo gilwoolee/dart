@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2014, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
+ * Author(s): Kristin Siu <kasiu@gatech.edu>,
  *            Jeongseok Lee <jslee02@gmail.com>
  *
- * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -35,42 +35,37 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_CONSTRAINT_JOINTLIMITCONSTRAINT_H_TEST
-#define DART_CONSTRAINT_JOINTLIMITCONSTRAINT_H_TEST
-
-#include "dart/constraint_test/Constraint.h"
+#include "dart/integration/SemiImplicitEulerIntegrator.h"
 
 namespace dart {
-namespace dynamics {
-class Joint;
-}  // namespace dynamics
-}  // namespace dart
+namespace integration {
 
-namespace dart {
-namespace constraint {
-
-/// \brief JointLimitConstraint handles joint position or velocity limits
-class JointLimitConstraintTEST : public ConstraintTEST
+//==============================================================================
+SemiImplicitEulerIntegrator::SemiImplicitEulerIntegrator()
+  : Integrator()
 {
-public:
-  /// \brief Default constructor
-  JointLimitConstraintTEST();
+}
 
-  /// \brief Default destructor
-  ~JointLimitConstraintTEST();
+//==============================================================================
+SemiImplicitEulerIntegrator::~SemiImplicitEulerIntegrator()
+{
+}
 
-  /// \brief
-  bool isActive();
+//==============================================================================
+void SemiImplicitEulerIntegrator::integrate(IntegrableSystem* _system,
+                                            double _dt) const
+{
+  Eigen::VectorXd state = _system->getState();
+  int n = state.size();
 
-protected:
-  /// \brief
-  dynamics::Joint* mJoint;
+  // dq(k+1) = dq(k) + dt * ddq(k)
+  state.tail(n) += _dt * _system->evalDeriv().tail(n);
 
-private:
-};
+  // q(k+1) = q(k) + dt * dq(k+1)
+  state.head(n) += _dt * state.tail(n);
 
-}  // namespace constraint
+  _system->setState(state);
+}
+
+}  // namespace integration
 }  // namespace dart
-
-#endif  // DART_CONSTRAINT_JOINTLIMITCONSTRAINT_H_TEST
-

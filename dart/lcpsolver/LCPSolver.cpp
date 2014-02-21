@@ -37,6 +37,7 @@
 #include "dart/lcpsolver/LCPSolver.h"
 
 #include <cstdio>
+#include <iostream>
 
 #include "dart/lcpsolver/Lemke.h"
 #include "dart/lcpsolver/lcp.h"
@@ -98,8 +99,117 @@ bool LCPSolver::Solve(const Eigen::MatrixXd& _A,
       hi[_numContacts + i * 2 + 0] = _mu;
       hi[_numContacts + i * 2 + 1] = _mu;
     }
+
+    std::cout << "Before solving: " << std::endl;
+    std::cout << "A: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      for (int j = 0; j < nSkip; ++j)
+      {
+        std::cout << A[i * nSkip + j] << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    std::cout << "b: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << b[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "w: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << w[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "x: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << x[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "lb: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << lo[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "ub: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << hi[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "frictionIndex: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << findex[i] << " ";
+    }
+    std::cout << std::endl;
+
     // dClearUpperTriangle (A,n);
     dSolveLCP(n, A, x, b, w, 0, lo, hi, findex);
+
+    std::cout << "After solving: " << std::endl;
+    std::cout << "A: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      for (int j = 0; j < nSkip; ++j)
+      {
+        std::cout << A[i * nSkip + j] << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+    std::cout << "b: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << b[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "w: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << w[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "x: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << x[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "lb: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << lo[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "ub: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << hi[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "frictionIndex: " << std::endl;
+    for (int i = 0; i < n; ++i)
+    {
+      std::cout << findex[i] << " ";
+    }
+    std::cout << std::endl;
 
 //    for (int i = 0; i < n; i++) {
 //      if (w[i] < 0.0 && abs(x[i] - hi[i]) > 0.000001)

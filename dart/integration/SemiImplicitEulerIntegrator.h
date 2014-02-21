@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2014, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
+ * Author(s): Kristin Siu <kasiu@gatech.edu>,
  *            Jeongseok Lee <jslee02@gmail.com>
  *
- * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
+ * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
  * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
  * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
@@ -35,42 +35,29 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_CONSTRAINT_JOINTLIMITCONSTRAINT_H_TEST
-#define DART_CONSTRAINT_JOINTLIMITCONSTRAINT_H_TEST
+#ifndef DART_INTEGRATION_SEMIIMPLICITEULERINTEGRATOR_H_
+#define DART_INTEGRATION_SEMIIMPLICITEULERINTEGRATOR_H_
 
-#include "dart/constraint_test/Constraint.h"
-
-namespace dart {
-namespace dynamics {
-class Joint;
-}  // namespace dynamics
-}  // namespace dart
+#include "dart/integration/Integrator.h"
 
 namespace dart {
-namespace constraint {
+namespace integration {
 
-/// \brief JointLimitConstraint handles joint position or velocity limits
-class JointLimitConstraintTEST : public ConstraintTEST
+/// \brief
+class SemiImplicitEulerIntegrator : public Integrator
 {
 public:
-  /// \brief Default constructor
-  JointLimitConstraintTEST();
+  /// \brief Default constructor.
+  SemiImplicitEulerIntegrator();
 
-  /// \brief Default destructor
-  ~JointLimitConstraintTEST();
+  /// \brief Default destructor.
+  virtual ~SemiImplicitEulerIntegrator();
 
-  /// \brief
-  bool isActive();
-
-protected:
-  /// \brief
-  dynamics::Joint* mJoint;
-
-private:
+  // Documentation inherited.
+  virtual void integrate(IntegrableSystem* _system, double _dt) const;
 };
 
-}  // namespace constraint
+}  // namespace integration
 }  // namespace dart
 
-#endif  // DART_CONSTRAINT_JOINTLIMITCONSTRAINT_H_TEST
-
+#endif  // DART_INTEGRATION_SEMIIMPLICITEULERINTEGRATOR_H_
