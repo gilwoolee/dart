@@ -21,6 +21,7 @@ option(BUILD_CORE_ONLY "Build only the core of DART" OFF)
 if(NOT MSVC)
     OPTION(BUILD_SHARED_LIBS "Build shared libraries" ON)
 endif()
+option(BUILD_OPENMP "Build with OpenMP" ON)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release CACHE STRING
@@ -58,6 +59,14 @@ set(CMAKE_DEBUG_POSTFIX "d")
 if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "C:/Golems" CACHE PATH "Install prefix" FORCE)
 endif()
+
+###############
+# Generate the config header file
+set(CONFIG_HEADER_IN ${CMAKE_SOURCE_DIR}/dart/common/Config.h.in)
+set(CONFIG_HEADER_OUT ${CMAKE_BINARY_DIR}/dart/common/Config.h)
+message(STATUS "Generate the config header file to ${CONFIG_HEADER_OUT}")
+configure_file(${CONFIG_HEADER_IN} ${CONFIG_HEADER_OUT} @ONLY)
+install(FILES ${CONFIG_HEADER_OUT} DESTINATION include/dart/common)
 
 ###############
 # Generate the path header file
@@ -114,10 +123,17 @@ endif()
 find_package(OpenMP)
 if(OPENMP_FOUND)
   message(STATUS "Looking for OpenMP -- found")
+  if(BUILD_OPENMP)
+    message(STATUS "BUILD_OPENMP is enabled")
+  endif()
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 else()
   message(STATUS "Looking for OpenMP -- not found")
+  if(BUILD_OPENMP)
+    message(STATUS "BUILD_OPENMP is disabled")
+    set(BUILD_OPENMP FALSE)
+  endif()
 endif()
 
 include_directories(BEFORE ${PROJECT_SOURCE_DIR})
