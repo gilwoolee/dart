@@ -44,15 +44,18 @@ TEST(OpenMP, BasicTest)
 {
 #ifdef BUILD_OPENMP
 
-  int num = 10000;
+  int num = 2e+9;
   int sum = 0;
   int omp_sum = 0;
 
+  double begin = omp_get_wtime();
   for (int i = 1; i <= num; ++i)
   {
     sum += i;
   }
+  double sum_duration = omp_get_wtime() - begin;
 
+  begin = omp_get_wtime();
 #pragma omp parallel
 {
   #pragma omp for reduction(+:omp_sum)
@@ -61,8 +64,12 @@ TEST(OpenMP, BasicTest)
     omp_sum += i;
   }
 }
+  double omp_sum_duration = omp_get_wtime() - begin;
 
   EXPECT_EQ(sum, omp_sum);
+
+  std::cout << "    sum duration: " <<     sum_duration << std::endl;
+  std::cout << "omp_sum duration: " << omp_sum_duration << std::endl;
 
 #endif
 }
