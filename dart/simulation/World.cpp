@@ -61,8 +61,6 @@ World::World()
     mTime(0.0),
     mTimeStep(0.001),
     mFrame(0),
-    mIntegrator(new integration::SemiImplicitEulerIntegrator<Eigen::VectorXd,
-                Eigen::VectorXd>()),
     mConstraintHandler(new constraint::ConstraintDynamics(mSkeletons,
                                                           mTimeStep))
 {
@@ -73,7 +71,6 @@ World::World()
 }
 
 World::~World() {
-  delete mIntegrator;
   delete mConstraintHandler;
 
   for (std::vector<dynamics::Skeleton*>::const_iterator it = mSkeletons.begin();
@@ -282,9 +279,11 @@ double World::getTimeStep() const {
   return mTimeStep;
 }
 
-void World::step() {
-  integration::SemiImplicitEulerIntegrator<Eigen::VectorXd, Eigen::VectorXd>::integrate(this, mTimeStep);
-//  mIntegrator->integrate(this, mTimeStep);
+//==============================================================================
+void World::step()
+{
+  integration::SemiImplicitEulerIntegrator<Eigen::VectorXd, Eigen::VectorXd>
+      ::integrate(this, mTimeStep);
 
   for (std::vector<dynamics::Skeleton*>::iterator itr = mSkeletons.begin();
        itr != mSkeletons.end(); ++itr) {

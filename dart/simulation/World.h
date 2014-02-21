@@ -210,9 +210,6 @@ protected:
   /// \brief The simulated frame number.
   int mFrame;
 
-  /// \brief The integrator.
-  integration::Integrator<Eigen::VectorXd, Eigen::VectorXd>* mIntegrator;
-
   /// \brief The constraint handler.
   constraint::ConstraintDynamics* mConstraintHandler;
 
