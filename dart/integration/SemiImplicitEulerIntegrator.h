@@ -40,21 +40,32 @@
 
 #include "dart/integration/Integrator.h"
 
+#include <vector>
+
 namespace dart {
 namespace integration {
 
 /// \brief
-class SemiImplicitEulerIntegrator : public Integrator
+template<typename State, typename Deriv>
+class SemiImplicitEulerIntegrator : public Integrator<State, Deriv>
 {
 public:
-  /// \brief Default constructor.
-  SemiImplicitEulerIntegrator();
-
-  /// \brief Default destructor.
-  virtual ~SemiImplicitEulerIntegrator();
-
   // Documentation inherited.
-  virtual void integrate(IntegrableSystem* _system, double _dt) const;
+  static void integrate(IntegrableSystem<State, Deriv>* _system, double _dt)
+  {
+    {
+      State state = _system->getState();
+      int n = state.size();
+
+      // dq(k+1) = dq(k) + dt * ddq(k)
+      state.tail(n) += _dt * _system->evalDeriv().tail(n);
+
+      // q(k+1) = q(k) + dt * dq(k+1)
+      state.head(n) += _dt * state.tail(n);
+
+      _system->setState(state);
+    }
+  }
 };
 
 }  // namespace integration

@@ -56,14 +56,15 @@ namespace dart {
 namespace simulation {
 
 World::World()
-  : integration::IntegrableSystem(),
+  : integration::IntegrableSystem<Eigen::VectorXd, Eigen::VectorXd>(),
     mGravity(0.0, 0.0, -9.81),
     mTime(0.0),
     mTimeStep(0.001),
     mFrame(0),
-    mIntegrator(new integration::SemiImplicitEulerIntegrator()),
-    mConstraintHandler(
-      new constraint::ConstraintDynamics(mSkeletons, mTimeStep))
+    mIntegrator(new integration::SemiImplicitEulerIntegrator<Eigen::VectorXd,
+                Eigen::VectorXd>()),
+    mConstraintHandler(new constraint::ConstraintDynamics(mSkeletons,
+                                                          mTimeStep))
 {
   mIndices.push_back(0);
 
@@ -282,7 +283,8 @@ double World::getTimeStep() const {
 }
 
 void World::step() {
-  mIntegrator->integrate(this, mTimeStep);
+  integration::SemiImplicitEulerIntegrator<Eigen::VectorXd, Eigen::VectorXd>::integrate(this, mTimeStep);
+//  mIntegrator->integrate(this, mTimeStep);
 
   for (std::vector<dynamics::Skeleton*>::iterator itr = mSkeletons.begin();
        itr != mSkeletons.end(); ++itr) {

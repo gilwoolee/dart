@@ -53,7 +53,7 @@
 
 namespace dart {
 namespace integration {
-class Integrator;
+//class Integrator<Eigen::VectorXd, Eigen::VectorXd>;
 }  // namespace integration
 namespace dynamics {
 class Skeleton;
@@ -69,7 +69,8 @@ namespace simulation {
 
 /// \class World
 /// \brief
-class World : public integration::IntegrableSystem {
+class World : public integration::IntegrableSystem<Eigen::VectorXd,
+                                                   Eigen::VectorXd> {
 public:
   //--------------------------------------------------------------------------
   // Constructor and Destructor
@@ -210,7 +211,7 @@ protected:
   int mFrame;
 
   /// \brief The integrator.
-  integration::Integrator* mIntegrator;
+  integration::Integrator<Eigen::VectorXd, Eigen::VectorXd>* mIntegrator;
 
   /// \brief The constraint handler.
   constraint::ConstraintDynamics* mConstraintHandler;

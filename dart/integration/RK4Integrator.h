@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2011-2013, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Kristin Siu <kasiu@gatech.edu>
+ * Author(s): Kristin Siu <kasiu@gatech.edu>,
+ *            Jeongseok Lee <jslee02@gmail.com>
  *
  * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -43,20 +44,34 @@ namespace dart {
 namespace integration {
 
 /// \brief
-class RK4Integrator : public Integrator {
+template<typename State, typename Deriv>
+class RK4Integrator : public Integrator<State, Deriv>
+{
 public:
-  /// \brief Default constructor.
-  RK4Integrator() {}
-
-  /// \brief Default destructor.
-  virtual ~RK4Integrator() {}
-
   // Documentation inherited.
-  virtual void integrate(IntegrableSystem* _system, double _dt) const;
+  static void integrate(IntegrableSystem<State, Deriv>* _system, double _dt)
+  {
+    // TODO(kasiu): Slow. Needs to be optimized.
 
-private:
-  /// \brief Weights.
-  mutable Eigen::VectorXd k1, k2, k3, k4;
+    // calculates the four weighted deltas
+    Deriv deriv = _system->evalDeriv();
+    State x = _system->getState();
+    Deriv k1 = deriv * _dt;
+
+    _system->setState(x + (k1 * 0.5));
+    deriv = _system->evalDeriv();
+    Deriv k2 = deriv * _dt;
+
+    _system->setState(x + (k2 * 0.5));
+    deriv = _system->evalDeriv();
+    Deriv k3 = deriv * _dt;
+
+    _system->setState(x + k3);
+    deriv = _system->evalDeriv();
+    Deriv k4 = deriv * _dt;
+
+    _system->setState(x + ((1.0/6.0) * (k1 + (2.0 * k2) + (2.0 * k3) + k4)));
+  }
 };
 
 }  // namespace integration
