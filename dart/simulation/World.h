@@ -95,11 +95,8 @@ public:
   Eigen::VectorXd _evalDerivPrev();
   Eigen::VectorXd _evalDerivNew();
 
-  void __prestep();                   // clear dynamics terms except user control input and external force (tau, Fext)
-  void __computeForwardDynamics();    // ddq = HybridDynamics(q, dq, tau, Fext)
   void __updateVelocity();            // dq = dq + dt * ddq
   void __computeConstraintImpulses(); // imp = ConstraintSolver(q)
-  void __computeVelocityJumps();      // del_dq = ImpulseBasedHybridDynamics(q, imp)
   void __updateVelocityWithVelJump(); // dq = dq + del_dq
   void __updateAccelerationWithVelJump(); // ddq = ddq + del_dq / dt
   void __updatePosition();            // q = q + dt * dq

@@ -156,15 +156,12 @@ Eigen::VectorXd World::_evalDerivPrev()
 
 Eigen::VectorXd World::_evalDerivNew()
 {
-  __prestep();
-  __computeForwardDynamics();
-  __updateVelocity();
-  __computeConstraintImpulses();
-  __computeVelocityJumps();
-  __updateVelocityWithVelJump();
-  __updateAccelerationWithVelJump();
-//  __updateTauWithImpulse();
-//  __updateSensors();
+  // compute forward dynamics
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    (*it)->computeForwardDynamics();
+  }
 
   // compute derivatives for integration
   Eigen::VectorXd deriv = Eigen::VectorXd::Zero(mIndices.back() * 2);
@@ -186,21 +183,6 @@ Eigen::VectorXd World::_evalDerivNew()
   return deriv;
 }
 
-void World::__prestep()
-{
-
-}
-
-void World::__computeForwardDynamics()
-{
-  // compute forward dynamics
-  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
-       it != mSkeletons.end(); ++it)
-  {
-    (*it)->computeForwardDynamics();
-  }
-}
-
 void World::__updateVelocity()
 {
   // dq = dq + dt * ddq
@@ -214,21 +196,6 @@ void World::__updateVelocity()
 void World::__computeConstraintImpulses()
 {
   mConstraintSolver->solve();
-}
-
-void World::__computeVelocityJumps()
-{
-  // TODO(JS): Parallel computing is possible here
-  // compute forward dynamics
-  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
-       it != mSkeletons.end(); ++it)
-  {
-    if ((*it)->isImpulseApplied())
-    {
-      (*it)->computeImpForwardDynamics();
-      (*it)->setImpulseApplied(false);
-    }
-  }
 }
 
 void World::__updateVelocityWithVelJump()
@@ -282,15 +249,44 @@ double World::getTimeStep() const {
 //==============================================================================
 void World::step()
 {
+  // Predict next state of skeletons by integrating one step forward without
+  // constraints. Parallel computing is possible here.
   integration::SemiImplicitEulerIntegrator<Eigen::VectorXd, Eigen::VectorXd>
       ::integrate(this, mTimeStep);
 
+  // Detect activated constraints and compute constraint impulses.
+  mConstraintSolver->solve();
+
+  // Correct constraint violations with the constraint impulses. Parallel
+  // computing is possible here.
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    if ((*it)->isImpulseApplied())
+    {
+      (*it)->computeImpForwardDynamics();
+      (*it)->setImpulseApplied(false);
+    }
+  }
+
+  __updateVelocity();
+  __computeConstraintImpulses();
+  __updateVelocityWithVelJump();
+  __updateAccelerationWithVelJump();
+//  __updateTauWithImpulse();
+//  __updateSensors();
+
+
+
+  // Clear user inputs.
   for (std::vector<dynamics::Skeleton*>::iterator itr = mSkeletons.begin();
-       itr != mSkeletons.end(); ++itr) {
+       itr != mSkeletons.end(); ++itr)
+  {
     (*itr)->clearInternalForceVector();
     (*itr)->clearExternalForceVector();
   }
 
+  // Step forward time stamps and frames.
   mTime += mTimeStep;
   mFrame++;
 }
