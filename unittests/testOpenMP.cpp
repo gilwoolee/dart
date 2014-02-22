@@ -36,10 +36,10 @@
 
 #include <iostream>
 #include <gtest/gtest.h>
+#include "dart/common/Config.h"
 #ifdef BUILD_OPENMP
   #include <omp.h>
 #endif
-#include "dart/common/Config.h"
 
 //==============================================================================
 TEST(OpenMP, BasicTest)
