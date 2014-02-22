@@ -36,7 +36,9 @@
 
 #include <iostream>
 #include <gtest/gtest.h>
-#include <omp.h>
+#ifdef BUILD_OPENMP
+  #include <omp.h>
+#endif
 #include "dart/common/Config.h"
 
 //==============================================================================
