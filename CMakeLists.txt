@@ -132,7 +132,7 @@ else()
   message(STATUS "Looking for OpenMP -- not found")
   if(BUILD_OPENMP)
     message(STATUS "BUILD_OPENMP is disabled")
-    set(BUILD_OPENMP FALSE)
+    set(BUILD_OPENMP OFF)
   endif()
 endif()
 
