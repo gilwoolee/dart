@@ -83,9 +83,18 @@ void TranslationalJoint::updateJacobian() {
   assert(!math::isNan(mS));
 }
 
-void TranslationalJoint::updateJacobianTimeDeriv() {
+void TranslationalJoint::updateJacobianDeriv() {
   // mdS.setZero();
   assert(mdS == math::Jacobian::Zero(6, 3));
+}
+
+void TranslationalJoint::integVelocityEulerTEST(double _timeStep)
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    mCoordinate[i].set_dq(mCoordinate[i].get_dq()
+                          + mCoordinate[i].get_ddq() * _timeStep);
+  }
 }
 
 }  // namespace dynamics

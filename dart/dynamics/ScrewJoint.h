@@ -76,7 +76,10 @@ public:
   virtual void updateJacobian();
 
   // Documentation inherited.
-  virtual void updateJacobianTimeDeriv();
+  virtual void updateJacobianDeriv();
+
+  // Documentation inherited.
+  virtual void integVelocityEulerTEST(double _timeStep);
 
   // Documentation inherited.
   virtual void clampRotation();

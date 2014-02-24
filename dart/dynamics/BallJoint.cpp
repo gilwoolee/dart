@@ -123,7 +123,7 @@ void BallJoint::updateJacobian_Issue122() {
   assert(!math::isNan(mS));
 }
 
-inline void BallJoint::updateJacobianTimeDeriv() {
+inline void BallJoint::updateJacobianDeriv() {
   Eigen::Vector3d q(mCoordinate[0].get_q(),
       mCoordinate[1].get_q(),
       mCoordinate[2].get_q());
@@ -148,9 +148,18 @@ inline void BallJoint::updateJacobianTimeDeriv() {
   assert(!math::isNan(mdS));
 }
 
-void BallJoint::updateJacobianTimeDeriv_Issue122() {
+void BallJoint::updateJacobianDeriv_Issue122() {
   // mdS == 0
   assert(mdS == Eigen::MatrixXd::Zero(6, 3));
+}
+
+void BallJoint::integVelocityEulerTEST(double _timeStep)
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    mCoordinate[i].set_dq(mCoordinate[i].get_dq()
+                          + mCoordinate[i].get_ddq() * _timeStep);
+  }
 }
 
 }  // namespace dynamics

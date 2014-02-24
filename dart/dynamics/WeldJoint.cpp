@@ -62,7 +62,12 @@ void WeldJoint::updateJacobian() {
   // Do nothing
 }
 
-void WeldJoint::updateJacobianTimeDeriv() {
+void WeldJoint::updateJacobianDeriv() {
+  // Do nothing
+}
+
+void WeldJoint::integVelocityEulerTEST(double /*_timeStep*/)
+{
   // Do nothing
 }
 

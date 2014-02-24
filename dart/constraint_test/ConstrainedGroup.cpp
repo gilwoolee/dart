@@ -106,6 +106,8 @@ bool ConstrainedGroup::solve()
   if (mConstraints.size() == 0)
     return true;
 
+  for (std::vector<ConstraintTEST*>::iterator it = mConstraints)
+
   // Build LCP terms by aggregating them from constraints
   ODELcp lcp(getTotalDimension());
 

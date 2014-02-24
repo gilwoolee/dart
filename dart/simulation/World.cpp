@@ -46,6 +46,7 @@
 #include <string>
 #include <vector>
 
+#include "dart/common/Console.h"
 #include "dart/integration/SemiImplicitEulerIntegrator.h"
 #include "dart/dynamics/GenCoord.h"
 #include "dart/dynamics/Skeleton.h"
@@ -156,6 +157,57 @@ Eigen::VectorXd World::_evalDerivPrev()
 
 Eigen::VectorXd World::_evalDerivNew()
 {
+  // Compute unconstrained acceleration.
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    // Transmitted body force doesn't need to be computed here since it will be
+    // computed at below.
+    (*it)->computeForwardDynamics();
+    (*it)->integVelocityEulerTEST(mTimeStep);
+  }
+
+  // Detect activated constraints and compute constraint impulses.
+  mConstraintSolver->solve();
+
+  // Predict next state of skeletons by integrating one step forward without
+  // constraints. Parallel computing is possible here.
+  integration::SemiImplicitEulerIntegrator<Eigen::VectorXd, Eigen::VectorXd>
+      ::integrate(this, mTimeStep);
+
+  // Correct constraint violations with the constraint impulses. Parallel
+  // computing is possible here.
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    if ((*it)->isImpulseApplied())
+    {
+      (*it)->computeImpForwardDynamics();
+      (*it)->setImpulseApplied(false);
+    }
+  }
+
+  // dq = dq + dt * ddq
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    (*it)->set_dq((*it)->get_dq() + (*it)->get_ddq() * mTimeStep);
+  }
+
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    (*it)->set_dq((*it)->get_dq() + (*it)->get_del_dq());
+  }
+
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+//    (*it)->set_ddq((*it)->get_ddq() - (*it)->get_del_dq() / mTimeStep);
+  }
+
+
+
   // compute forward dynamics
   for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
        it != mSkeletons.end(); ++it)
@@ -183,54 +235,6 @@ Eigen::VectorXd World::_evalDerivNew()
   return deriv;
 }
 
-void World::__updateVelocity()
-{
-  // dq = dq + dt * ddq
-  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
-       it != mSkeletons.end(); ++it)
-  {
-    (*it)->set_dq((*it)->get_dq() + (*it)->get_ddq() * mTimeStep);
-  }
-}
-
-void World::__computeConstraintImpulses()
-{
-  mConstraintSolver->solve();
-}
-
-void World::__updateVelocityWithVelJump()
-{
-  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
-       it != mSkeletons.end(); ++it)
-  {
-    (*it)->set_dq((*it)->get_dq() + (*it)->get_del_dq());
-  }
-}
-
-void World::__updateAccelerationWithVelJump()
-{
-  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
-       it != mSkeletons.end(); ++it)
-  {
-//    (*it)->set_ddq((*it)->get_ddq() - (*it)->get_del_dq() / mTimeStep);
-  }
-}
-
-void World::__updatePosition()
-{
-
-}
-
-void World::__updateTauWithImpulse()
-{
-
-}
-
-void World::__updateSensors()
-{
-
-}
-
 void World::setTimeStep(double _timeStep) {
   assert(_timeStep > 0.0 && "Invalid timestep.");
 
@@ -242,13 +246,39 @@ void World::setTimeStep(double _timeStep) {
   }
 }
 
-double World::getTimeStep() const {
+//==============================================================================
+double World::getTimeStep() const
+{
   return mTimeStep;
 }
 
 //==============================================================================
 void World::step()
 {
+  // Predict next state of skeletons by integrating one step forward without
+  // constraints. Parallel computing is possible here.
+  integration::SemiImplicitEulerIntegrator<Eigen::VectorXd, Eigen::VectorXd>
+      ::integrate(this, mTimeStep);
+
+  // Clear user inputs.
+  for (std::vector<dynamics::Skeleton*>::iterator itr = mSkeletons.begin();
+       itr != mSkeletons.end(); ++itr)
+  {
+    (*itr)->clearInternalForceVector();
+    (*itr)->clearExternalForceVector();
+  }
+
+  // Step forward time stamps and frames.
+  mTime += mTimeStep;
+  mFrame++;
+}
+
+//==============================================================================
+void World::step1Correction()
+{
+  dterr << "World::step1Correction(): "
+        << "not implemented yet." << std::endl;
+
   // Predict next state of skeletons by integrating one step forward without
   // constraints. Parallel computing is possible here.
   integration::SemiImplicitEulerIntegrator<Eigen::VectorXd, Eigen::VectorXd>
@@ -269,14 +299,24 @@ void World::step()
     }
   }
 
-  __updateVelocity();
-  __computeConstraintImpulses();
-  __updateVelocityWithVelJump();
-  __updateAccelerationWithVelJump();
-//  __updateTauWithImpulse();
-//  __updateSensors();
+  // dq = dq + dt * ddq
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    (*it)->set_dq((*it)->get_dq() + (*it)->get_ddq() * mTimeStep);
+  }
 
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    (*it)->set_dq((*it)->get_dq() + (*it)->get_del_dq());
+  }
 
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+//    (*it)->set_ddq((*it)->get_ddq() - (*it)->get_del_dq() / mTimeStep);
+  }
 
   // Clear user inputs.
   for (std::vector<dynamics::Skeleton*>::iterator itr = mSkeletons.begin();
@@ -291,22 +331,45 @@ void World::step()
   mFrame++;
 }
 
-void World::setTime(double _time) {
+//==============================================================================
+void World::stepLazy2Correction()
+{
+  dterr << "World::stepLazy2Correction(): "
+        << "not implemented yet." << std::endl;
+}
+
+//==============================================================================
+void World::step2Correction()
+{
+  dterr << "World::step2Correction(): "
+        << "not implemented yet." << std::endl;
+}
+
+//==============================================================================
+void World::setTime(double _time)
+{
   mTime = _time;
 }
 
-double World::getTime() const {
+//==============================================================================
+double World::getTime() const
+{
   return mTime;
 }
 
-int World::getSimFrames() const {
+//==============================================================================
+int World::getSimFrames() const
+{
   return mFrame;
 }
 
-void World::setGravity(const Eigen::Vector3d& _gravity) {
+//==============================================================================
+void World::setGravity(const Eigen::Vector3d& _gravity)
+{
   mGravity = _gravity;
   for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
-       it != mSkeletons.end(); ++it) {
+       it != mSkeletons.end(); ++it)
+  {
     (*it)->setGravity(_gravity);
   }
 }

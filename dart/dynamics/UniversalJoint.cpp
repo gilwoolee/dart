@@ -97,7 +97,7 @@ void UniversalJoint::updateJacobian() {
   assert(!math::isNan(mS));
 }
 
-void UniversalJoint::updateJacobianTimeDeriv() {
+void UniversalJoint::updateJacobianDeriv() {
   mdS.col(0) = -math::ad(mS.col(1)*mCoordinate[1].get_dq(),
                          math::AdTAngular(mT_ChildBodyToJoint
                          * math::expAngular(-mAxis[1]*mCoordinate[1].get_q()),
@@ -105,6 +105,15 @@ void UniversalJoint::updateJacobianTimeDeriv() {
   // mdS.col(1) = setZero();
   assert(!math::isNan(mdS.col(0)));
   assert(mdS.col(1) == Eigen::Vector6d::Zero());
+}
+
+void UniversalJoint::integVelocityEulerTEST(double _timeStep)
+{
+  for (int i = 0; i < 2; ++i)
+  {
+    mCoordinate[i].set_dq(mCoordinate[i].get_dq()
+                          + mCoordinate[i].get_ddq() * _timeStep);
+  }
 }
 
 void UniversalJoint::clampRotation() {

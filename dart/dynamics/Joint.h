@@ -59,6 +59,7 @@ class BodyNode;
 class Joint : public GenCoordSystem {
 public:
   friend class BodyNode;
+  friend class Skeleton;
 
   //--------------------------------------------------------------------------
   // Types
@@ -108,7 +109,7 @@ public:
   const math::Jacobian& getLocalJacobian() const;
 
   /// \brief
-  const math::Jacobian& getLocalJacobianTimeDeriv() const;
+  const math::Jacobian& getLocalJacobianDeriv() const;
 
   /// \brief Get whether this joint contains _genCoord.
   /// \param[in] Generalized coordinate to see.
@@ -226,10 +227,13 @@ protected:
   /// \brief
   /// dq, ddq, S(q) --> dS(q), dV(q, dq, ddq)
   /// dV(q, dq, ddq) = dS(q) * dq + S(q) * ddq
-  virtual void updateJacobianTimeDeriv() = 0;
+  virtual void updateJacobianDeriv() = 0;
 
   /// @brief TODO(JS): This is workaround for Issue #122.
-  virtual void updateJacobianTimeDeriv_Issue122() {}
+  virtual void updateJacobianDeriv_Issue122() {}
+
+  /// @brief Integrate joint velocity using Euler method. dq = dq + dt*ddq
+  virtual void integVelocityEulerTEST(double _timeStep) = 0;
 
   //--------------------------------------------------------------------------
   //

@@ -247,13 +247,23 @@ public:
   Eigen::MatrixXd getWorldCOMJacobian();
 
   /// \brief Get skeleton's COM Jacobian time derivative w.r.t. world frame.
-  Eigen::MatrixXd getWorldCOMJacobianTimeDeriv();
+  Eigen::MatrixXd getWorldCOMJacobianDeriv();
 
   /// \brief Get kinetic energy of this skeleton.
   virtual double getKineticEnergy() const;
 
   /// \brief Get potential energy of this skeleton.
   virtual double getPotentialEnergy() const;
+
+  //------------------- Recursive kinematics algorithms ------------------------
+  /// \brief Update transformation of body nodes
+  virtual void updateBodyTransforms();
+
+  /// \brief Update velocities of body nodes
+  virtual void updateBodyVelocities();
+
+  /// \brief Update accelerations of body nodes
+  virtual void updateBodyAccelerations();
 
   //-------------------- Recursive dynamics algorithms -------------------------
   /// \brief Initialize before inverse/forward dynamics compuation
@@ -266,8 +276,21 @@ public:
                                     bool _withExternalForces = false,
                                     bool _withDampingForces = false);
 
-  /// \brief Compute forward dynamics
+  /// \brief Compute forward dynamics.
+  ///
+  /// Given: joint kinematic cache data (position, Jacobian, velocity, Jacobian
+  ///        derivative) and body node cache data (transformations, velocities,
+  ///        articulated inertia). There are all stored in the joints and body
+  ///        nodes.
+  /// Output: joint acceleration, body acceleration, and body transmitted force.
+  ///         They are also stored in the joints and body nodes
+  /// \param[in] _compTransForce True to compute transmitted body force.
+  ///                            The transmitted body force is needed for
+  ///                            force/torque sensor.
   void computeForwardDynamics();
+
+  /// \brief Integrate velocity by acceleration using Euler method.
+  void integVelocityEulerTEST(double _timeStep);
 
   /// \brief Compute impulse-based forward dynamics
   void computeImpForwardDynamics();

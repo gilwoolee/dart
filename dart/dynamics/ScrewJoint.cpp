@@ -97,9 +97,14 @@ void ScrewJoint::updateJacobian() {
   assert(!math::isNan(mS));
 }
 
-void ScrewJoint::updateJacobianTimeDeriv() {
+void ScrewJoint::updateJacobianDeriv() {
   // mdS.setZero();
   assert(mdS == math::Jacobian::Zero(6, 1));
+}
+
+void ScrewJoint::integVelocityEulerTEST(double _timeStep)
+{
+  mCoordinate.set_dq(mCoordinate.get_dq() + mCoordinate.get_ddq() * _timeStep);
 }
 
 void ScrewJoint::clampRotation() {

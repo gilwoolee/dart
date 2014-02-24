@@ -196,7 +196,7 @@ void EulerJoint::updateJacobian() {
 #endif
 }
 
-void EulerJoint::updateJacobianTimeDeriv() {
+void EulerJoint::updateJacobianDeriv() {
   double q0 = mCoordinate[0].get_q();
   double q1 = mCoordinate[1].get_q();
   double q2 = mCoordinate[2].get_q();
@@ -264,6 +264,15 @@ void EulerJoint::updateJacobianTimeDeriv() {
   mdS.col(2) = math::AdT(mT_ChildBodyToJoint, dJ2);
 
   assert(!math::isNan(mdS));
+}
+
+void EulerJoint::integVelocityEulerTEST(double _timeStep)
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    mCoordinate[i].set_dq(mCoordinate[i].get_dq()
+                          + mCoordinate[i].get_ddq() * _timeStep);
+  }
 }
 
 }  // namespace dynamics

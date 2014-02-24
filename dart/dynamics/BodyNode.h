@@ -265,7 +265,7 @@ public:
   /// \brief Get time derivative of generalized Jacobian at the origin of this
   ///        body node where the Jacobian is expressed in this body node
   ///        frame.
-  const math::Jacobian& getBodyJacobianTimeDeriv();
+  const math::Jacobian& getBodyJacobianDeriv();
 
   /// \brief Get time derivative of generalized Jacobian at a point on this
   ///        body node where the time derivative of Jacobian is expressed in
@@ -273,7 +273,7 @@ public:
   /// \param[in] _offset Position vector relative to the origin the body frame.
   /// \param[in] _isLocal True if _offset is expressed in the body frame.
   ///                     False if _offset is expressed in the world frame.
-  math::Jacobian getWorldJacobianTimeDeriv(
+  math::Jacobian getWorldJacobianDeriv(
       const Eigen::Vector3d& _offset = Eigen::Vector3d::Zero(),
       bool _isOffsetLocal            = false);
 
@@ -564,10 +564,10 @@ protected:
   bool mIsBodyJacobianDirty;
 
   /// \brief Time derivative of body Jacobian.
-  math::Jacobian mBodyJacobianTimeDeriv;
+  math::Jacobian mBodyJacobianDeriv;
 
   /// \brief Dirty flag for time derivative of body Jacobian.
-  bool mIsBodyJacobianTimeDerivDirty;
+  bool mIsBodyJacobianDerivDirty;
 
   /// \brief Generalized body velocity w.r.t. body frame.
   Eigen::Vector6d mV;
@@ -687,9 +687,9 @@ public:
   ///        mIsBodyJacobianDirty is true.
   void _updateBodyJacobian();
 
-  /// \brief Update time derivative of body Jacobian. getBodyJacobianTimeDeriv()
-  ///        calls this function if mIsBodyJacobianTimeDerivDirty is true.
-  void _updateBodyJacobianTimeDeriv();
+  /// \brief Update time derivative of body Jacobian. getBodyJacobianDeriv()
+  ///        calls this function if mIsBodyJacobianDerivDirty is true.
+  void _updateBodyJacobianDeriv();
 
 private:
   /// \brief

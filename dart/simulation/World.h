@@ -67,23 +67,19 @@ class ConstraintSolverTEST;
 namespace dart {
 namespace simulation {
 
-/// \class World
-/// \brief
+/// \brief World
 class World : public integration::IntegrableSystem<Eigen::VectorXd,
-                                                   Eigen::VectorXd> {
+                                                   Eigen::VectorXd>
+{
 public:
-  //--------------------------------------------------------------------------
-  // Constructor and Destructor
-  //--------------------------------------------------------------------------
+  //-------------------- Constructor and Destructor ----------------------------
   /// \brief Constructor.
   World();
 
   /// \brief Destructor.
   virtual ~World();
 
-  //--------------------------------------------------------------------------
-  // Virtual functions
-  //--------------------------------------------------------------------------
+  //------------------------- Virtual functions --------------------------------
   virtual Eigen::VectorXd getState() const;
 
   virtual void setState(const Eigen::VectorXd &_newState);
@@ -95,51 +91,46 @@ public:
   Eigen::VectorXd _evalDerivPrev();
   Eigen::VectorXd _evalDerivNew();
 
-  void __updateVelocity();            // dq = dq + dt * ddq
-  void __computeConstraintImpulses(); // imp = ConstraintSolver(q)
-  void __updateVelocityWithVelJump(); // dq = dq + del_dq
-  void __updateAccelerationWithVelJump(); // ddq = ddq + del_dq / dt
-  void __updatePosition();            // q = q + dt * dq
-  void __updateTauWithImpulse();      // tau = tau + imp / dt
-  void __updateSensors();             //
-
-  //--------------------------------------------------------------------------
-  // Simulation
-  //--------------------------------------------------------------------------
+  //--------------------------- Simulation -------------------------------------
   /// \brief Calculate the dynamics and integrate the world for one step.
+  /// Lazy single correction with semi-implicit Euler method (most fast)
   void step();
 
-  /// \brief
+  /// \brief Calculate the dynamics and integrate the world for one step.
+  /// Single correction with arbitrary integration method
+  void step1Correction();
+
+  /// \brief Calculate the dynamics and integrate the world for one step.
+  /// Lazy double correction with semi-implicit Euler method
+  void stepLazy2Correction();
+
+  /// \brief Calculate the dynamics and integrate the world for one step.
+  /// Double correction with arbitrary integration method
+  void step2Correction();
+
+  /// \brief Set current time.
   void setTime(double _time);
 
-  /// \brief Get the time step.
-  /// \return Time step.
+  /// \brief Get current time.
   double getTime() const;
 
-  /// \brief Get the number of simulated frames.
+  /// \brief Get number of simulated frames.
   int getSimFrames() const;
 
-  //--------------------------------------------------------------------------
-  // Properties
-  //--------------------------------------------------------------------------
-
-  /// \brief .
-  /// \param[in] _gravity
+  //--------------------------- Properties -------------------------------------
+  /// \brief Set gravity
   void setGravity(const Eigen::Vector3d& _gravity);
 
-  /// \brief .
+  /// \brief Get gravity
   const Eigen::Vector3d& getGravity() const;
 
-  /// \brief .
-  /// \param[in] _timeStep
+  /// \brief Set simulation time step.
   void setTimeStep(double _timeStep);
 
-  /// \brief Get the time step.
+  /// \brief Get simulation time step.
   double getTimeStep() const;
 
-  //--------------------------------------------------------------------------
-  // Structueral Properties
-  //--------------------------------------------------------------------------
+  //----------------------- Structueral Properties -----------------------------
   /// \brief Get the indexed skeleton.
   /// \param[in] _index
   dynamics::Skeleton* getSkeleton(int _index) const;
@@ -153,29 +144,20 @@ public:
   /// \brief Get the number of skeletons.
   int getNumSkeletons() const;
 
-  /// \brief .
-  /// \param[in] _skel
+  /// \brief Add skeleton to the world
   void addSkeleton(dynamics::Skeleton* _skeleton);
 
+  /// \brief Remove skeleton from the world
   void removeSkeleton(dynamics::Skeleton* _skeleton);
 
   /// \brief Get the dof index for the indexed skeleton.
-  /// \param[in] _index
   int getIndex(int _index) const;
 
-  //--------------------------------------------------------------------------
-  // Kinematics
-  //--------------------------------------------------------------------------
+  //---------------------------- Kinematics ------------------------------------
   /// \brief
   bool checkCollision(bool _checkAllCollisions = false);
 
-  //--------------------------------------------------------------------------
-  // Dynamics
-  //--------------------------------------------------------------------------
-
-  //--------------------------------------------------------------------------
-  // Constraint
-  //--------------------------------------------------------------------------
+  //---------------------------- Constraint ------------------------------------
   /// \brief Get the constraint handler.
   constraint::ConstraintDynamics* getConstraintHandler() const;
 

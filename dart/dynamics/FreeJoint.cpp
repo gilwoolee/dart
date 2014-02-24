@@ -140,7 +140,7 @@ void FreeJoint::updateJacobian_Issue122() {
   assert(!math::isNan(mS));
 }
 
-void FreeJoint::updateJacobianTimeDeriv() {
+void FreeJoint::updateJacobianDeriv() {
   Eigen::Vector3d q(mCoordinate[0].get_q(),
                     mCoordinate[1].get_q(),
                     mCoordinate[2].get_q());
@@ -180,9 +180,18 @@ void FreeJoint::updateJacobianTimeDeriv() {
   assert(!math::isNan(mdS));
 }
 
-void FreeJoint::updateJacobianTimeDeriv_Issue122() {
+void FreeJoint::updateJacobianDeriv_Issue122() {
   // mdS == 0
   assert(mdS == Eigen::MatrixXd::Zero(6, 6));
+}
+
+void FreeJoint::integVelocityEulerTEST(double _timeStep)
+{
+  for (int i = 0; i < 6; ++i)
+  {
+    mCoordinate[i].set_dq(mCoordinate[i].get_dq()
+                          + mCoordinate[i].get_ddq() * _timeStep);
+  }
 }
 
 void FreeJoint::clampRotation() {

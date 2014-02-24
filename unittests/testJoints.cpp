@@ -110,7 +110,7 @@ void JOINTS::kinematicsTest(Joint* _joint)
 
         Eigen::Isometry3d T = _joint->getLocalTransform();
         Jacobian J = _joint->getLocalJacobian();
-        Jacobian dJ = _joint->getLocalJacobianTimeDeriv();
+        Jacobian dJ = _joint->getLocalJacobianDeriv();
 
         //--------------------------------------------------------------------------
         // Test T

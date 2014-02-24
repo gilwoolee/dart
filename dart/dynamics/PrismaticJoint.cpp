@@ -81,9 +81,14 @@ void PrismaticJoint::updateJacobian() {
   assert(!math::isNan(mS));
 }
 
-void PrismaticJoint::updateJacobianTimeDeriv() {
+void PrismaticJoint::updateJacobianDeriv() {
   // mdS.setZero();
   assert(mdS == math::Jacobian::Zero(6, 1));
+}
+
+void PrismaticJoint::integVelocityEulerTEST(double _timeStep)
+{
+  mCoordinate.set_dq(mCoordinate.get_dq() + mCoordinate.get_ddq() * _timeStep);
 }
 
 }  // namespace dynamics

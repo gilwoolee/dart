@@ -68,10 +68,13 @@ public:
   virtual void updateJacobian_Issue122();
 
   // Documentation inherited.
-  virtual void updateJacobianTimeDeriv();
+  virtual void updateJacobianDeriv();
 
   /// @brief TODO(JS): This is workaround for Issue #122.
-  virtual void updateJacobianTimeDeriv_Issue122();
+  virtual void updateJacobianDeriv_Issue122();
+
+  // Documentation inherited.
+  virtual void integVelocityEulerTEST(double _timeStep);
 
 protected:
   /// \brief

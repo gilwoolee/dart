@@ -79,7 +79,7 @@ const math::Jacobian&Joint::getLocalJacobian() const {
   return mS;
 }
 
-const math::Jacobian&Joint::getLocalJacobianTimeDeriv() const {
+const math::Jacobian&Joint::getLocalJacobianDeriv() const {
   return mdS;
 }
 

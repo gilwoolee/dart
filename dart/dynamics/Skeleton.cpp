@@ -340,7 +340,7 @@ void Skeleton::setConfig(const std::vector<int>& _id,
        it != mBodyNodes.end(); ++it)
   {
     (*it)->mIsBodyJacobianDirty = true;
-    (*it)->mIsBodyJacobianTimeDerivDirty = true;
+    (*it)->mIsBodyJacobianDerivDirty = true;
   }
 }
 
@@ -377,7 +377,7 @@ void Skeleton::setConfig(const Eigen::VectorXd& _config)
        it != mBodyNodes.end(); ++it)
   {
     (*it)->mIsBodyJacobianDirty = true;
-    (*it)->mIsBodyJacobianTimeDerivDirty = true;
+    (*it)->mIsBodyJacobianDerivDirty = true;
   }
 }
 
@@ -426,7 +426,7 @@ void Skeleton::setState(const Eigen::VectorXd& _state)
        it != mBodyNodes.end(); ++it)
   {
     (*it)->mIsBodyJacobianDirty = true;
-    (*it)->mIsBodyJacobianTimeDerivDirty = true;
+    (*it)->mIsBodyJacobianDerivDirty = true;
   }
 }
 
@@ -856,6 +856,40 @@ bool Skeleton::isImpulseApplied() const
 }
 
 //==============================================================================
+void Skeleton::updateBodyTransforms()
+{
+  // Forward recursion
+  for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it)
+  {
+    (*it)->updateTransform();
+  }
+}
+
+//==============================================================================
+void Skeleton::updateBodyVelocities()
+{
+  // Forward recursion
+  for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it)
+  {
+    (*it)->updateVelocity();
+  }
+}
+
+//==============================================================================
+void Skeleton::updateBodyAccelerations()
+{
+  // Forward recursion
+  for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it)
+  {
+    (*it)->updateEta();
+    (*it)->updateBodyAcceleration();
+  }
+}
+
+//==============================================================================
 void Skeleton::computeInverseDynamicsLinear(bool _computeJacobian,
                                             bool _computeJacobianDeriv,
                                             bool _withExternalForces,
@@ -912,6 +946,18 @@ void Skeleton::computeForwardDynamics()
     (*it)->updateJointAcceleration();
     (*it)->updateBodyAcceleration();
     (*it)->updateBodyForceFwdDyn();
+  }
+}
+
+//==============================================================================
+void Skeleton::integVelocityEulerTEST(double _timeStep)
+{
+  // Forward recursion
+  for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it)
+  {
+    (*it)->getParentJoint()->integVelocityEulerTEST(_timeStep);
+    (*it)->updateVelocity();
   }
 }
 
@@ -1126,7 +1172,7 @@ Eigen::MatrixXd Skeleton::getWorldCOMJacobian()
 }
 
 //==============================================================================
-Eigen::MatrixXd Skeleton::getWorldCOMJacobianTimeDeriv()
+Eigen::MatrixXd Skeleton::getWorldCOMJacobianDeriv()
 {
   // Jacobian time derivative of COM
   Eigen::MatrixXd dJ = Eigen::MatrixXd::Zero(3, getNumGenCoords());
@@ -1142,7 +1188,7 @@ Eigen::MatrixXd Skeleton::getWorldCOMJacobianTimeDeriv()
     // Compute weighted Jacobian time derivative
     Eigen::MatrixXd localJ
         = bodyNode->getMass()
-          * bodyNode->getWorldJacobianTimeDeriv(bodyNode->getLocalCOM(), true).bottomRows<3>();
+          * bodyNode->getWorldJacobianDeriv(bodyNode->getLocalCOM(), true).bottomRows<3>();
 
     // Assign the weighted Jacobian to total Jacobian time derivative
     for (int j = 0; j < bodyNode->getNumDependentGenCoords(); ++j)

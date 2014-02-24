@@ -92,7 +92,7 @@ void PlanarJoint::updateJacobian()
   assert(!math::isNan(mS));
 }
 
-void PlanarJoint::updateJacobianTimeDeriv()
+void PlanarJoint::updateJacobianDeriv()
 {
   Eigen::MatrixXd J = Eigen::MatrixXd::Zero(6, 3);
   J.block<3, 1>(0, 0) = mRotAxis;
@@ -116,6 +116,15 @@ void PlanarJoint::updateJacobianTimeDeriv()
   assert(mdS.col(0) == Eigen::Vector6d::Zero());
   assert(!math::isNan(mdS.col(1)));
   assert(!math::isNan(mdS.col(2)));
+}
+
+void PlanarJoint::integVelocityEulerTEST(double _timeStep)
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    mCoordinate[i].set_dq(mCoordinate[i].get_dq()
+                          + mCoordinate[i].get_ddq() * _timeStep);
+  }
 }
 
 void PlanarJoint::setPlaneType(PlaneType _planeType)

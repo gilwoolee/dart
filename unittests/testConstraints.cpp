@@ -267,8 +267,8 @@ void DynamicsTest::compareVelocities(const std::string& _fileName)
         // Calculation of velocities using Jacobian and dq
         MatrixXd JBody   = bn->getBodyJacobian();
         MatrixXd JWorld  = bn->getWorldJacobian();
-        MatrixXd dJBody  = bn->getBodyJacobianTimeDeriv();
-        MatrixXd dJWorld = bn->getWorldJacobianTimeDeriv();
+        MatrixXd dJBody  = bn->getBodyJacobianDeriv();
+        MatrixXd dJWorld = bn->getWorldJacobianDeriv();
         Vector6d vBody2  = Vector6d::Zero();
         Vector6d vWorld2 = Vector6d::Zero();
         Vector6d aBody2  = Vector6d::Zero();
@@ -402,8 +402,8 @@ void DynamicsTest::compareAccelerations(const std::string& _fileName)
         // Get accelerations and time derivatives of Jacobians at k-th time step
         Vector6d aBody1   = bn->getBodyAcceleration();
         Vector6d aWorld1  = bn->getWorldAcceleration();
-        MatrixXd dJBody1  = bn->getBodyJacobianTimeDeriv();
-        MatrixXd dJWorld1 = bn->getWorldJacobianTimeDeriv();
+        MatrixXd dJBody1  = bn->getBodyJacobianDeriv();
+        MatrixXd dJWorld1 = bn->getWorldJacobianDeriv();
 
         // Calculation of velocities and Jacobian at (k+1)-th time step
         skeleton->setState(xNext);
@@ -418,8 +418,8 @@ void DynamicsTest::compareAccelerations(const std::string& _fileName)
         // Get accelerations and time derivatives of Jacobians at k-th time step
         Vector6d aBody2   = bn->getBodyAcceleration();
         Vector6d aWorld2  = bn->getWorldAcceleration();
-        MatrixXd dJBody2  = bn->getBodyJacobianTimeDeriv();
-        MatrixXd dJWorld2 = bn->getWorldJacobianTimeDeriv();
+        MatrixXd dJBody2  = bn->getBodyJacobianDeriv();
+        MatrixXd dJWorld2 = bn->getWorldJacobianDeriv();
 
         // Calculation of approximated accelerations and time derivatives of
         // Jacobians
@@ -799,7 +799,7 @@ void DynamicsTest::centerOfMass(const std::string& _fileName)
       VectorXd ddcom = skel->getWorldCOMAcceleration();
 
       MatrixXd comJ  = skel->getWorldCOMJacobian();
-      MatrixXd comdJ = skel->getWorldCOMJacobianTimeDeriv();
+      MatrixXd comdJ = skel->getWorldCOMJacobianDeriv();
 
       VectorXd dcom2  = comJ * dq;
       VectorXd ddcom2 = comdJ * dq + comJ * ddq;
