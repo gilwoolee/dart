@@ -53,7 +53,7 @@
 
 namespace dart {
 namespace integration {
-class Integrator;
+//class Integrator;
 }  // namespace integration
 namespace dynamics {
 class Skeleton;
@@ -68,7 +68,9 @@ namespace simulation {
 
 /// \class World
 /// \brief
-class World : public integration::IntegrableSystem {
+class World : public integration::SecondOrderIntegrable<Eigen::VectorXd,
+                                                        Eigen::VectorXd>
+{
 public:
   //--------------------------------------------------------------------------
   // Constructor and Destructor
@@ -82,13 +84,29 @@ public:
   //--------------------------------------------------------------------------
   // Virtual functions
   //--------------------------------------------------------------------------
+  // Documentation inherited.
   virtual Eigen::VectorXd getState() const;
 
-  virtual void setState(const Eigen::VectorXd &_newState);
+  // Documentation inherited.
+  virtual void setState(const Eigen::VectorXd& _newState);
 
-  virtual void setControlInput();
-
+  // Documentation inherited.
   virtual Eigen::VectorXd evalDeriv();
+
+  // Documentation inherited.
+  virtual Eigen::VectorXd getPosition() const {}
+
+  // Documentation inherited.
+  virtual void setPosition(const Eigen::VectorXd& _newPosition) {}
+
+  // Documentation inherited.
+  virtual Eigen::VectorXd getVelocity() const {}
+
+  // Documentation inherited.
+  virtual void setVelocity(const Eigen::VectorXd& _newVelocity) {}
+
+  // Documentation inherited.
+  virtual Eigen::VectorXd evalAcceleration() {}
 
   //--------------------------------------------------------------------------
   // Simulation
@@ -192,7 +210,8 @@ protected:
   int mFrame;
 
   /// \brief The integrator.
-  integration::Integrator* mIntegrator;
+  integration::SecondOrderIntegrator
+      <Eigen::VectorXd, Eigen::VectorXd>* mIntegrator;
 
   /// \brief The constraint handler.
   constraint::ConstraintDynamics* mConstraintHandler;

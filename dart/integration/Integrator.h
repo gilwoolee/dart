@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Kristin Siu <kasiu@gatech.edu>
@@ -37,47 +37,96 @@
 #ifndef DART_INTEGRATION_INTEGRATOR_H_
 #define DART_INTEGRATION_INTEGRATOR_H_
 
-#include <vector>
-
-#include <Eigen/Dense>
-
 namespace dart {
 namespace integration {
 
-/// \brief Any class that uses an integrator should implement this interface.
-class IntegrableSystem {
+/// \brief Integrable system
+/// Any class that uses an integrator should implement this interface.
+template<typename State, typename Deriv>
+class FirstOrderIntegrable
+{
 public:
+  /// \brief State type alias
+  typedef State StateType;
+
+  /// \brief Deriv type alias
+  typedef Deriv DerivType;
+
   /// \brief Default constructor.
-  IntegrableSystem();
+  FirstOrderIntegrable() {}
 
   /// \brief Default destructor.
-  virtual ~IntegrableSystem();
+  virtual ~FirstOrderIntegrable() {}
 
-public:
   /// \brief Get state of the system.
-  virtual Eigen::VectorXd getState() const = 0;
+  virtual FirstOrderIntegrable::StateType getState() const = 0;
 
   /// \brief Set state of the system.
-  virtual void setState(const Eigen::VectorXd& _state) = 0;
+  virtual void setState(const FirstOrderIntegrable::StateType& _state) = 0;
 
   /// \brief Evaluate the derivatives of the system.
-  virtual Eigen::VectorXd evalDeriv() = 0;
+  virtual FirstOrderIntegrable::DerivType evalDeriv() = 0;
 };
 
-// TODO(kasiu): Consider templating the class (which currently only works on
-// arbitrarily-sized vectors of doubles)
 /// \brief
-class Integrator {
+template<typename Config, typename Tangent>
+class SecondOrderIntegrable\
+{
 public:
   /// \brief Default constructor.
-  Integrator();
+  SecondOrderIntegrable() {}
 
   /// \brief Default destructor.
-  virtual ~Integrator();
+  virtual ~SecondOrderIntegrable() {}
+
+  /// \brief Get state of the system.
+  virtual Config getPosition() const = 0;
+
+  /// \brief Set state of the system.
+  virtual void setPosition(const Config& _state) = 0;
+
+  /// \brief Get state of the system.
+  virtual Tangent getVelocity() const = 0;
+
+  /// \brief Set state of the system.
+  virtual void setVelocity(const Tangent& _state) = 0;
+
+  /// \brief Evaluate the derivatives of the system.
+  virtual Tangent evalAcceleration() = 0;
+};
+
+/// \brief class IntegratorTEST
+template<typename State, typename Deriv>
+class FirstOrderIntegrator
+{
+public:
+  /// \brief Default constructor.
+  FirstOrderIntegrator() {}
+
+  /// \brief Default destructor.
+  virtual ~FirstOrderIntegrator() {}
 
 public:
   /// \brief Integrate the system with time step dt.
-  virtual void integrate(IntegrableSystem* system, double dt) const = 0;
+  virtual void integrate(FirstOrderIntegrable<State, Deriv>* system,
+                         double dt) const = 0;
+};
+
+/// \brief class IntegratorTEST
+template<typename Config, typename Tangent>
+class SecondOrderIntegrator
+{
+public:
+  /// \brief Default constructor.
+  SecondOrderIntegrator() {}
+
+  /// \brief Default destructor.
+  virtual ~SecondOrderIntegrator() {}
+
+public:
+  /// \brief Integrate the system with time step dt.
+  virtual void integrate(SecondOrderIntegrable<Config, Tangent>* system,
+                         double dt) const = 0;
 };
 
 }  // namespace integration

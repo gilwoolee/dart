@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Kristin Siu <kasiu@gatech.edu>
@@ -42,17 +42,55 @@
 namespace dart {
 namespace integration {
 
-/// \brief
-class EulerIntegrator : public Integrator {
+/// \brief Explicit Euler integrator
+template<typename State, typename Deriv>
+class ExplicitEulerIntegrator : public FirstOrderIntegrator<State, Deriv>
+{
 public:
   /// \brief Default constructor.
-  EulerIntegrator();
+  ExplicitEulerIntegrator() : FirstOrderIntegrator<State, Deriv>() {}
 
   /// \brief Default destructor.
-  virtual ~EulerIntegrator();
+  virtual ~ExplicitEulerIntegrator() {}
 
   // Documentation inherited.
-  virtual void integrate(IntegrableSystem* _system, double _dt) const;
+  virtual void integrate(FirstOrderIntegrable<State, Deriv>* _system, double _dt) const
+  {
+    _system->setState(_system->getState() + _dt * _system->evalDeriv());
+  }
+};
+
+/// \brief Semi-implicit Euler integrator for second order ordinary differential
+/// systems
+template<typename Config, typename Tangent>
+class SemiImplicitEulerIntegrator : public SecondOrderIntegrator<Config, Tangent>
+{
+public:
+  /// \brief Default constructor.
+  SemiImplicitEulerIntegrator() {}
+
+  /// \brief Default destructor.
+  virtual ~SemiImplicitEulerIntegrator() {}
+
+  // Documentation inherited.
+  virtual void integrate(
+      SecondOrderIntegrable<Config, Tangent>* _system, double _dt) const
+  {
+#ifndef NDEBUG
+    // Check if _system is SecondOrderIntegrableSystem
+    SecondOrderIntegrable<Config, Tangent>* systemTest
+        =  dynamic_cast<SecondOrderIntegrable<Config, Tangent>*>(_system);
+    assert(systemTest != NULL
+        && "Only SecondOrderIntegrableSystem is allowed.");
+#endif
+
+    SecondOrderIntegrable<Config, Tangent>* system
+        =  static_cast<SecondOrderIntegrable<Config, Tangent>*>(_system);
+    system->setVelocity(system->getVelocity()
+                         + _dt * _system->evalAcceleration());
+    system->setPosition(system->getPosition()
+                         + _dt * system->getVelocity());
+  }
 };
 
 }  // namespace integration

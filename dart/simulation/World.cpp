@@ -55,12 +55,14 @@ namespace dart {
 namespace simulation {
 
 World::World()
-  : integration::IntegrableSystem(),
+  : integration::SecondOrderIntegrable<Eigen::VectorXd, Eigen::VectorXd>(),
     mGravity(0.0, 0.0, -9.81),
     mTime(0.0),
     mTimeStep(0.001),
     mFrame(0),
-    mIntegrator(new integration::EulerIntegrator()),
+    mIntegrator(
+      new integration::SemiImplicitEulerIntegrator<Eigen::VectorXd,
+                                                   Eigen::VectorXd>()),
     mConstraintHandler(
       new constraint::ConstraintDynamics(mSkeletons, mTimeStep)) {
   mIndices.push_back(0);
@@ -93,12 +95,6 @@ void World::setState(const Eigen::VectorXd& _newState) {
     int start = 2 * mIndices[i];
     int size = 2 * getSkeleton(i)->getNumGenCoords();
     getSkeleton(i)->setState(_newState.segment(start, size));
-  }
-}
-
-void World::setControlInput() {
-  for (int i = 0; i < getNumSkeletons(); i++) {
-    getSkeleton(i);
   }
 }
 
