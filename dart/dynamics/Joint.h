@@ -55,8 +55,9 @@ namespace dynamics {
 
 class BodyNode;
 
-/// \brief
-class Joint : public GenCoordSystem {
+/// \brief class JointBase
+/// JointBase contains fixed size variables.
+class JointBase : public GenCoordSystem {
 public:
   friend class BodyNode;
 
@@ -77,14 +78,25 @@ public:
     FREE            // 6-dof
   };
 
+  enum ControlType
+  {
+//    CT_POSITION,
+//    CT_VELOCITY,
+//    CT_ACCELERATION,
+    CT_KINEMATIC,
+    CT_FORCE,
+    CT_POS_SERVO,
+    CT_VEL_SERVO
+  };
+
   //--------------------------------------------------------------------------
   // Constructor and Destructor
   //--------------------------------------------------------------------------
   /// \brief
-  Joint(JointType _type, const std::string& _name = "Noname Joint");
+  JointBase(JointType _type, const std::string& _name = "Noname Joint");
 
   /// \brief
-  virtual ~Joint();
+  virtual ~JointBase();
 
   //--------------------------------------------------------------------------
   //
@@ -231,6 +243,26 @@ protected:
   /// @brief TODO(JS): This is workaround for Issue #122.
   virtual void updateJacobianTimeDeriv_Issue122() {}
 
+  /// \brief Set joint velocity to _bodyVel
+  virtual void setJointVelocityTo(Eigen::Vector6d& _bodyVel) = 0;
+
+  /// \brief
+  virtual void setEtaTo(Eigen::Vector6d& _eta,
+                        const Eigen::Vector6d& _bodyVel) = 0;
+
+  /// \brief Set joint accleration to _bodyVel using _eta.
+  virtual void setJointAccelerationTo(Eigen::Vector6d& _bodyVel,
+                                      const Eigen::Vector6d& _eta) = 0;
+
+  /// \brief Update inverse matrix of local articulated mass matrix using
+  ///        articulated inertia.
+  virtual void updateLocalInvMassMatrix(const Eigen::Matrix6d& _AInertia,
+                                        const Eigen::Matrix6d& _ImplicitAInertia,
+                                        double _dt) = 0;
+
+  virtual void addTransformedAInertiaTo(Eigen::Matrix6d& _parentAI,
+                                        const Eigen::Matrix6d& _Pi) = 0;
+
   //--------------------------------------------------------------------------
   //
   //--------------------------------------------------------------------------
@@ -279,6 +311,239 @@ protected:
 private:
   /// \brief Type of joint e.g. ball, hinge etc.
   JointType mJointType;
+
+  /// \brief
+  ControlType mControlType;
+};
+
+/// \brief class Joint
+/// Joint contains type dependent variables
+template<typename Config, typename Tangent, unsigned int DOF>
+class Joint : public JointBase
+{
+public:
+  /// \brief Configuration space type alias
+  typedef Config ConfigType;
+
+  /// \brief Tangent space type alias of configuration space
+  typedef Tangent TangentType;
+
+  /// \brief
+  typedef Eigen::Matrix<double, DOF, 1> VectorType;
+//  typedef TangentType VectorType;
+
+  /// \brief Local Jacobian type alias
+  typedef Eigen::Matrix<double, 6, DOF> JacobianType;
+
+  /// \brief Local mass matrix type alias
+  typedef Eigen::Matrix<double, DOF, DOF> MassMatrixType;
+
+  /// \brief
+  Joint(JointType _type, const std::string& _name = "Noname Joint")
+    : JointBase(_type, _name)
+  {
+  }
+
+  /// \brief
+  virtual ~Joint()
+  {
+  }
+
+  /// \brief Get degrees of freedom which is the dimension of local coordinates.
+  unsigned int getDof() const {return DOF;}
+
+  //------------------------------ Control -------------------------------------
+  void setConfig(const ConfigType& _config)
+  {
+    if (mControlType != CT_KINEMATIC)
+    {
+#ifndef NDEBUG
+      _printControlTypeError(_config);
+#endif
+      return;
+    }
+
+    // TODO(JS): Not implemented yet
+  }
+
+  void setForce(const TangentType& _force)
+  {
+
+  }
+
+  /// \brief
+  const TangentType& getForce() const { return mForce_TEST; }
+
+protected:
+  //--------------------- Recursive dynamics algorithms ------------------------
+  // Documentation inherited.
+  virtual void setJointVelocityTo(Eigen::Vector6d& _vel)
+  {
+//    _vel = mS_ * mVelocity_;
+    _vel = mS_ * get_dq();
+    assert(!math::isNan(_vel));
+  }
+
+  // Documentation inherited.
+  virtual void setEtaTo(Eigen::Vector6d& _eta, const Eigen::Vector6d& _bodyVel)
+  {
+    //_eta = math::ad(_bodyVel, mS_ * mVelocity_) + mdS_ * mVelocity_;
+    _eta = math::ad(_bodyVel, mS * get_dq()) + mdS * get_dq();
+    assert(!math::isNan(_eta));
+  }
+
+  // Documentation inherited.
+  virtual void setJointAccelerationTo(Eigen::Vector6d& _bodyAcc,
+                                      const Eigen::Vector6d& _eta)
+  {
+//    _bodyAcc = mS_ * mAcceleration_ + _eta;
+    _bodyAcc = mS_ * get_ddq() + _eta;
+    assert(!math::isNan(_bodyAcc));
+  }
+
+  // Documentation inherited.
+  virtual void updateLocalInvMassMatrix(const Eigen::Matrix6d& _AInertia,
+                                        const Eigen::Matrix6d& _ImplicitAInertia,
+                                        double _dt)
+  {
+    // TODO(JS): need to cache mAI_S?
+    mAI_S_.noalias() = _AInertia * mS_;
+    mImplicitAI_S_.noalias() = _ImplicitAInertia * mS_;
+
+//    mPsi_ = (mS_.transpose() * _AInertia * mS_).inverse();
+    mPsi_ = (mS.transpose() * _AInertia * mS).inverse();
+    assert(!math::isNan(mPsi_));
+
+    //
+    Eigen::DiagonalMatrix<double, DOF> K;
+    Eigen::DiagonalMatrix<double, DOF> D;
+    K.diagonal() = mSpringStiffness_;
+    D.diagonal() = mDampingCoefficient_;
+    mImplicitPsi_.noalias() = mS_.transpose() * _AInertia * mS_;
+    mImplicitPsi_ += _dt * D;
+    mImplicitPsi_ += _dt * _dt * K;
+    mImplicitPsi_ = mImplicitPsi_.inverse();
+    assert(!math::isNan(mImplicitPsi_));
+
+    // Cache data: AI_S_Psi
+    mAI_S_Psi_ = mAI_S_ * mPsi_;
+    mImplicitAI_S_ImplicitPsi_ = mImplicitAI_S_ * mImplicitPsi_;
+  }
+
+  // Documentation inherited.
+  virtual void addTransformedAInertiaTo(Eigen::Matrix6d& _parentAI,
+                                        const Eigen::Matrix6d& _Pi)
+  {
+    _parentAI.noalias() += math::transformInertia(mT.inverse(), _Pi);
+  }
+
+  /// \brief Get Jacobian.
+  const JacobianType& getJacobian() const { return mS_; }
+
+  /// \brief Get Jacobian time derivative.
+  const JacobianType& getJacobianDeriv() const { return mdS_; }
+
+  /// \brief Joint spring stiffness.
+  VectorType mSpringStiffness_;
+
+  /// \brief Joint damping coefficient.
+  VectorType mDampingCoefficient_;
+
+  /// \brief
+  Config mConfig_TEST;
+
+  /// \brief
+  Config mConfigMin_TEST;
+
+  /// \brief
+  Config mConfigMax_TEST;
+
+  /// \brief
+  Tangent mVelocity_;
+
+  /// \brief
+  Tangent mVelocityMin_TEST;
+
+  /// \brief
+  Tangent mVelocityMax_TEST;
+
+  /// \brief
+  Tangent mAcceleration_;
+
+  /// \brief
+  Tangent mAccelerationMin_TEST;
+
+  /// \brief
+  Tangent mAccelerationMax_TEST;
+
+  /// \brief
+  Tangent mForce_TEST;
+
+  /// \brief
+  Tangent mForceMin_TEST;
+
+  /// \brief
+  Tangent mForceMax_TEST;
+
+  /// \brief Local Jacobian.
+  JacobianType mS_;
+
+  /// \brief Local Jacobian.
+  JacobianType mdS_;
+
+  /// \brief Inverse of articulated mass matrix.
+  MassMatrixType mPsi_;
+
+  /// \brief Inverse of articulated mass matrix for implicit joint damping and
+  ///        stiffness.
+  MassMatrixType mImplicitPsi_;
+
+  /// \brief Cache data
+  JacobianType mAI_S_;
+
+  /// \brief
+  JacobianType mImplicitAI_S_;
+
+  /// \brief
+  JacobianType mAI_S_Psi_;
+
+  /// \brief
+  JacobianType mImplicitAI_S_ImplicitPsi_;
+
+private:
+  /// \brief
+  void _printControlTypeError(const ControlType& _inputType)
+  {
+    std::cout << "The control type of this joint [" << getName()
+              << "] is [" << _getControlTypeString(mControlType)
+              << "] so ["
+              << _getControlTypeString(_inputType)
+              << "] is not allowed as control input. "
+              << std::endl;
+  }
+
+  /// \brief
+  std::string _getControlTypeString(const ControlType& _type)
+  {
+    switch (_type)
+    {
+    case CT_KINEMATIC:
+      return std::string("kinematic");
+      break;
+    case CT_FORCE:
+      return std::string("force/torque");
+      break;
+    case CT_POS_SERVO:
+      return std::string("position (servo)");
+      break;
+    case CT_VEL_SERVO:
+      return std::string("velocity (servo)");
+      break;
+    default:
+      return std::string("unknown control type");
+      break;
+    }
+  }
 };
 
 }  // namespace dynamics

@@ -46,7 +46,7 @@
 namespace dart {
 namespace dynamics {
 
-Joint::Joint(JointType _type, const std::string& _name)
+JointBase::JointBase(JointType _type, const std::string& _name)
   : mName(_name),
     mSkelIndex(-1),
     mJointType(_type),
@@ -56,91 +56,91 @@ Joint::Joint(JointType _type, const std::string& _name)
     mT(Eigen::Isometry3d::Identity()) {
 }
 
-Joint::~Joint() {
+JointBase::~JointBase() {
 }
 
-void Joint::setName(const std::string& _name) {
+void JointBase::setName(const std::string& _name) {
   mName = _name;
 }
 
-const std::string& Joint::getName() const {
+const std::string& JointBase::getName() const {
   return mName;
 }
 
-Joint::JointType Joint::getJointType() const {
+JointBase::JointType JointBase::getJointType() const {
   return mJointType;
 }
 
-const Eigen::Isometry3d&Joint::getLocalTransform() const {
+const Eigen::Isometry3d&JointBase::getLocalTransform() const {
   return mT;
 }
 
-const math::Jacobian&Joint::getLocalJacobian() const {
+const math::Jacobian&JointBase::getLocalJacobian() const {
   return mS;
 }
 
-const math::Jacobian&Joint::getLocalJacobianTimeDeriv() const {
+const math::Jacobian&JointBase::getLocalJacobianTimeDeriv() const {
   return mdS;
 }
 
-bool Joint::contains(const GenCoord* _genCoord) const {
+bool JointBase::contains(const GenCoord* _genCoord) const {
   return find(mGenCoords.begin(), mGenCoords.end(), _genCoord) !=
       mGenCoords.end() ? true : false;
 }
 
-int Joint::getGenCoordLocalIndex(int _dofSkelIndex) const {
+int JointBase::getGenCoordLocalIndex(int _dofSkelIndex) const {
   for (unsigned int i = 0; i < mGenCoords.size(); i++)
     if (mGenCoords[i]->getSkeletonIndex() == _dofSkelIndex)
       return i;
   return -1;
 }
 
-void Joint::setPositionLimited(bool _isPositionLimited) {
+void JointBase::setPositionLimited(bool _isPositionLimited) {
   mIsPositionLimited = _isPositionLimited;
 }
 
-bool Joint::isPositionLimited() const {
+bool JointBase::isPositionLimited() const {
   return mIsPositionLimited;
 }
 
-int Joint::getSkeletonIndex() const {
+int JointBase::getSkeletonIndex() const {
   return mSkelIndex;
 }
 
-void Joint::setTransformFromParentBodyNode(const Eigen::Isometry3d& _T) {
+void JointBase::setTransformFromParentBodyNode(const Eigen::Isometry3d& _T) {
   assert(math::verifyTransform(_T));
   mT_ParentBodyToJoint = _T;
 }
 
-void Joint::setTransformFromChildBodyNode(const Eigen::Isometry3d& _T) {
+void JointBase::setTransformFromChildBodyNode(const Eigen::Isometry3d& _T) {
   assert(math::verifyTransform(_T));
   mT_ChildBodyToJoint = _T;
 }
 
-const Eigen::Isometry3d&Joint::getTransformFromParentBodyNode() const {
+const Eigen::Isometry3d&JointBase::getTransformFromParentBodyNode() const {
   return mT_ParentBodyToJoint;
 }
 
-const Eigen::Isometry3d&Joint::getTransformFromChildBodyNode() const {
+const Eigen::Isometry3d&JointBase::getTransformFromChildBodyNode() const {
   return mT_ChildBodyToJoint;
 }
 
-void Joint::applyGLTransform(renderer::RenderInterface* _ri) {
+void JointBase::applyGLTransform(renderer::RenderInterface* _ri) {
   _ri->transform(mT);
 }
 
-void Joint::setDampingCoefficient(int _idx, double _d) {
+void JointBase::setDampingCoefficient(int _idx, double _d) {
   assert(0 <= _idx && _idx < getNumGenCoords());
   assert(_d >= 0.0);
   mDampingCoefficient[_idx] = _d;
 }
 
-double Joint::getDampingCoefficient(int _idx) const {
+double JointBase::getDampingCoefficient(int _idx) const {
   assert(0 <= _idx && _idx < getNumGenCoords());
   return mDampingCoefficient[_idx];
 }
 
-Eigen::VectorXd Joint::getDampingForces() const {
+Eigen::VectorXd JointBase::getDampingForces() const {
   int numDofs = getNumGenCoords();
   Eigen::VectorXd dampingForce(numDofs);
 
@@ -150,18 +150,18 @@ Eigen::VectorXd Joint::getDampingForces() const {
   return dampingForce;
 }
 
-void Joint::setSpringStiffness(int _idx, double _k) {
+void JointBase::setSpringStiffness(int _idx, double _k) {
   assert(0 <= _idx && _idx < getNumGenCoords());
   assert(_k >= 0.0);
   mSpringStiffness[_idx] = _k;
 }
 
-double Joint::getSpringStiffness(int _idx) const {
+double JointBase::getSpringStiffness(int _idx) const {
   assert(0 <= _idx && _idx < getNumGenCoords());
   return mSpringStiffness[_idx];
 }
 
-void Joint::setRestPosition(int _idx, double _q0) {
+void JointBase::setRestPosition(int _idx, double _q0) {
   assert(0 <= _idx && _idx < getNumGenCoords());
 
   if (getGenCoord(_idx)->get_qMin() > _q0
@@ -177,12 +177,12 @@ void Joint::setRestPosition(int _idx, double _q0) {
   mRestPosition[_idx] = _q0;
 }
 
-double Joint::getRestPosition(int _idx) const {
+double JointBase::getRestPosition(int _idx) const {
   assert(0 <= _idx && _idx < getNumGenCoords());
   return mRestPosition[_idx];
 }
 
-Eigen::VectorXd Joint::getSpringForces(double _timeStep) const {
+Eigen::VectorXd JointBase::getSpringForces(double _timeStep) const {
   int dof = getNumGenCoords();
   Eigen::VectorXd springForce(dof);
   for (int i = 0; i < dof; ++i) {
@@ -194,7 +194,7 @@ Eigen::VectorXd Joint::getSpringForces(double _timeStep) const {
   return springForce;
 }
 
-double Joint::getPotentialEnergy() const {
+double JointBase::getPotentialEnergy() const {
   double PE = 0.0;
   int dof = getNumGenCoords();
 

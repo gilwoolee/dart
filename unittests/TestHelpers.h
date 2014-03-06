@@ -87,10 +87,10 @@ void addEndEffector(Skeleton* robot, BodyNode* parent_node, Vector3d dim)
 
 /******************************************************************************/
 /// Add a DOF to a given joint
-Joint* create1DOFJoint(double val, double min, double max, int type)
+JointBase* create1DOFJoint(double val, double min, double max, int type)
 {
     // Create the transformation based on the type
-    Joint* newJoint = NULL;
+    JointBase* newJoint = NULL;
     if(type == DOF_X)
         newJoint = new PrismaticJoint(Eigen::Vector3d(1.0, 0.0, 0.0));
     else if(type == DOF_Y)
@@ -124,7 +124,7 @@ Skeleton* createTwoLinkRobot(Vector3d dim1, TypeOfDOF type1,
     // Create the first link, the joint with the ground and its shape
     double mass = 1.0;
     BodyNode* node = new BodyNode("link1");
-    Joint* joint = create1DOFJoint(0.0, -DART_PI, DART_PI, type1);
+    JointBase* joint = create1DOFJoint(0.0, -DART_PI, DART_PI, type1);
     joint->setName("joint1");
     Shape* shape = new BoxShape(dim1);
     node->setLocalCOM(Vector3d(0.0, 0.0, dim1(2)/2.0));
@@ -174,7 +174,7 @@ Skeleton* createThreeLinkRobot(Vector3d dim1, TypeOfDOF type1,
     // Create the first link, the joint with the ground and its shape
     double mass = 1.0;
     BodyNode* node = new BodyNode("link1");
-    Joint* joint = create1DOFJoint(0.0, -DART_PI, DART_PI, type1);
+    JointBase* joint = create1DOFJoint(0.0, -DART_PI, DART_PI, type1);
     joint->setName("joint1");
     Shape* shape = new BoxShape(dim1);
     node->setLocalCOM(Vector3d(0.0, 0.0, dim1(2)/2.0));
@@ -242,7 +242,7 @@ Skeleton* createNLinkRobot(int _n, Vector3d dim, TypeOfDOF type,
     // Create the first link, the joint with the ground and its shape
     BodyNode* parent_node = NULL;
     BodyNode* node = new BodyNode("link1");
-    Joint* joint = create1DOFJoint(0.0, -DART_PI, DART_PI, type);
+    JointBase* joint = create1DOFJoint(0.0, -DART_PI, DART_PI, type);
     joint->setName("joint1");
     joint->setDampingCoefficient(0, 0.01);
     Shape* shape = new BoxShape(dim);

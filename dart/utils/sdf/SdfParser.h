@@ -17,7 +17,7 @@ namespace dynamics {
 class Skeleton;
 class BodyNode;
 class Shape;
-class Joint;
+class JointBase;
 class WeldJoint;
 class PrismaticJoint;
 class RevoluteJoint;
@@ -79,7 +79,7 @@ public:
             const std::string& _skelPath);
 
     /// \brief
-    static dynamics::Joint* readJoint(
+    static dynamics::JointBase* readJoint(
             tinyxml2::XMLElement* _jointElement,
             const std::vector<SDFBodyNode, Eigen::aligned_allocator<SDFBodyNode> >& _bodies);
 

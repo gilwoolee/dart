@@ -45,7 +45,7 @@
 namespace dart {
 namespace dynamics {
 
-class PlanarJoint : public Joint
+class PlanarJoint : public Joint<Eigen::Vector3d, Eigen::Vector3d, 3>
 {
 public:
   enum PlaneType

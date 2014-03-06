@@ -51,7 +51,7 @@
 
 namespace dart {
 namespace dynamics {
-class Joint;
+class JointBase;
 class PrismaticJoint;
 class RevoluteJoint;
 }
@@ -63,10 +63,10 @@ enum TypeOfDOF {
 };
 
 /// \brief Add a DOF to a given joint
-dart::dynamics::Joint* create1DOFJoint(double val, double min, double max,
+dart::dynamics::JointBase* create1DOFJoint(double val, double min, double max,
                                        int type) {
   // Create the transformation based on the type
-  dart::dynamics::Joint* newJoint = NULL;
+  dart::dynamics::JointBase* newJoint = NULL;
   if (type == DOF_X)
     newJoint = new dart::dynamics::PrismaticJoint(
                  Eigen::Vector3d(1.0, 0.0, 0.0));
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
 
   // ***** BodyNode 1: Left Hip Yaw (LHY) ***** *
   dart::dynamics::BodyNode* node = new dart::dynamics::BodyNode("LHY");
-  dart::dynamics::Joint* joint = create1DOFJoint(0.0, 0.0, DART_PI, DOF_YAW);
+  dart::dynamics::JointBase* joint = create1DOFJoint(0.0, 0.0, DART_PI, DOF_YAW);
   joint->setName("LHY");
   dart::dynamics::Shape* shape =
       new dart::dynamics::BoxShape(Eigen::Vector3d(0.3, 0.3, 1.0));

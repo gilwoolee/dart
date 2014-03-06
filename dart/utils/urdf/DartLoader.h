@@ -23,7 +23,7 @@ namespace dart {
 namespace dynamics {
     class Skeleton;
     class BodyNode;
-    class Joint;
+    class JointBase;
     class Shape;
 }
 namespace simulation {
@@ -50,7 +50,7 @@ private:
     template <class VisualOrCollision>
     dynamics::Shape* createShape(const VisualOrCollision* _vizOrCol, std::string  _rootToSkelPath);
 
-    dynamics::Joint* createDartJoint(const urdf::Joint* _jt);
+    dynamics::JointBase* createDartJoint(const urdf::Joint* _jt);
     dynamics::BodyNode* createDartNode(const urdf::Link* _lk, std::string _rootToSkelPath = NULL);
 
     Eigen::Isometry3d toEigen(const urdf::Pose& _pose);

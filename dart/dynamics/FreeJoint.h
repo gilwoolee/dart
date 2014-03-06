@@ -45,7 +45,7 @@
 namespace dart {
 namespace dynamics {
 
-class FreeJoint : public Joint {
+class FreeJoint : public Joint<Eigen::Isometry3d, Eigen::Vector6d, 6> {
 public:
   /// \brief Constructor.
   explicit FreeJoint(const std::string& _name = "Noname FreeJoint");

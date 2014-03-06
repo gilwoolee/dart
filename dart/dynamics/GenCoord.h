@@ -46,7 +46,7 @@
 namespace dart {
 namespace dynamics {
 
-class Joint;
+class JointBase;
 
 /// \brief Generalized coordinate.
 /// A set of generalized coordiante describes the configuration of a system.

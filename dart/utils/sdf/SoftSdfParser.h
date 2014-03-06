@@ -49,7 +49,7 @@
 
 namespace dart {
 namespace dynamics {
-class Joint;
+class JointBase;
 class SoftBodyNode;
 class SoftSkeleton;
 }  // namespace dynamics
@@ -90,7 +90,7 @@ protected:
       const std::string& _skelPath);
 
   /// \brief
-  static dynamics::Joint* readSoftJoint(
+  static dynamics::JointBase* readSoftJoint(
       tinyxml2::XMLElement* _jointElement,
       const std::vector<SDFBodyNode,
       Eigen::aligned_allocator<SDFBodyNode> >& _bodies);

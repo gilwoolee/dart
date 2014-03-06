@@ -47,7 +47,7 @@
 namespace dart {
 namespace dynamics {
 
-class WeldJoint : public Joint {
+class WeldJoint : public JointBase {
 public:
   /// \brief Constructor.
   explicit WeldJoint(const std::string& _name = "Noname WeldJoint");
@@ -64,6 +64,26 @@ public:
   // Documentation inherited.
   virtual void updateJacobianTimeDeriv();
 
+protected:
+  // Documentation inherited.
+  virtual void setJointVelocityTo(Eigen::Vector6d& _vel);
+
+  // Documentation inherited.
+  virtual void setEtaTo(Eigen::Vector6d& _eta, const Eigen::Vector6d& _bodyVel);
+
+  // Documentation inherited.
+  virtual void setJointAccelerationTo(Eigen::Vector6d& _bodyVel,
+                                      const Eigen::Vector6d& _eta);
+
+  // Documentation inherited.
+  virtual void updateLocalInvMassMatrix(const Eigen::Matrix6d& _AInertia,
+                                        const Eigen::Matrix6d& _ImplicitAInertia,
+                                        double _dt);
+
+  // Documentation inherited.
+  // TODO(JS): Change _Pi to _AI
+  virtual void addTransformedAInertiaTo(Eigen::Matrix6d& _parentAI,
+                                        const Eigen::Matrix6d& _Pi);
 public:
   //
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

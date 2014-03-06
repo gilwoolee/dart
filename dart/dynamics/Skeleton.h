@@ -56,7 +56,7 @@ namespace dart {
 namespace dynamics {
 
 class BodyNode;
-class Joint;
+class JointBase;
 class Marker;
 
 /// \brief
@@ -140,10 +140,10 @@ public:
     BodyNode* getBodyNode(const std::string& _name) const;
 
     /// \brief
-    Joint* getJoint(int _idx) const;
+    JointBase* getJoint(int _idx) const;
 
     /// \brief
-    Joint* getJoint(const std::string& _name) const;
+    JointBase* getJoint(const std::string& _name) const;
 
     /// \brief
     Marker* getMarker(int _i);

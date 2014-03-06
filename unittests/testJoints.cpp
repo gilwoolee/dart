@@ -67,11 +67,11 @@ using namespace dynamics;
 class JOINTS : public testing::Test
 {
 public:
-    void kinematicsTest(Joint* _joint);
+    void kinematicsTest(JointBase* _joint);
 };
 
 /******************************************************************************/
-void JOINTS::kinematicsTest(Joint* _joint)
+void JOINTS::kinematicsTest(JointBase* _joint)
 {
     int numTests = 100;
 
@@ -313,8 +313,8 @@ TEST_F(JOINTS, POSITION_LIMIT)
     dynamics::Skeleton* pendulum = myWorld->getSkeleton("double_pendulum");
     EXPECT_TRUE(pendulum != NULL);
 
-    dynamics::Joint* joint0 = pendulum->getJoint("joint0");
-    dynamics::Joint* joint1 = pendulum->getJoint("joint1");
+    dynamics::JointBase* joint0 = pendulum->getJoint("joint0");
+    dynamics::JointBase* joint1 = pendulum->getJoint("joint1");
 
     EXPECT_TRUE(joint0 != NULL);
     EXPECT_TRUE(joint1 != NULL);

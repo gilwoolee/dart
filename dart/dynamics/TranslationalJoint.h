@@ -45,7 +45,7 @@
 namespace dart {
 namespace dynamics {
 
-class TranslationalJoint : public Joint {
+class TranslationalJoint : public Joint<Eigen::Vector3d, Eigen::Vector3d, 3> {
 public:
   /// \brief Constructor.
   explicit TranslationalJoint(

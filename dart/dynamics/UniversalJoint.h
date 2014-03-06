@@ -47,7 +47,7 @@
 namespace dart {
 namespace dynamics {
 
-class UniversalJoint : public Joint {
+class UniversalJoint : public Joint<Eigen::Vector2d, Eigen::Vector2d, 2> {
 public:
   /// \brief Constructor.
   UniversalJoint(const Eigen::Vector3d& _axis0 = Eigen::Vector3d(1.0, 0.0, 0.0),

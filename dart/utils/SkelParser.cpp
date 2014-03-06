@@ -398,13 +398,13 @@ dynamics::Shape* SkelParser::readShape(tinyxml2::XMLElement* vizEle) {
   return newShape;
 }
 
-dynamics::Joint* SkelParser::readJoint(
+dynamics::JointBase* SkelParser::readJoint(
     tinyxml2::XMLElement* _jointElement,
     const std::vector<SkelBodyNode,
         Eigen::aligned_allocator<SkelBodyNode> >& _skelBodyNodes) {
   assert(_jointElement != NULL);
 
-  dynamics::Joint* newJoint = NULL;
+  dynamics::JointBase* newJoint = NULL;
 
   //--------------------------------------------------------------------------
   // Type attribute

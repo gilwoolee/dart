@@ -97,7 +97,7 @@ void ConstraintDynamics::computeConstraintForces()
 
     for (int j = 0; j < mSkeletons[i]->getNumBodyNodes(); j++)
     {
-      dynamics::Joint* joint = mSkeletons[i]->getJoint(j);
+      dynamics::JointBase* joint = mSkeletons[i]->getJoint(j);
       if (!joint->isPositionLimited())
         continue;
       for (int k = 0; k < mSkeletons[i]->getJoint(j)->getNumGenCoords(); k++)

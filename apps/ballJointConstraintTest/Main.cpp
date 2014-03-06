@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
     // Add damping to every joint
     for (int i = 0; i < myWorld->getSkeleton(0)->getNumBodyNodes(); i++) {
         BodyNode *bd = myWorld->getSkeleton(0)->getBodyNode(i);
-        Joint *jt = bd->getParentJoint();
+        JointBase *jt = bd->getParentJoint();
         for (int j = 0; j < jt->getNumGenCoords(); j++)
             jt->setDampingCoefficient(j, 0.02);
     }

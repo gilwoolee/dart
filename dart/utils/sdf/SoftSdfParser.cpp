@@ -513,12 +513,12 @@ SdfParser::SDFBodyNode SoftSdfParser::readSoftBodyNode(
   return sdfBodyNode;
 }
 
-dynamics::Joint* SoftSdfParser::readSoftJoint(tinyxml2::XMLElement* _jointElement,
+dynamics::JointBase* SoftSdfParser::readSoftJoint(tinyxml2::XMLElement* _jointElement,
                                               const std::vector<SDFBodyNode, Eigen::aligned_allocator<SDFBodyNode> >& _sdfBodyNodes)
 {
   assert(_jointElement != NULL);
 
-  dynamics::Joint* newJoint = NULL;
+  dynamics::JointBase* newJoint = NULL;
 
   //--------------------------------------------------------------------------
   // Type attribute

@@ -467,12 +467,12 @@ dynamics::Shape* SdfParser::readShape(tinyxml2::XMLElement* _shapelement,
     return newShape;
 }
 
-dynamics::Joint* SdfParser::readJoint(tinyxml2::XMLElement* _jointElement,
+dynamics::JointBase* SdfParser::readJoint(tinyxml2::XMLElement* _jointElement,
                             const std::vector<SDFBodyNode, Eigen::aligned_allocator<SDFBodyNode> >& _sdfBodyNodes)
 {
     assert(_jointElement != NULL);
 
-    dynamics::Joint* newJoint = NULL;
+    dynamics::JointBase* newJoint = NULL;
 
     //--------------------------------------------------------------------------
     // Type attribute

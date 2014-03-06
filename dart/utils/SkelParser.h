@@ -48,7 +48,7 @@
 namespace dart {
 
 namespace dynamics {
-class Joint;
+class JointBase;
 class WeldJoint;
 class PrismaticJoint;
 class RevoluteJoint;
@@ -106,7 +106,7 @@ protected:
             tinyxml2::XMLElement* _shapeElement);
 
     /// \brief
-    static dynamics::Joint* readJoint(
+    static dynamics::JointBase* readJoint(
             tinyxml2::XMLElement* _jointElement,
             const std::vector<SkelBodyNode, Eigen::aligned_allocator<SkelBodyNode> >& _bodies);
 

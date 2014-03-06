@@ -91,7 +91,7 @@ namespace dynamics {
 
 class GenCoord;
 class Skeleton;
-class Joint;
+class JointBase;
 class Shape;
 class Marker;
 
@@ -194,10 +194,10 @@ public:
   Skeleton* getSkeleton() const;
 
   /// \brief
-  void setParentJoint(Joint* _joint);
+  void setParentJoint(JointBase* _joint);
 
   /// \brief
-  Joint* getParentJoint() const;
+  JointBase* getParentJoint() const;
 
   /// \brief
   BodyNode* getParentBodyNode() const;
@@ -524,7 +524,7 @@ public:
   Skeleton* mSkeleton;
 
   /// \brief
-  Joint* mParentJoint;
+  JointBase* mParentJoint;
 
   /// \brief
   BodyNode* mParentBodyNode;

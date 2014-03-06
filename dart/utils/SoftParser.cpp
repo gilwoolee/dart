@@ -584,14 +584,14 @@ SkelParser::SkelBodyNode SoftSkelParser::readSoftBodyNode(
   return softBodyNode;
 }
 
-dynamics::Joint* SoftSkelParser::readSoftJoint(
+dynamics::JointBase* SoftSkelParser::readSoftJoint(
     tinyxml2::XMLElement* _jointElement,
     const std::vector<SkelBodyNode,
     Eigen::aligned_allocator<SkelBodyNode> >& _softBodyNodes)
 {
   assert(_jointElement != NULL);
 
-  dynamics::Joint* newJoint = NULL;
+  dynamics::JointBase* newJoint = NULL;
 
   //--------------------------------------------------------------------------
   // Type attribute

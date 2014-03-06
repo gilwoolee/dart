@@ -47,7 +47,7 @@
 namespace dart {
 namespace dynamics {
 
-class BallJoint : public Joint {
+class BallJoint : public Joint<Eigen::Matrix3d, Eigen::Vector3d, 3> {
 public:
   /// \brief Destructor.
   explicit BallJoint(const std::string& _name = "Noname BallJoint");

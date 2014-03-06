@@ -47,7 +47,7 @@
 namespace dart {
 namespace dynamics {
 
-class EulerJoint : public Joint {
+class EulerJoint : public Joint<Eigen::Vector3d, Eigen::Vector3d, 3> {
 public:
   enum AxisOrder {
     AO_ZYX = 0,

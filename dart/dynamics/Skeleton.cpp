@@ -205,11 +205,11 @@ BodyNode* Skeleton::getBodyNode(const std::string& _name) const {
   return NULL;
 }
 
-Joint* Skeleton::getJoint(int _idx) const {
+JointBase* Skeleton::getJoint(int _idx) const {
   return mBodyNodes[_idx]->getParentJoint();
 }
 
-Joint* Skeleton::getJoint(const std::string& _name) const {
+JointBase* Skeleton::getJoint(const std::string& _name) const {
   assert(!_name.empty());
 
   for (std::vector<BodyNode*>::const_iterator it = mBodyNodes.begin();
@@ -321,8 +321,8 @@ void Skeleton::setState(const Eigen::VectorXd& _state) {
   for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
        it != mBodyNodes.end(); ++it) {
     // TODO(JS): This is workaround for Issue #122.
-    if ((*it)->getParentJoint()->getJointType() == Joint::BALL
-        || (*it)->getParentJoint()->getJointType() == Joint::FREE) {
+    if ((*it)->getParentJoint()->getJointType() == JointBase::BALL
+        || (*it)->getParentJoint()->getJointType() == JointBase::FREE) {
       (*it)->updateTransform_Issue122(mTimeStep);
       (*it)->updateVelocity();
       (*it)->updateEta_Issue122();

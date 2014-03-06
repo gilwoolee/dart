@@ -176,7 +176,7 @@ MatrixXd DynamicsTest::getAugMassMatrix(dynamics::Skeleton* _skel)
   for (int i = 0; i < _skel->getNumBodyNodes(); ++i)
   {
     dynamics::BodyNode* body  = _skel->getBodyNode(i);
-    dynamics::Joint*    joint = body->getParentJoint();
+    dynamics::JointBase*    joint = body->getParentJoint();
 
     EXPECT_TRUE(body  != NULL);
     EXPECT_TRUE(joint != NULL);
@@ -564,7 +564,7 @@ void DynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
       for (int k = 0; k < skel->getNumBodyNodes(); ++k)
       {
         BodyNode* body     = skel->getBodyNode(k);
-        Joint*    joint    = body->getParentJoint();
+        JointBase*    joint    = body->getParentJoint();
         int       localDof = joint->getNumGenCoords();
 
         for (int l = 0; l < localDof; ++l)
@@ -762,8 +762,8 @@ void DynamicsTest::centerOfMass(const std::string& _fileName)
       // Random joint stiffness and damping coefficient
       for (int k = 0; k < skel->getNumBodyNodes(); ++k)
       {
-        BodyNode* body     = skel->getBodyNode(k);
-        Joint*    joint    = body->getParentJoint();
+        BodyNode*  body     = skel->getBodyNode(k);
+        JointBase* joint    = body->getParentJoint();
         int       localDof = joint->getNumGenCoords();
 
         for (int l = 0; l < localDof; ++l)

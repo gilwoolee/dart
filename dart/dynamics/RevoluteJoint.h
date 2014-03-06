@@ -47,7 +47,7 @@
 namespace dart {
 namespace dynamics {
 
-class RevoluteJoint : public Joint {
+class RevoluteJoint : public Joint<double, double, 1> {
 public:
   /// \brief Constructor.
   RevoluteJoint(const Eigen::Vector3d& axis = Eigen::Vector3d(1.0, 0.0, 0.0),

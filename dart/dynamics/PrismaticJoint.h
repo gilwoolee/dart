@@ -47,7 +47,7 @@
 namespace dart {
 namespace dynamics {
 
-class PrismaticJoint : public Joint {
+class PrismaticJoint : public Joint<double, double, 1> {
 public:
   /// \brief Constructor.
   PrismaticJoint(const Eigen::Vector3d& axis = Eigen::Vector3d(1.0, 0.0, 0.0),

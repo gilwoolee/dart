@@ -45,7 +45,7 @@ namespace dart {
 namespace dynamics {
 
 WeldJoint::WeldJoint(const std::string& _name)
-  : Joint(WELD, _name) {
+  : JointBase(WELD, _name) {
   mS = math::Jacobian::Zero(6, 0);
   mdS = math::Jacobian::Zero(6, 0);
 }
@@ -64,6 +64,37 @@ void WeldJoint::updateJacobian() {
 
 void WeldJoint::updateJacobianTimeDeriv() {
   // Do nothing
+}
+
+void WeldJoint::setJointVelocityTo(Eigen::Vector6d& _vel)
+{
+  _vel.setZero();
+}
+
+void WeldJoint::setEtaTo(Eigen::Vector6d& _eta,
+                       const Eigen::Vector6d& /*_bodyVel*/)
+{
+  _eta.setZero();
+}
+
+void WeldJoint::setJointAccelerationTo(Eigen::Vector6d& _bodyVel,
+                                       const Eigen::Vector6d& _eta)
+{
+  _bodyVel = _eta;
+}
+
+void WeldJoint::updateLocalInvMassMatrix(const Eigen::Matrix6d& /*_AInertia*/,
+                                         const Eigen::Matrix6d& /*_ImplicitAInertia*/,
+                                         double /*_dt*/)
+{
+  // Do nothing
+}
+
+void WeldJoint::addTransformedAInertiaTo(Eigen::Matrix6d& _parentAI,
+                                         const Eigen::Matrix6d& _Pi)
+{
+  // TODO(JS): Not implemented yet.
+  _parentAI += math::transformInertia(mT.inverse(), _Pi);
 }
 
 }  // namespace dynamics

@@ -77,7 +77,7 @@ simulation::World* DartLoader::parseWorld(std::string _urdfFileName) {
       }
 
       // Initialize position and RPY
-      dynamics::Joint* rootJoint = skeleton->getRootBodyNode()->getParentJoint();
+      dynamics::JointBase* rootJoint = skeleton->getRootBodyNode()->getParentJoint();
       Eigen::Isometry3d transform = toEigen(worldInterface->models[i].origin);
 
       if(dynamic_cast<dynamics::FreeJoint*>(rootJoint)) {
@@ -166,7 +166,7 @@ dynamics::Skeleton* DartLoader::modelInterfaceToSkeleton(const urdf::ModelInterf
 
     dynamics::Skeleton* skeleton = new dynamics::Skeleton(_model->getName());
     dynamics::BodyNode* rootNode;
-    dynamics::Joint* rootJoint;
+    dynamics::JointBase* rootJoint;
 
     const urdf::Link* root = _model->getRoot().get();
     if(root->name == "world") {
@@ -201,7 +201,7 @@ dynamics::Skeleton* DartLoader::modelInterfaceToSkeleton(const urdf::ModelInterf
 
 void DartLoader::createSkeletonRecursive(dynamics::Skeleton* _skel, const urdf::Link* _lk, dynamics::BodyNode* _parentNode, std::string _rootToSkelPath) {
   dynamics::BodyNode* node = createDartNode(_lk, _rootToSkelPath);
-  dynamics::Joint* joint = createDartJoint(_lk->parent_joint.get());
+  dynamics::JointBase* joint = createDartJoint(_lk->parent_joint.get());
   node->setParentJoint(joint);
   _parentNode->addChildBodyNode(node);
   _skel->addBodyNode(node);
@@ -234,9 +234,9 @@ std::string  DartLoader::readFileToString(std::string _xmlFile) {
 /**
  * @function createDartJoint
  */
-dynamics::Joint* DartLoader::createDartJoint(const urdf::Joint* _jt)
+dynamics::JointBase* DartLoader::createDartJoint(const urdf::Joint* _jt)
 { 
-  dynamics::Joint* joint;
+  dynamics::JointBase* joint;
   switch(_jt->type) {
   case urdf::Joint::REVOLUTE:
       joint = new dynamics::RevoluteJoint(toEigen(_jt->axis));

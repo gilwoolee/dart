@@ -275,7 +275,7 @@ void SoftBodyNode::updateBodyForce(const Eigen::Vector3d& _gravity,
 
   for (std::vector<BodyNode*>::iterator iChildBody = mChildBodyNodes.begin();
        iChildBody != mChildBodyNodes.end(); ++iChildBody) {
-    Joint* childJoint = (*iChildBody)->getParentJoint();
+    JointBase* childJoint = (*iChildBody)->getParentJoint();
     assert(childJoint != NULL);
 
     mF += math::dAdInvT(childJoint->getLocalTransform(),
