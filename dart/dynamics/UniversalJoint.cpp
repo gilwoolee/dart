@@ -47,7 +47,8 @@ namespace dynamics {
 UniversalJoint::UniversalJoint(const Eigen::Vector3d& _axis0,
                                const Eigen::Vector3d& _axis1,
                                const std::string& _name)
-  : Joint(UNIVERSAL, _name) {
+  : Joint(_name)
+{
   mGenCoords.push_back(&mCoordinate[0]);
   mGenCoords.push_back(&mCoordinate[1]);
 
@@ -83,8 +84,8 @@ const Eigen::Vector3d& UniversalJoint::getAxis2() const {
 
 void UniversalJoint::updateTransform() {
   mT = mT_ParentBodyToJoint
-       * Eigen::AngleAxisd(mCoordinate[0].get_q(), mAxis[0])
-       * Eigen::AngleAxisd(mCoordinate[1].get_q(), mAxis[1])
+       * Eigen::AngleAxisd(mCoordinate[0].getPos(), mAxis[0])
+       * Eigen::AngleAxisd(mCoordinate[1].getPos(), mAxis[1])
        * mT_ChildBodyToJoint.inverse();
   assert(math::verifyTransform(mT));
 }
@@ -92,28 +93,19 @@ void UniversalJoint::updateTransform() {
 void UniversalJoint::updateJacobian() {
   mS.col(0) =  math::AdTAngular(mT_ChildBodyToJoint
                                 * math::expAngular(
-                                  -mAxis[1]*mCoordinate[1].get_q()), mAxis[0]);
+                                  -mAxis[1]*mCoordinate[1].getPos()), mAxis[0]);
   mS.col(1) = math::AdTAngular(mT_ChildBodyToJoint, mAxis[1]);
   assert(!math::isNan(mS));
 }
 
 void UniversalJoint::updateJacobianTimeDeriv() {
-  mdS.col(0) = -math::ad(mS.col(1)*mCoordinate[1].get_dq(),
+  mdS.col(0) = -math::ad(mS.col(1)*mCoordinate[1].getVel(),
                          math::AdTAngular(mT_ChildBodyToJoint
-                         * math::expAngular(-mAxis[1]*mCoordinate[1].get_q()),
+                         * math::expAngular(-mAxis[1]*mCoordinate[1].getPos()),
                                             mAxis[0]));
   // mdS.col(1) = setZero();
   assert(!math::isNan(mdS.col(0)));
   assert(mdS.col(1) == Eigen::Vector6d::Zero());
-}
-
-void UniversalJoint::clampRotation() {
-  for (int i = 0; i < 2; i++)   {
-    if (mCoordinate[i].get_q() > M_PI)
-      mCoordinate[i].set_q(mCoordinate[i].get_q() - 2*M_PI);
-    if (mCoordinate[i].get_q() < -M_PI)
-      mCoordinate[i].set_q(mCoordinate[i].get_q() + 2*M_PI);
-  }
 }
 
 }  // namespace dynamics

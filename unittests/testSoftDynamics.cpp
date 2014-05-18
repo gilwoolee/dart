@@ -41,16 +41,16 @@
 #include <gtest/gtest.h>
 #include <boost/math/special_functions/fpclassify.hpp>
 
-#include <dart/common/Console.h>
-#include <dart/math/Helpers.h>
-#include <dart/dynamics/Joint.h>
+#include "dart/common/Console.h"
+#include "dart/math/Helpers.h"
+#include "dart/dynamics/Joint.h"
 
-#include "dart/dynamics/SoftSkeleton.h"
+#include "dart/dynamics/Skeleton.h"
 #include "dart/dynamics/SoftBodyNode.h"
 #include "dart/dynamics/PointMass.h"
-#include "dart/simulation/SoftWorld.h"
+#include "dart/simulation/World.h"
 #include "dart/utils/Paths.h"
-#include "dart/utils/SoftParser.h"
+#include "dart/utils/SkelParser.h"
 
 using namespace std;
 using namespace Eigen;
@@ -172,8 +172,8 @@ MatrixXd SoftDynamicsTest::getMassMatrix(dynamics::Skeleton* _skel)
     }
   }
 
-  dynamics::SoftSkeleton* softSkel
-      = dynamic_cast<dynamics::SoftSkeleton*>(_skel);
+  dynamics::Skeleton* softSkel
+      = dynamic_cast<dynamics::Skeleton*>(_skel);
 
   if (softSkel == NULL)
     return skelM;
@@ -245,8 +245,8 @@ MatrixXd SoftDynamicsTest::getAugMassMatrix(dynamics::Skeleton* _skel)
     }
   }
 
-  dynamics::SoftSkeleton* softSkel
-      = dynamic_cast<dynamics::SoftSkeleton*>(_skel);
+  dynamics::Skeleton* softSkel
+      = dynamic_cast<dynamics::Skeleton*>(_skel);
 
   if (softSkel != NULL)
   {
@@ -305,19 +305,19 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
   double lbK =  0.0;
   double ubK = 10.0;
 
-  simulation::SoftWorld* myWorld = NULL;
+  simulation::World* myWorld = NULL;
 
   //----------------------------- Tests ----------------------------------------
   // Check whether multiplication of mass matrix and its inverse is identity
   // matrix.
-  myWorld = utils::SoftSkelParser::readSoftFile(_fileName);
+  myWorld = utils::SkelParser::readWorld(_fileName);
   EXPECT_TRUE(myWorld != NULL);
 
   for (int i = 0; i < myWorld->getNumSkeletons(); ++i)
   {
     dynamics::Skeleton* skel = myWorld->getSkeleton(i);
-    dynamics::SoftSkeleton* softSkel
-        = dynamic_cast<dynamics::SoftSkeleton*>(skel);
+    dynamics::Skeleton* softSkel
+        = dynamic_cast<dynamics::Skeleton*>(skel);
 
     int dof            = skel->getNumGenCoords();
 //    int nBodyNodes     = skel->getNumBodyNodes();
@@ -346,8 +346,8 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
           joint->setDampingCoefficient(l, random(lbD,  ubD));
           joint->setSpringStiffness   (l, random(lbK,  ubK));
 
-          double lbRP = joint->getGenCoord(l)->get_qMin();
-          double ubRP = joint->getGenCoord(l)->get_qMax();
+          double lbRP = joint->getGenCoord(l)->getPosMin();
+          double ubRP = joint->getGenCoord(l)->getPosMax();
           joint->setRestPosition      (l, random(lbRP, ubRP));
         }
       }
@@ -356,7 +356,7 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
       VectorXd x = skel->getState();
       for (int k = 0; k < x.size(); ++k)
         x[k] = random(lb, ub);
-      skel->setState(x);
+      skel->setState(x, true, true, true);
 
       //------------------------ Mass Matrix Test ----------------------------
       // Get matrices
@@ -429,7 +429,7 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
       // Get C2, Coriolis force vector using inverse dynamics algorithm
       Vector3d oldGravity = skel->getGravity();
       VectorXd oldTau     = skel->getInternalForceVector();
-      VectorXd oldDdq     = skel->get_ddq();
+      VectorXd oldDdq     = skel->getGenAccs();
       // TODO(JS): Save external forces of body nodes
       vector<double> oldKv(nSoftBodyNodes, 0.0);
       vector<double> oldKe(nSoftBodyNodes, 0.0);
@@ -443,9 +443,9 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
         oldD[k]  = sbn->getDampingCoefficient();
       }
 
-      skel->clearInternalForceVector();
-      skel->clearExternalForceVector();
-      skel->set_ddq(VectorXd::Zero(dof));
+      skel->clearInternalForces();
+      skel->clearExternalForces();
+      skel->setGenAccs(VectorXd::Zero(dof), false);
       for (int k = 0; k < nSoftBodyNodes; ++k)
       {
         assert(softSkel != NULL);
@@ -457,17 +457,17 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
 
       EXPECT_TRUE(skel->getInternalForceVector() == VectorXd::Zero(dof));
       EXPECT_TRUE(skel->getExternalForceVector() == VectorXd::Zero(dof));
-      EXPECT_TRUE(skel->get_ddq()                == VectorXd::Zero(dof));
+      EXPECT_TRUE(skel->getGenAccs()                == VectorXd::Zero(dof));
 
       skel->setGravity(Vector3d::Zero());
       EXPECT_TRUE(skel->getGravity() == Vector3d::Zero());
-      skel->computeInverseDynamicsLinear(false, false, false, false);
-      VectorXd C2 = skel->get_tau();
+      skel->computeInverseDynamics(false, false);
+      VectorXd C2 = skel->getGenForces();
 
       skel->setGravity(oldGravity);
       EXPECT_TRUE(skel->getGravity() == oldGravity);
-      skel->computeInverseDynamicsLinear(false, false, false, false);
-      VectorXd Cg2 = skel->get_tau();
+      skel->computeInverseDynamics(false, false);
+      VectorXd Cg2 = skel->getGenForces();
 
       EXPECT_TRUE(equals(C, C2, 1e-6));
       if (!equals(C, C2, 1e-6))
@@ -483,8 +483,8 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
         cout << "Cg2:" << Cg2.transpose() << endl;
       }
 
-      skel->set_tau(oldTau);
-      skel->set_ddq(oldDdq);
+      skel->setGenForces(oldTau);
+      skel->setGenAccs(oldDdq, false);
       // TODO(JS): Restore external forces of body nodes
     }
   }

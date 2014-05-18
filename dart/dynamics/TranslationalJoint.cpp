@@ -39,12 +39,14 @@
 #include <string>
 
 #include "dart/math/Geometry.h"
+#include "dart/math/Helpers.h"
 
 namespace dart {
 namespace dynamics {
 
 TranslationalJoint::TranslationalJoint(const std::string& _name)
-  : Joint(TRANSLATIONAL, _name) {
+  : Joint(_name)
+{
   mGenCoords.push_back(&mCoordinate[0]);
   mGenCoords.push_back(&mCoordinate[1]);
   mGenCoords.push_back(&mCoordinate[2]);
@@ -62,7 +64,7 @@ TranslationalJoint::~TranslationalJoint() {
 
 void TranslationalJoint::updateTransform() {
   mT = mT_ParentBodyToJoint
-       * Eigen::Translation3d(get_q())
+       * Eigen::Translation3d(getConfigs())
        * mT_ChildBodyToJoint.inverse();
   assert(math::verifyTransform(mT));
 }

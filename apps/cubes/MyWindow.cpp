@@ -53,8 +53,7 @@ MyWindow::~MyWindow() {
 }
 
 void MyWindow::timeStepping() {
-  mWorld->getSkeleton(1)->getBodyNode(0)->addExtForce(
-        Eigen::Vector3d(0.0, 0.0, 0.0), mForce);
+  mWorld->getSkeleton(1)->getBodyNode(0)->addExtForce(mForce);
   mWorld->step();
   mForce /= 2.0;
 }
@@ -93,7 +92,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
     case ']':  // step forwardward
       if (!mSimulating) {
         mPlayFrame++;
-        if (mPlayFrame >= mBakedStates.size())
+        if (mPlayFrame >= mWorld->getRecording()->getNumFrames())
           mPlayFrame = 0;
         glutPostRedisplay();
       }
@@ -116,8 +115,8 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
     case 'q':  // Spawn a cube
     case 'Q': {  // Spawn a cube
       Eigen::Vector3d position = Eigen::Vector3d(dart::math::random(-1.0, 1.0),
-                                                 dart::math::random(-1.0, 1.0),
-                                                 dart::math::random(0.5, 1.0));
+                                                 dart::math::random( 0.5, 1.0),
+                                                 dart::math::random(-1.0, 1.0));
       Eigen::Vector3d size = Eigen::Vector3d(dart::math::random(0.01, 0.2),
                                              dart::math::random(0.01, 0.2),
                                              dart::math::random(0.01, 0.2));

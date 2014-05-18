@@ -40,6 +40,7 @@
 
 #include "dart/common/Console.h"
 #include "dart/math/Geometry.h"
+#include "dart/math/Helpers.h"
 #include "dart/dynamics/BodyNode.h"
 
 namespace dart {
@@ -47,8 +48,9 @@ namespace dynamics {
 
 RevoluteJoint::RevoluteJoint(const Eigen::Vector3d& axis,
                              const std::string& _name)
-  : Joint(REVOLUTE, _name),
-    mAxis(axis.normalized()) {
+  : Joint(_name),
+    mAxis(axis.normalized())
+{
   mGenCoords.push_back(&mCoordinate);
 
   mS = Eigen::Matrix<double, 6, 1>::Zero();
@@ -72,7 +74,7 @@ const Eigen::Vector3d&RevoluteJoint::getAxis() const {
 
 void RevoluteJoint::updateTransform() {
   mT = mT_ParentBodyToJoint
-       * math::expAngular(mAxis * mCoordinate.get_q())
+       * math::expAngular(mAxis * mCoordinate.getPos())
        * mT_ChildBodyToJoint.inverse();
 
   assert(math::verifyTransform(mT));

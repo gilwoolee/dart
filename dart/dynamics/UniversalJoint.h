@@ -78,9 +78,6 @@ public:
   // Documentation inherited.
   virtual void updateJacobianTimeDeriv();
 
-  // Documentation inherited.
-  virtual void clampRotation();
-
 protected:
   /// \brief Euler angles X, Y, Z
   GenCoord mCoordinate[2];
@@ -89,7 +86,7 @@ protected:
   Eigen::Vector3d mAxis[2];
 
 public:
-  //
+  // To get byte-aligned Eigen vectors
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 

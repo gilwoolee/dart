@@ -38,8 +38,10 @@
 #include "dart/collision/CollisionDetector.h"
 
 #include <algorithm>
+#include <iostream>
 #include <vector>
 
+#include "dart/common/Console.h"
 #include "dart/dynamics/BodyNode.h"
 #include "dart/dynamics/Skeleton.h"
 #include "dart/collision/CollisionNode.h"
@@ -54,6 +56,54 @@ CollisionDetector::CollisionDetector()
 CollisionDetector::~CollisionDetector() {
   for (int i = 0; i < mCollisionNodes.size(); i++)
     delete mCollisionNodes[i];
+}
+
+//==============================================================================
+void CollisionDetector::addSkeleton(dynamics::Skeleton* _skeleton)
+{
+  assert(_skeleton != NULL
+      && "Null pointer skeleton is not allowed to add to CollisionDetector.");
+
+  if (containSkeleton(_skeleton) == false)
+  {
+    mSkeletons.push_back(_skeleton);
+    for (int i = 0; i < _skeleton->getNumBodyNodes(); ++i)
+      addCollisionSkeletonNode(_skeleton->getBodyNode(i));
+  }
+  else
+  {
+    dtwarn << "Skeleton [" << _skeleton->getName()
+           << "] is already in CollisionDetector." << std::endl;
+  }
+}
+
+//==============================================================================
+void CollisionDetector::removeSkeleton(dynamics::Skeleton* _skeleton)
+{
+  assert(_skeleton != NULL
+      && "Null pointer skeleton is not allowed to add to CollisionDetector.");
+
+  if (containSkeleton(_skeleton))
+  {
+    mSkeletons.erase(remove(mSkeletons.begin(), mSkeletons.end(), _skeleton),
+                     mSkeletons.end());
+    for (int i = 0; i < _skeleton->getNumBodyNodes(); ++i)
+      removeCollisionSkeletonNode(_skeleton->getBodyNode(i));
+  }
+  else
+  {
+    dtwarn << "Skeleton [" << _skeleton->getName()
+           << "] is not in CollisionDetector." << std::endl;
+  }
+}
+
+//==============================================================================
+void CollisionDetector::removeAllSkeletons()
+{
+  for (size_t i = 0; i < mSkeletons.size(); ++i)
+    removeSkeleton(mSkeletons[i]);
+
+  mSkeletons.clear();
 }
 
 void CollisionDetector::addCollisionSkeletonNode(dynamics::BodyNode* _bodyNode,
@@ -176,14 +226,49 @@ void CollisionDetector::disablePair(dynamics::BodyNode* _node1,
     getPairCollidable(collisionNode1, collisionNode2) = false;
 }
 
+//==============================================================================
 bool CollisionDetector::isCollidable(const CollisionNode* _node1,
-                                     const CollisionNode* _node2) {
-  return getPairCollidable(_node1, _node2)
-      && _node1->getBodyNode()->isCollidable()
-      && _node2->getBodyNode()->isCollidable()
-      && (_node1->getBodyNode()->getSkeleton()
-          != _node2->getBodyNode()->getSkeleton()
-             || _node1->getBodyNode()->getSkeleton()->isSelfCollidable());
+                                     const CollisionNode* _node2)
+{
+  dynamics::BodyNode* bn1 = _node1->getBodyNode();
+  dynamics::BodyNode* bn2 = _node2->getBodyNode();
+
+  if (!getPairCollidable(_node1, _node2))
+    return false;
+
+  if (!bn1->isCollidable() || !bn2->isCollidable())
+    return false;
+
+  if (bn1->getSkeleton() == bn2->getSkeleton())
+  {
+    if (bn1->getSkeleton()->isEnabledSelfCollisionCheck())
+    {
+      if (isAdjacentBodies(bn1, bn2))
+      {
+        if (!bn1->getSkeleton()->isEnabledAdjacentBodyCheck())
+          return false;
+      }
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+//==============================================================================
+bool CollisionDetector::containSkeleton(const dynamics::Skeleton* _skeleton)
+{
+  for (std::vector<dynamics::Skeleton*>::const_iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    if ((*it) == _skeleton)
+      return true;
+  }
+
+  return false;
 }
 
 std::vector<bool>::reference CollisionDetector::getPairCollidable(
@@ -194,6 +279,19 @@ std::vector<bool>::reference CollisionDetector::getPairCollidable(
   if (index1 < index2)
     std::swap(index1, index2);
   return mCollidablePairs[index1][index2];
+}
+
+bool CollisionDetector::isAdjacentBodies(const dynamics::BodyNode* _bodyNode1,
+                                         const dynamics::BodyNode* _bodyNode2)
+{
+  if ((_bodyNode1->getParentBodyNode() == _bodyNode2)
+      || (_bodyNode2->getParentBodyNode() == _bodyNode1))
+  {
+    assert(_bodyNode1->getSkeleton() == _bodyNode2->getSkeleton());
+    return true;
+  }
+
+  return false;
 }
 
 CollisionNode* CollisionDetector::getCollisionNode(

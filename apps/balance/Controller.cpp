@@ -42,11 +42,11 @@
 #include "dart/dynamics/BodyNode.h"
 #include "dart/dynamics/GenCoord.h"
 #include "dart/dynamics/Shape.h"
-#include "dart/constraint/ConstraintDynamics.h"
+//#include "dart/constraint/OldConstraintDynamics.h"
 #include "dart/collision/CollisionDetector.h"
 
 Controller::Controller(dart::dynamics::Skeleton* _skel,
-                       dart::constraint::ConstraintDynamics* _collisionHandle,
+                       dart::constraint::OldConstraintDynamics* _collisionHandle,
                        double _t) {
   mSkel = _skel;
   mCollisionHandle = _collisionHandle;
@@ -61,7 +61,7 @@ Controller::Controller(dart::dynamics::Skeleton* _skel,
   mDesiredDofs.resize(nDof);
   for (int i = 0; i < nDof; i++) {
     mTorques[i] = 0.0;
-    mDesiredDofs[i] = mSkel->getGenCoord(i)->get_q();
+    mDesiredDofs[i] = mSkel->getGenCoord(i)->getPos();
   }
 
   // using SPD results in simple Kp coefficients
@@ -69,14 +69,10 @@ Controller::Controller(dart::dynamics::Skeleton* _skel,
     mKp(i, i) = 0.0;
     mKd(i, i) = 0.0;
   }
-  for (int i = 6; i < 22; i++)
-    mKp(i, i) = 200.0;  // lower body + lower back
-  for (int i = 22; i < nDof; i++)
-    mKp(i, i) = 20.0;
-  for (int i = 6; i < 22; i++)
+  for (int i = 6; i < nDof; i++)
+      mKp(i, i) = 200.0;
+  for (int i = 6; i < nDof; i++)
     mKd(i, i) = 100.0;
-  for (int i = 22; i < nDof; i++)
-    mKd(i, i) = 10.0;
 
   mPreOffset = 0.0;
 }

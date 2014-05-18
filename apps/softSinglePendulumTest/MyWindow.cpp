@@ -42,10 +42,8 @@
 
 #include "apps/softSinglePendulumTest/MyWindow.h"
 
-#include <dart/dynamics/Skeleton.h>
-#include <dart/simulation/World.h>
-
-#include "dart/dynamics/SoftSkeleton.h"
+#include "dart/dynamics/Skeleton.h"
+#include "dart/simulation/World.h"
 
 MyWindow::MyWindow()
   : SoftSimWindow()
@@ -59,8 +57,7 @@ MyWindow::~MyWindow()
 
 void MyWindow::timeStepping()
 {
-  // static_cast<BodyNode*>(mWorld->getSkeleton(1)->getNode(0))->addExtForce(
-  //     Vector3d(0.0, 0.0, 0.0), mForce);
+  // static_cast<BodyNode*>(mWorld->getSkeleton(1)->getNode(0))->addExtForce(mForce);
   mWorld->step();
   // mForce /= 2.0;
 }
@@ -108,7 +105,7 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
       if (!mSimulating)
       {
         mPlayFrame++;
-        if (mPlayFrame >= mBakedStates.size())
+        if (mPlayFrame >= mWorld->getRecording()->getNumFrames())
           mPlayFrame = 0;
         glutPostRedisplay();
       }

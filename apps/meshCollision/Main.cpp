@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
   using dart::utils::SkelParser;
 
   // Create and initialize the world
-  World* myWorld = dart::utils::SkelParser::readSkelFile(
+  World* myWorld = dart::utils::SkelParser::readWorld(
                      DART_DATA_PATH"/skel/mesh_collision.skel");
 
   // Create a skeleton
@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
   // Verify that our skeleton has something inside :)
   std::printf("Our skeleton has %d nodes \n", MeshSkel->getNumBodyNodes());
   // std::printf("Our skeleton has %d joints \n", MeshSkel->getNumJoints());
-  std::printf("Our skeleton has %d DOFs \n", MeshSkel->getNumGenCoords());
+  std::printf("Our skeleton has %zu DOFs \n", MeshSkel->getNumGenCoords());
 
   MyWindow window;
   window.setWorld(myWorld);

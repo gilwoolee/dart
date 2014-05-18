@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Georgia Tech Research Corporation
+ * Copyright (c) 2013-2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Jeongseok Lee <jslee02@gmail.com>
@@ -46,163 +46,314 @@
 #include <string>
 #include <vector>
 
-#include "dart/integration/EulerIntegrator.h"
+#include "dart/common/Console.h"
+#include "dart/integration/SemiImplicitEulerIntegrator.h"
 #include "dart/dynamics/GenCoord.h"
 #include "dart/dynamics/Skeleton.h"
-#include "dart/constraint/ConstraintDynamics.h"
+#include "dart/constraint/ConstraintSolver.h"
 
 namespace dart {
 namespace simulation {
 
+//==============================================================================
 World::World()
   : integration::IntegrableSystem(),
     mGravity(0.0, 0.0, -9.81),
     mTime(0.0),
     mTimeStep(0.001),
     mFrame(0),
-    mIntegrator(new integration::EulerIntegrator()),
-    mConstraintHandler(
-      new constraint::ConstraintDynamics(mSkeletons, mTimeStep)) {
+    mIntegrator(new integration::SemiImplicitEulerIntegrator()),
+    mConstraintSolver(new constraint::ConstraintSolver(mTimeStep)),
+    mRecording(new Recording(mSkeletons))
+{
   mIndices.push_back(0);
 }
 
-World::~World() {
+//==============================================================================
+World::~World()
+{
   delete mIntegrator;
-  delete mConstraintHandler;
+  delete mConstraintSolver;
+  delete mRecording;
 
   for (std::vector<dynamics::Skeleton*>::const_iterator it = mSkeletons.begin();
        it != mSkeletons.end(); ++it)
+  {
     delete (*it);
-}
-
-Eigen::VectorXd World::getState() const {
-  Eigen::VectorXd state(mIndices.back() * 2);
-
-  for (unsigned int i = 0; i < getNumSkeletons(); i++) {
-    int start = mIndices[i] * 2;
-    int size = getSkeleton(i)->getNumGenCoords();
-    state.segment(start, size) = getSkeleton(i)->get_q();
-    state.segment(start + size, size) = getSkeleton(i)->get_dq();
-  }
-
-  return state;
-}
-
-void World::setState(const Eigen::VectorXd& _newState) {
-  for (int i = 0; i < getNumSkeletons(); i++) {
-    int start = 2 * mIndices[i];
-    int size = 2 * getSkeleton(i)->getNumGenCoords();
-    getSkeleton(i)->setState(_newState.segment(start, size));
   }
 }
 
-void World::setControlInput() {
-  for (int i = 0; i < getNumSkeletons(); i++) {
-    getSkeleton(i);
-  }
-}
+//==============================================================================
+void World::setConfigs(const Eigen::VectorXd& _configs)
+{
+  for (int i = 0; i < getNumSkeletons(); i++)
+  {
+    int start = mIndices[i];
+    int size  = getSkeleton(i)->getNumGenCoords();
 
-Eigen::VectorXd World::evalDeriv() {
-  // compute constraint (contact/contact, joint limit) forces
-  mConstraintHandler->computeConstraintForces();
-
-  // set constraint force
-  for (unsigned int i = 0; i < getNumSkeletons(); i++) {
-    // skip immobile objects in forward simulation
-    if (!mSkeletons[i]->isMobile() || mSkeletons[i]->getNumGenCoords() == 0)
+    if (size == 0 || !mSkeletons[i]->isMobile())
       continue;
 
-    mSkeletons[i]->setConstraintForceVector(
-          mConstraintHandler->getTotalConstraintForce(i) -
-          mConstraintHandler->getContactForce(i));
+    getSkeleton(i)->setConfigs(_configs.segment(start, size),
+                               false, false, false);
+  }
+}
+
+//==============================================================================
+void World::setGenVels(const Eigen::VectorXd& _genVels)
+{
+  for (int i = 0; i < getNumSkeletons(); i++)
+  {
+    int start = mIndices[i];
+    int size  = getSkeleton(i)->getNumGenCoords();
+
+    if (size == 0 || !mSkeletons[i]->isMobile())
+      continue;
+
+    getSkeleton(i)->setGenVels(_genVels.segment(start, size), false, false);
+  }
+}
+
+//==============================================================================
+Eigen::VectorXd World::getConfigs() const
+{
+  Eigen::VectorXd config(mIndices.back());
+
+  for (unsigned int i = 0; i < getNumSkeletons(); i++)
+  {
+    int start = mIndices[i];
+    int size = getSkeleton(i)->getNumGenCoords();
+
+    if (size == 0 || !mSkeletons[i]->isMobile())
+      continue;
+
+    config.segment(start, size) = getSkeleton(i)->getConfigs();
   }
 
-  // compute forward dynamics
-  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
-       it != mSkeletons.end(); ++it) {
-    (*it)->computeForwardDynamics();
+  return config;
+}
+
+//==============================================================================
+Eigen::VectorXd World::getGenVels() const
+{
+  Eigen::VectorXd genVels(mIndices.back());
+
+  for (unsigned int i = 0; i < getNumSkeletons(); i++)
+  {
+    int start = mIndices[i];
+    int size = getSkeleton(i)->getNumGenCoords();
+
+    if (size == 0 || !mSkeletons[i]->isMobile())
+      continue;
+
+    genVels.segment(start, size) = getSkeleton(i)->getGenVels();
   }
+
+  return genVels;
+}
+
+//==============================================================================
+Eigen::VectorXd World::evalGenAccs()
+{
+  // Compute unconstrained acceleration.
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    // Transmitted body force doesn't need to be computed here since it will be
+    // computed at below.
+    (*it)->computeForwardDynamics();
+
+    // TODO(JS): Just do Euler integration for test
+//    (*it)->integrateConfigs(mTimeStep);
+//    (*it)->integrateGenVels(mTimeStep);
+  }
+
+//  // compute constraint (contact/contact, joint limit) forces
+//  mConstraintHandler->computeConstraintForces();
+
+//  // set constraint force
+//  for (int i = 0; i < getNumSkeletons(); i++)
+//  {
+//    // skip immobile objects in forward simulation
+//    if (!mSkeletons[i]->isMobile() || mSkeletons[i]->getNumGenCoords() == 0)
+//      continue;
+
+//    mSkeletons[i]->setConstraintForceVector(
+//          mConstraintHandler->getTotalConstraintForce(i) -
+//          mConstraintHandler->getContactForce(i));
+//  }
+
+//  // compute forward dynamics
+//  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+//       it != mSkeletons.end(); ++it)
+//  {
+//    (*it)->computeForwardDynamics();
+//  }
 
   // compute derivatives for integration
-  Eigen::VectorXd deriv = Eigen::VectorXd::Zero(mIndices.back() * 2);
-  for (unsigned int i = 0; i < getNumSkeletons(); i++) {
+  Eigen::VectorXd genAccs = Eigen::VectorXd::Zero(mIndices.back());
+  for (unsigned int i = 0; i < getNumSkeletons(); i++)
+  {
     // skip immobile objects in forward simulation
     if (!mSkeletons[i]->isMobile() || mSkeletons[i]->getNumGenCoords() == 0)
       continue;
 
-    int start = mIndices[i] * 2;
+    int start = mIndices[i];
     int size = getSkeleton(i)->getNumGenCoords();
 
-    // set velocities
-    deriv.segment(start, size) = getSkeleton(i)->get_dq()
-                                 + mTimeStep * getSkeleton(i)->get_ddq();
-
-    // set qddot (accelerations)
-    deriv.segment(start + size, size) = getSkeleton(i)->get_ddq();
+    // set accelerations
+    genAccs.segment(start, size) = getSkeleton(i)->getGenAccs();
   }
 
-  return deriv;
+  return genAccs;
 }
 
-void World::setTimeStep(double _timeStep) {
+//==============================================================================
+void World::integrateConfigs(const Eigen::VectorXd& _genVels, double _dt)
+{
+  for (int i = 0; i < getNumSkeletons(); i++)
+  {
+    int start = mIndices[i];
+    int size  = getSkeleton(i)->getNumGenCoords();
+
+    if (size == 0 || !mSkeletons[i]->isMobile())
+      continue;
+
+    // TODO(JS)
+//    getSkeleton(i)->setGenVels(_genVels.segment(start, size), false, false);
+    getSkeleton(i)->setGenVels(_genVels.segment(start, size), true, false);
+    getSkeleton(i)->integrateConfigs(_dt);
+  }
+}
+
+//==============================================================================
+void World::integrateGenVels(const Eigen::VectorXd& _genAccs, double _dt)
+{
+  for (int i = 0; i < getNumSkeletons(); i++)
+  {
+    int start = mIndices[i];
+    int size  = getSkeleton(i)->getNumGenCoords();
+
+    if (size == 0 || !mSkeletons[i]->isMobile())
+      continue;
+
+    getSkeleton(i)->setGenAccs(_genAccs.segment(start, size), false);
+    getSkeleton(i)->integrateGenVels(_dt);
+  }
+}
+
+//==============================================================================
+void World::setTimeStep(double _timeStep)
+{
   assert(_timeStep > 0.0 && "Invalid timestep.");
 
   mTimeStep = _timeStep;
-  mConstraintHandler->setTimeStep(_timeStep);
+//  mConstraintHandler->setTimeStep(_timeStep);
+  mConstraintSolver->setTimeStep(_timeStep);
   for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
-       it != mSkeletons.end(); ++it) {
+       it != mSkeletons.end(); ++it)
+  {
     (*it)->setTimeStep(_timeStep);
   }
 }
 
-double World::getTimeStep() const {
+//==============================================================================
+double World::getTimeStep() const
+{
   return mTimeStep;
 }
 
-void World::step() {
-  mIntegrator->integrate(this, mTimeStep);
+//==============================================================================
+void World::step()
+{
+  // Integrate velocity unconstrained skeletons
+  mIntegrator->integrateVel(this, mTimeStep);
 
-  for (std::vector<dynamics::Skeleton*>::iterator itr = mSkeletons.begin();
-       itr != mSkeletons.end(); ++itr) {
-    (*itr)->clearInternalForceVector();
-    (*itr)->clearExternalForceVector();
+  // Detect active constraints and compute constraint impulses
+  mConstraintSolver->solve();
+
+  // Integrate skeletons with constraint impulses
+//  mIntegrator->integrate(this, mTimeStep);
+
+//  dtdbg << "GenCoordSystem::getConfigs(): "
+//        << getConfigs().transpose() << std::endl;
+
+  // Compute velocity changes given constraint impulses
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    if ((*it)->isImpulseApplied())
+    {
+      (*it)->computeImpulseForwardDynamics();
+      (*it)->setImpulseApplied(false);
+    }
+  }
+
+  mIntegrator->integratePos(this, mTimeStep);
+
+//  dtdbg << "GenCoordSystem::getConfigs(): "
+//        << getConfigs().transpose() << std::endl;
+
+  for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
+       it != mSkeletons.end(); ++it)
+  {
+    (*it)->computeForwardKinematics(true, true, false);
+    (*it)->clearInternalForces();
+    (*it)->clearExternalForces();
+    (*it)->clearConstraintImpulses();
   }
 
   mTime += mTimeStep;
   mFrame++;
 }
 
-void World::setTime(double _time) {
+//==============================================================================
+void World::setTime(double _time)
+{
   mTime = _time;
 }
 
-double World::getTime() const {
+//==============================================================================
+double World::getTime() const
+{
   return mTime;
 }
 
-int World::getSimFrames() const {
+//==============================================================================
+int World::getSimFrames() const
+{
   return mFrame;
 }
 
-void World::setGravity(const Eigen::Vector3d& _gravity) {
+//==============================================================================
+void World::setGravity(const Eigen::Vector3d& _gravity)
+{
   mGravity = _gravity;
   for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
-       it != mSkeletons.end(); ++it) {
+       it != mSkeletons.end(); ++it)
+  {
     (*it)->setGravity(_gravity);
   }
 }
 
-const Eigen::Vector3d&World::getGravity() const {
+//==============================================================================
+const Eigen::Vector3d& World::getGravity() const
+{
   return mGravity;
 }
 
-dynamics::Skeleton* World::getSkeleton(int _index) const {
+//==============================================================================
+dynamics::Skeleton* World::getSkeleton(int _index) const
+{
   return mSkeletons[_index];
 }
 
-dynamics::Skeleton* World::getSkeleton(const std::string& _name) const {
+//==============================================================================
+dynamics::Skeleton* World::getSkeleton(const std::string& _name) const
+{
   for (std::vector<dynamics::Skeleton*>::const_iterator it = mSkeletons.begin();
-       it != mSkeletons.end(); ++it) {
+       it != mSkeletons.end(); ++it)
+  {
     if ((*it)->getName() == _name)
       return *it;
   }
@@ -210,16 +361,20 @@ dynamics::Skeleton* World::getSkeleton(const std::string& _name) const {
   return NULL;
 }
 
-int World::getNumSkeletons() const {
+//==============================================================================
+int World::getNumSkeletons() const
+{
   return mSkeletons.size();
 }
 
-void World::addSkeleton(dynamics::Skeleton* _skeleton) {
+//==============================================================================
+void World::addSkeleton(dynamics::Skeleton* _skeleton)
+{
   assert(_skeleton != NULL && "Invalid skeleton.");
 
   // If mSkeletons already has _skeleton, then we do nothing.
-  if (find(mSkeletons.begin(), mSkeletons.end(), _skeleton) !=
-      mSkeletons.end()) {
+  if (find(mSkeletons.begin(), mSkeletons.end(), _skeleton) != mSkeletons.end())
+  {
     std::cout << "Skeleton [" << _skeleton->getName()
               << "] is already in the world." << std::endl;
     return;
@@ -228,21 +383,29 @@ void World::addSkeleton(dynamics::Skeleton* _skeleton) {
   mSkeletons.push_back(_skeleton);
   _skeleton->init(mTimeStep, mGravity);
   mIndices.push_back(mIndices.back() + _skeleton->getNumGenCoords());
-  mConstraintHandler->addSkeleton(_skeleton);
+  mConstraintSolver->addSkeleton(_skeleton);
+
+  // Update recording
+  mRecording->updateNumGenCoords(mSkeletons);
 }
 
-void World::removeSkeleton(dynamics::Skeleton* _skeleton) {
+//==============================================================================
+void World::removeSkeleton(dynamics::Skeleton* _skeleton)
+{
   assert(_skeleton != NULL && "Invalid skeleton.");
 
   // Find index of _skeleton in mSkeleton.
   int i = 0;
   for (; i < mSkeletons.size(); ++i)
+  {
     if (mSkeletons[i] == _skeleton)
       break;
+  }
 
   // If i is equal to the number of skeletons, then _skeleton is not in
   // mSkeleton. We do nothing.
-  if (i == mSkeletons.size()) {
+  if (i == mSkeletons.size())
+  {
     std::cout << "Skeleton [" << _skeleton->getName()
               << "] is not in the world." << std::endl;
     return;
@@ -254,25 +417,71 @@ void World::removeSkeleton(dynamics::Skeleton* _skeleton) {
   mIndices.pop_back();
 
   // Remove _skeleton from constraint handler.
-  mConstraintHandler->removeSkeleton(_skeleton);
+//  mConstraintHandler->removeSkeleton(_skeleton);
+  mConstraintSolver->removeSkeleton(_skeleton);
 
   // Remove _skeleton in mSkeletons and delete it.
   mSkeletons.erase(remove(mSkeletons.begin(), mSkeletons.end(), _skeleton),
                    mSkeletons.end());
+
+  // Update recording
+  mRecording->updateNumGenCoords(mSkeletons);
+
   delete _skeleton;
 }
 
-int World::getIndex(int _index) const {
+//==============================================================================
+void World::removeAllSkeletons()
+{
+  while (getNumSkeletons() > 0)
+    removeSkeleton(getSkeleton(0));
+}
+
+//==============================================================================
+int World::getIndex(int _index) const
+{
   return mIndices[_index];
 }
 
-bool World::checkCollision(bool _checkAllCollisions) {
-  return mConstraintHandler->getCollisionDetector()->detectCollision(
+//==============================================================================
+bool World::checkCollision(bool _checkAllCollisions)
+{
+  return mConstraintSolver->getCollisionDetector()->detectCollision(
         _checkAllCollisions, false);
 }
 
-constraint::ConstraintDynamics*World::getConstraintHandler() const {
-  return mConstraintHandler;
+//==============================================================================
+constraint::ConstraintSolver* World::getConstraintSolver() const
+{
+  return mConstraintSolver;
+}
+
+//==============================================================================
+void World::bake()
+{
+  collision::CollisionDetector* cd
+      = getConstraintSolver()->getCollisionDetector();
+  int nContacts = cd->getNumContacts();
+  int nSkeletons = getNumSkeletons();
+  Eigen::VectorXd state(getIndex(nSkeletons) + 6 * nContacts);
+  for (unsigned int i = 0; i < getNumSkeletons(); i++)
+  {
+    state.segment(getIndex(i), getSkeleton(i)->getNumGenCoords())
+        = getSkeleton(i)->getConfigs();
+  }
+  for (int i = 0; i < nContacts; i++)
+  {
+    int begin = getIndex(nSkeletons) + i * 6;
+    state.segment(begin, 3)     = cd->getContact(i).point;
+    state.segment(begin + 3, 3) = cd->getContact(i).force;
+  }
+  mRecording->addState(state);
+}
+
+//==============================================================================
+Recording* World::getRecording()
+{
+  return mRecording;
 }
 
 }  // namespace simulation

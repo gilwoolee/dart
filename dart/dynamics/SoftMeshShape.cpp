@@ -36,7 +36,7 @@
 
 #include "dart/dynamics/SoftMeshShape.h"
 
-#include <dart/common/Console.h>
+#include "dart/common/Console.h"
 
 #include "dart/dynamics/PointMass.h"
 #include "dart/dynamics/SoftBodyNode.h"
@@ -57,8 +57,7 @@ SoftMeshShape::SoftMeshShape(SoftBodyNode* _softBodyNode)
 
 SoftMeshShape::~SoftMeshShape()
 {
-  if (mAssimpMesh != NULL)
-    delete mAssimpMesh;
+  delete mAssimpMesh;
 }
 
 const aiMesh* SoftMeshShape::getAssimpMesh() const

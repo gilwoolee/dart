@@ -39,8 +39,8 @@
 #include "dart/dynamics/Skeleton.h"
 #include "dart/dynamics/BodyNode.h"
 #include "dart/simulation/World.h"
-#include "dart/constraint/ConstraintDynamics.h"
-#include "dart/constraint/BallJointConstraint.h"
+//#include "dart/constraint/OldConstraintDynamics.h"
+//#include "dart/constraint/OldBallJointConstraint.h"
 
 using namespace dart::dynamics;
 using namespace dart::constraint;
@@ -57,7 +57,7 @@ Eigen::VectorXd MyWindow::computeDamping()
     int nDof = mWorld->getSkeleton(0)->getNumGenCoords();
     Eigen::VectorXd damping = Eigen::VectorXd::Zero(nDof);
     // add damping to each joint; twist-dof has smaller damping
-    damping = -0.01 * mWorld->getSkeleton(0)->get_dq();
+    damping = -0.01 * mWorld->getSkeleton(0)->getGenVels();
     for (int i = 0; i < nDof; i++)
         if (i % 3 == 1)
             damping[i] *= 0.1;
@@ -92,7 +92,7 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
     case ']': // step forwardward
         if (!mSimulating) {
             mPlayFrame++;
-            if(mPlayFrame >= mBakedStates.size())
+            if(mPlayFrame >= mWorld->getRecording()->getNumFrames())
                 mPlayFrame = 0;
             glutPostRedisplay();
         }
@@ -103,7 +103,7 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
 
     case 'h':
         if (mHeadConstraint) {
-            mWorld->getConstraintHandler()->deleteConstraint(mHeadConstraint);
+//            mWorld->getConstraintHandler()->deleteConstraint(mHeadConstraint);
             mHeadConstraint = NULL;
         } else {
             mHeadConstraint = addHeadConstraint();
@@ -112,7 +112,7 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
 
     case 't':
         if (mTailConstraint) {
-            mWorld->getConstraintHandler()->deleteConstraint(mTailConstraint);
+//            mWorld->getConstraintHandler()->deleteConstraint(mTailConstraint);
             mTailConstraint = NULL;
         } else {
             mTailConstraint = addTailConstraint();
@@ -125,20 +125,22 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
     glutPostRedisplay();
 }
 
-Constraint* MyWindow::addHeadConstraint() {
+OldConstraint* MyWindow::addHeadConstraint() {
     BodyNode *bd = mWorld->getSkeleton(0)->getBodyNode("link 1");
     Eigen::Vector3d offset(0.0, 0.025, 0.0);
     Eigen::Vector3d target = bd->getWorldTransform() * offset;
-    BallJointConstraint *bj = new BallJointConstraint(bd, offset, target);
-    mWorld->getConstraintHandler()->addConstraint(bj);
-    return bj;
+//    OldBallJointConstraint *bj = new OldBallJointConstraint(bd, offset, target);
+//    mWorld->getConstraintHandler()->addConstraint(bj);
+//    return bj;
+    return NULL;
 }
 
-Constraint* MyWindow::addTailConstraint() {
+OldConstraint* MyWindow::addTailConstraint() {
     BodyNode *bd = mWorld->getSkeleton(0)->getBodyNode("link 10");
     Eigen::Vector3d offset(0.0, -0.025, 0.0);
     Eigen::Vector3d target = bd->getWorldTransform() * offset;
-    BallJointConstraint *bj = new BallJointConstraint(bd, offset, target);
-    mWorld->getConstraintHandler()->addConstraint(bj);
-    return bj;
+//    OldBallJointConstraint *bj = new OldBallJointConstraint(bd, offset, target);
+//    mWorld->getConstraintHandler()->addConstraint(bj);
+//    return bj;
+    return NULL;
 }

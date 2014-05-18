@@ -43,8 +43,8 @@
 #ifndef APPS_TESTDROP_MYWINDOW_H_
 #define APPS_TESTDROP_MYWINDOW_H_
 
-#include <dart/math/MathTypes.h>
-#include <dart/gui/Win3D.h>
+#include "dart/math/MathTypes.h"
+#include "dart/gui/Win3D.h"
 
 #include "dart/gui/SoftSimWindow.h"
 
@@ -70,6 +70,9 @@ public:
 private:
   /// \brief
   Eigen::Vector3d mForceOnRigidBody;
+
+  /// \brief Number of frames for applying external force
+  int mImpulseDuration;
 
   /// \brief
   Eigen::Vector3d mForceOnVertex;

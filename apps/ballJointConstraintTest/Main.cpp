@@ -41,8 +41,8 @@
 #include "dart/dynamics/Joint.h"
 #include "dart/simulation/World.h"
 #include "dart/utils/SkelParser.h"
-#include "dart/constraint/ConstraintDynamics.h"
-#include "dart/constraint/BallJointConstraint.h"
+//#include "dart/constraint/OldConstraintDynamics.h"
+//#include "dart/constraint/OldBallJointConstraint.h"
 
 #include "apps/ballJointConstraintTest/MyWindow.h"
 
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
     // load a skeleton file
     // create and initialize the world
     dart::simulation::World* myWorld
-            = utils::SkelParser::readSkelFile(DART_DATA_PATH"/skel/freeChain.skel");
+            = utils::SkelParser::readWorld(DART_DATA_PATH"/skel/freeChain.skel");
     assert(myWorld != NULL);
     
     // create and initialize the world
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     Eigen::VectorXd initPose(dof);
     for (int i = 0; i < dof; i++)
         initPose[i] = random(-0.5, 0.5);
-    myWorld->getSkeleton(0)->setConfig(initPose);
+    myWorld->getSkeleton(0)->setConfigs(initPose, true, true, false);
     
     // Add damping to every joint
     for (int i = 0; i < myWorld->getSkeleton(0)->getNumBodyNodes(); i++) {

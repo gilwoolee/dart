@@ -51,6 +51,9 @@
 #include "dart/utils/SkelParser.h"
 #include "dart/utils/Paths.h"
 
+using namespace Eigen;
+using namespace dart;
+
 //==============================================================================
 class DynamicsTest : public ::testing::Test
 {
@@ -81,6 +84,9 @@ public:
 
   // Test skeleton's COM and its related quantities.
   void centerOfMass(const std::string& _fileName);
+
+  // Test impulse based dynamics
+  void testImpulseBasedDynamics(const std::string& _fileName);
 
 protected:
   // Sets up the test fixture.
@@ -224,7 +230,7 @@ void DynamicsTest::compareVelocities(const std::string& _fileName)
   Vector3d gravity(0.0, -9.81, 0.0);
 
   // load skeleton
-  World* world = SkelParser::readSkelFile(_fileName);
+  World* world = SkelParser::readWorld(_fileName);
   assert(world != NULL);
   world->setGravity(gravity);
 
@@ -249,9 +255,9 @@ void DynamicsTest::compareVelocities(const std::string& _fileName)
       }
       VectorXd state = VectorXd::Zero(dof * 2);
       state << q, dq;
-      skeleton->setState(state);
-      skeleton->set_ddq(ddq);
-      skeleton->computeInverseDynamicsLinear(true, true, false, false);
+      skeleton->setState(state, true, true, true);
+      skeleton->setGenAccs(ddq, true);
+      skeleton->computeInverseDynamics(false, false);
 
       // For each body node
       for (int k = 0; k < skeleton->getNumBodyNodes(); ++k)
@@ -344,7 +350,7 @@ void DynamicsTest::compareAccelerations(const std::string& _fileName)
   double timeStep = 1.0e-6;
 
   // load skeleton
-  World* world = SkelParser::readSkelFile(_fileName);
+  World* world = SkelParser::readWorld(_fileName);
   assert(world != NULL);
   world->setGravity(gravity);
   world->setTimeStep(timeStep);
@@ -374,12 +380,14 @@ void DynamicsTest::compareAccelerations(const std::string& _fileName)
       }
       VectorXd x = VectorXd::Zero(dof * 2);
       x << q, dq;
-      skeleton->setState(x);
-      skeleton->set_ddq(ddq);
+      skeleton->setState(x, true, true, false);
+      skeleton->setGenAccs(ddq, true);
 
-      // Set x(k+1) = x(k) + dt * dx(k)
-      VectorXd qNext  = q  + timeStep * dq;
-      VectorXd dqNext = dq + timeStep * ddq;
+      // Integrate state
+      skeleton->integrateConfigs(timeStep);
+      skeleton->integrateGenVels(timeStep);
+      VectorXd qNext  = skeleton->getConfigs();
+      VectorXd dqNext = skeleton->getGenVels();
       VectorXd xNext  = VectorXd::Zero(dof * 2);
       xNext << qNext, dqNext;
 
@@ -390,9 +398,8 @@ void DynamicsTest::compareAccelerations(const std::string& _fileName)
         int nDepGenCoord = bn->getNumDependentGenCoords();
 
         // Calculation of velocities and Jacobian at k-th time step
-        skeleton->setState(x);
-        skeleton->set_ddq(ddq);
-        skeleton->computeInverseDynamicsLinear(true, true, false, false);
+        skeleton->setState(x, true, true, false);
+        skeleton->setGenAccs(ddq, true);
         Vector6d vBody1  = bn->getBodyVelocity();
         Vector6d vWorld1 = bn->getWorldVelocity();
         MatrixXd JBody1  = bn->getBodyJacobian();
@@ -406,9 +413,8 @@ void DynamicsTest::compareAccelerations(const std::string& _fileName)
         MatrixXd dJWorld1 = bn->getWorldJacobianTimeDeriv();
 
         // Calculation of velocities and Jacobian at (k+1)-th time step
-        skeleton->setState(xNext);
-        skeleton->set_ddq(ddq);
-        skeleton->computeInverseDynamicsLinear(true, true, false, false);
+        skeleton->setState(xNext, true, true, false);
+        skeleton->setGenAccs(ddq, true);
         Vector6d vBody2  = bn->getBodyVelocity();
         Vector6d vWorld2 = bn->getWorldVelocity();
         MatrixXd JBody2  = bn->getBodyJacobian();
@@ -527,8 +533,8 @@ void DynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
 #endif
 
   // Lower and upper bound of configuration for system
-  double lb = -1.5 * DART_PI;
-  double ub =  1.5 * DART_PI;
+  double lb = -1.0 * DART_PI;
+  double ub =  1.0 * DART_PI;
 
   // Lower and upper bound of joint damping and stiffness
   double lbD =  0.0;
@@ -541,7 +547,7 @@ void DynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
   //----------------------------- Tests ----------------------------------------
   // Check whether multiplication of mass matrix and its inverse is identity
   // matrix.
-  myWorld = utils::SkelParser::readSkelFile(_fileName);
+  myWorld = utils::SkelParser::readWorld(_fileName);
   EXPECT_TRUE(myWorld != NULL);
 
   for (int i = 0; i < myWorld->getNumSkeletons(); ++i)
@@ -572,8 +578,12 @@ void DynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
           joint->setDampingCoefficient(l, random(lbD,  ubD));
           joint->setSpringStiffness   (l, random(lbK,  ubK));
 
-          double lbRP = -1e+1;
-          double ubRP = +1e+1;
+          double lbRP = joint->getGenCoord(l)->getPosMin();
+          double ubRP = joint->getGenCoord(l)->getPosMax();
+          if (lbRP < -DART_PI)
+            lbRP = -DART_PI;
+          if (ubRP > DART_PI)
+            ubRP = DART_PI;
           joint->setRestPosition      (l, random(lbRP, ubRP));
         }
       }
@@ -582,7 +592,7 @@ void DynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
       VectorXd x = skel->getState();
       for (int k = 0; k < x.size(); ++k)
         x[k] = random(lb, ub);
-      skel->setState(x);
+      skel->setState(x, true, true, false);
 
       //------------------------ Mass Matrix Test ----------------------------
       // Get matrices
@@ -653,26 +663,26 @@ void DynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
       // Get C2, Coriolis force vector using inverse dynamics algorithm
       Vector3d oldGravity = skel->getGravity();
       VectorXd oldTau     = skel->getInternalForceVector();
-      VectorXd oldDdq     = skel->get_ddq();
+      VectorXd oldDdq     = skel->getGenAccs();
       // TODO(JS): Save external forces of body nodes
 
-      skel->clearInternalForceVector();
-      skel->clearExternalForceVector();
-      skel->set_ddq(VectorXd::Zero(dof));
+      skel->clearInternalForces();
+      skel->clearExternalForces();
+      skel->setGenAccs(VectorXd::Zero(dof), true);
 
       EXPECT_TRUE(skel->getInternalForceVector() == VectorXd::Zero(dof));
       EXPECT_TRUE(skel->getExternalForceVector() == VectorXd::Zero(dof));
-      EXPECT_TRUE(skel->get_ddq()                == VectorXd::Zero(dof));
+      EXPECT_TRUE(skel->getGenAccs()                == VectorXd::Zero(dof));
 
       skel->setGravity(Vector3d::Zero());
       EXPECT_TRUE(skel->getGravity() == Vector3d::Zero());
-      skel->computeInverseDynamicsLinear(false, false, false, false);
-      VectorXd C2 = skel->get_tau();
+      skel->computeInverseDynamics(false, false);
+      VectorXd C2 = skel->getGenForces();
 
       skel->setGravity(oldGravity);
       EXPECT_TRUE(skel->getGravity() == oldGravity);
-      skel->computeInverseDynamicsLinear(false, false, false, false);
-      VectorXd Cg2 = skel->get_tau();
+      skel->computeInverseDynamics(false, false);
+      VectorXd Cg2 = skel->getGenForces();
 
       EXPECT_TRUE(equals(C, C2, 1e-6));
       if (!equals(C, C2, 1e-6))
@@ -688,8 +698,8 @@ void DynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
         cout << "Cg2:" << Cg2.transpose() << endl;
       }
 
-      skel->set_tau(oldTau);
-      skel->set_ddq(oldDdq);
+      skel->setGenForces(oldTau);
+      skel->setGenAccs(oldDdq, false);
       // TODO(JS): Restore external forces of body nodes
 
       //------------------- Combined Force Vector Test -----------------------
@@ -720,9 +730,9 @@ void DynamicsTest::centerOfMass(const std::string& _fileName)
   //---------------------------- Settings --------------------------------------
   // Number of random state tests for each skeletons
 #ifndef NDEBUG  // Debug mode
-  int nRandomItr = 5;
+  int nRandomItr = 10;
 #else
-  int nRandomItr = 1;
+  int nRandomItr = 100;
 #endif
 
   // Lower and upper bound of configuration for system
@@ -740,7 +750,7 @@ void DynamicsTest::centerOfMass(const std::string& _fileName)
   //----------------------------- Tests ----------------------------------------
   // Check whether multiplication of mass matrix and its inverse is identity
   // matrix.
-  myWorld = utils::SkelParser::readSkelFile(_fileName);
+  myWorld = utils::SkelParser::readWorld(_fileName);
   EXPECT_TRUE(myWorld != NULL);
 
   for (int i = 0; i < myWorld->getNumSkeletons(); ++i)
@@ -771,8 +781,12 @@ void DynamicsTest::centerOfMass(const std::string& _fileName)
           joint->setDampingCoefficient(l, random(lbD,  ubD));
           joint->setSpringStiffness   (l, random(lbK,  ubK));
 
-          double lbRP = -1e+1;
-          double ubRP = +1e+1;
+          double lbRP = joint->getGenCoord(l)->getPosMin();
+          double ubRP = joint->getGenCoord(l)->getPosMax();
+          if (lbRP < -DART_PI)
+            lbRP = -DART_PI;
+          if (ubRP > DART_PI)
+            ubRP = DART_PI;
           joint->setRestPosition      (l, random(lbRP, ubRP));
         }
       }
@@ -781,18 +795,18 @@ void DynamicsTest::centerOfMass(const std::string& _fileName)
       VectorXd x = skel->getState();
       for (int k = 0; k < x.size(); ++k)
         x[k] = random(lb, ub);
-      skel->setState(x);
+      skel->setState(x, true, true, false);
 
-      VectorXd tau = skel->get_tau();
+      VectorXd tau = skel->getGenForces();
       for (int k = 0; k < tau.size(); ++k)
         tau[k] = random(lb, ub);
-      skel->set_tau(tau);
+      skel->setGenForces(tau);
 
       skel->computeForwardDynamics();
 
-      VectorXd q  = skel->get_q();
-      VectorXd dq = skel->get_dq();
-      VectorXd ddq = skel->get_ddq();
+      VectorXd q  = skel->getConfigs();
+      VectorXd dq = skel->getGenVels();
+      VectorXd ddq = skel->getGenAccs();
 
       VectorXd com   = skel->getWorldCOM();
       VectorXd dcom  = skel->getWorldCOMVelocity();
@@ -823,55 +837,153 @@ void DynamicsTest::centerOfMass(const std::string& _fileName)
   delete myWorld;
 }
 
-////==============================================================================
-//TEST_F(DynamicsTest, compareVelocities)
-//{
-//  for (int i = 0; i < getList().size(); ++i)
-//  {
-//#ifndef NDEBUG
-//    dtdbg << getList()[i] << std::endl;
-//#endif
-//    compareVelocities(getList()[i]);
-//  }
-//}
+//==============================================================================
+void DynamicsTest::testImpulseBasedDynamics(const std::string& _fileName)
+{
+  using namespace std;
+  using namespace Eigen;
+  using namespace dart;
+  using namespace math;
+  using namespace dynamics;
+  using namespace simulation;
+  using namespace utils;
 
-////==============================================================================
-//TEST_F(DynamicsTest, compareAccelerations)
-//{
-//  for (int i = 0; i < getList().size(); ++i)
-//  {
-//#ifndef NDEBUG
-//    dtdbg << getList()[i] << std::endl;
-//#endif
-//    compareAccelerations(getList()[i]);
-//  }
-//}
+  //---------------------------- Settings --------------------------------------
+  // Number of random state tests for each skeletons
+#ifndef NDEBUG  // Debug mode
+  int nRandomItr = 1;
+#else
+  int nRandomItr = 100;
+#endif
 
-////==============================================================================
-//TEST_F(DynamicsTest, compareEquationsOfMotion)
-//{
-//  for (int i = 0; i < getList().size(); ++i)
-//  {
-//    ////////////////////////////////////////////////////////////////////////////
-//    // TODO(JS): Following five skel files, which contain euler joints couldn't
-//    //           pass EQUATIONS_OF_MOTION, are disabled.
-//    std::string skelFileName = getList()[i];
-//    if (skelFileName == DART_DATA_PATH"skel/test/chainwhipa.skel"
-//        || skelFileName == DART_DATA_PATH"skel/test/serial_chain_eulerxyz_joint.skel"
-//        || skelFileName == DART_DATA_PATH"skel/test/simple_tree_structure_euler_joint.skel"
-//        || skelFileName == DART_DATA_PATH"skel/test/tree_structure_euler_joint.skel"
-//        || skelFileName == DART_DATA_PATH"skel/fullbody1.skel")
-//    {
-//        continue;
-//    }
-//    ////////////////////////////////////////////////////////////////////////////
+  // Lower and upper bound of configuration for system
+  double lb = -1.5 * DART_PI;
+  double ub =  1.5 * DART_PI;
 
-//#ifndef NDEBUG
-//    dtdbg << getList()[i] << std::endl;
-//#endif
-//    compareEquationsOfMotion(getList()[i]);
-//  }
-//}
+  simulation::World* myWorld = NULL;
+
+  //----------------------------- Tests ----------------------------------------
+  // Check whether multiplication of mass matrix and its inverse is identity
+  // matrix.
+  myWorld = utils::SkelParser::readWorld(_fileName);
+  EXPECT_TRUE(myWorld != NULL);
+
+  for (int i = 0; i < myWorld->getNumSkeletons(); ++i)
+  {
+    dynamics::Skeleton* skel = myWorld->getSkeleton(i);
+
+    int dof            = skel->getNumGenCoords();
+//    int nBodyNodes     = skel->getNumBodyNodes();
+
+    if (dof == 0 || !skel->isMobile())
+    {
+      dtdbg << "Skeleton [" << skel->getName() << "] is skipped since it has "
+            << "0 DOF or is immobile." << endl;
+      continue;
+    }
+
+    for (int j = 0; j < nRandomItr; ++j)
+    {
+      // Set random configurations
+      for (int k = 0; k < skel->getNumBodyNodes(); ++k)
+      {
+        BodyNode* body     = skel->getBodyNode(k);
+        Joint*    joint    = body->getParentJoint();
+        int       localDof = joint->getNumGenCoords();
+
+        for (int l = 0; l < localDof; ++l)
+        {
+          double lbRP = joint->getGenCoord(l)->getPosMin();
+          double ubRP = joint->getGenCoord(l)->getPosMax();
+          if (lbRP < -DART_PI)
+            lbRP = -DART_PI;
+          if (ubRP > DART_PI)
+            ubRP = DART_PI;
+          joint->setConfig(l, random(lbRP, ubRP), true, false, false);
+        }
+      }
+      skel->setConfigs(VectorXd::Zero(dof));
+
+      // TODO(JS): Just clear what should be
+      skel->clearExternalForces();
+      skel->clearConstraintImpulses();
+
+      // Set random impulses
+      VectorXd impulses = VectorXd::Zero(dof);
+      for (size_t k = 0; k < impulses.size(); ++k)
+        impulses[k] = random(lb, ub);
+      skel->setConstraintImpulses(impulses);
+
+      // Compute impulse-based forward dynamics
+      skel->computeImpulseForwardDynamics();
+
+      // Compare resultant velocity change and invM * impulses
+      VectorXd deltaVel1 = skel->getVelsChange();
+      MatrixXd invM = skel->getInvMassMatrix();
+      VectorXd deltaVel2 = invM * impulses;
+
+      EXPECT_TRUE(equals(deltaVel1, deltaVel2, 1e-6));
+      if (!equals(deltaVel1, deltaVel2, 1e-6))
+      {
+        cout << "deltaVel1: " << deltaVel1.transpose()  << endl;
+        cout << "deltaVel2: " << deltaVel2.transpose() << endl;
+      }
+    }
+  }
+
+  delete myWorld;
+}
+
+//==============================================================================
+TEST_F(DynamicsTest, compareVelocities)
+{
+  for (int i = 0; i < getList().size(); ++i)
+  {
+#ifndef NDEBUG
+    dtdbg << getList()[i] << std::endl;
+#endif
+    compareVelocities(getList()[i]);
+  }
+}
+
+//==============================================================================
+TEST_F(DynamicsTest, compareAccelerations)
+{
+  for (int i = 0; i < getList().size(); ++i)
+  {
+#ifndef NDEBUG
+    dtdbg << getList()[i] << std::endl;
+#endif
+    compareAccelerations(getList()[i]);
+  }
+}
+
+//==============================================================================
+TEST_F(DynamicsTest, compareEquationsOfMotion)
+{
+  for (int i = 0; i < getList().size(); ++i)
+  {
+    ////////////////////////////////////////////////////////////////////////////
+    // TODO(JS): Following skel files, which contain euler joints couldn't
+    //           pass EQUATIONS_OF_MOTION, are disabled.
+    std::string skelFileName = getList()[i];
+    if (skelFileName == DART_DATA_PATH"skel/test/double_pendulum_euler_joint.skel"
+        || skelFileName == DART_DATA_PATH"skel/test/chainwhipa.skel"
+        || skelFileName == DART_DATA_PATH"skel/test/serial_chain_eulerxyz_joint.skel"
+        || skelFileName == DART_DATA_PATH"skel/test/simple_tree_structure_euler_joint.skel"
+        || skelFileName == DART_DATA_PATH"skel/test/tree_structure_euler_joint.skel"
+        || skelFileName == DART_DATA_PATH"skel/fullbody1.skel")
+    {
+        continue;
+    }
+    ////////////////////////////////////////////////////////////////////////////
+
+#ifndef NDEBUG
+    dtdbg << getList()[i] << std::endl;
+#endif
+    compareEquationsOfMotion(getList()[i]);
+  }
+}
 
 //==============================================================================
 TEST_F(DynamicsTest, testCenterOfMass)
@@ -886,7 +998,20 @@ TEST_F(DynamicsTest, testCenterOfMass)
 }
 
 //==============================================================================
-int main(int argc, char* argv[]) {
+TEST_F(DynamicsTest, testImpulseBasedDynamics)
+{
+  for (int i = 0; i < getList().size(); ++i)
+  {
+#ifndef NDEBUG
+    dtdbg << getList()[i] << std::endl;
+#endif
+    testImpulseBasedDynamics(getList()[i]);
+  }
+}
+
+//==============================================================================
+int main(int argc, char* argv[])
+{
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

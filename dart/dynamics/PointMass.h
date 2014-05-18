@@ -34,12 +34,12 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOFT_DYNAMICS_POINTMASS_H_
-#define SOFT_DYNAMICS_POINTMASS_H_
+#ifndef DART_DYNAMICS_POINTMASS_H_
+#define DART_DYNAMICS_POINTMASS_H_
 
 #include <vector>
 #include <Eigen/Dense>
-#include <dart/dynamics/GenCoordSystem.h>
+#include "dart/dynamics/GenCoordSystem.h"
 
 namespace dart {
 namespace renderer {
@@ -101,6 +101,25 @@ public:
   /// \brief
   void clearExtForce();
 
+  //----------------------------------------------------------------------------
+  // Constraints
+  //   - Following functions are managed by constraint solver.
+  //----------------------------------------------------------------------------
+  /// \brief Set constraint impulse
+  void setConstraintImpulse(const Eigen::Vector3d& _constImp,
+                            bool _isLocal = false);
+
+  /// \brief Add constraint impulse
+  void addConstraintImpulse(const Eigen::Vector3d& _constImp,
+                            bool _isLocal = false);
+
+  /// \brief Clear constraint impulse
+  void clearConstraintImpulse();
+
+  /// \brief Get constraint impulse
+  Eigen::Vector3d getConstraintImpulses() const;
+
+  //----------------------------------------------------------------------------
   /// \brief
   void setRestingPosition(const Eigen::Vector3d& _p);
 
@@ -117,6 +136,10 @@ public:
   Eigen::Matrix<double, 3, Eigen::Dynamic> getBodyJacobian();
   Eigen::Matrix<double, 3, Eigen::Dynamic> getWorldJacobian();
 
+  /// \brief Return velocity change due to impulse
+  const Eigen::Vector3d& getBodyVelocityChange() const;
+
+  /// \brief
   SoftBodyNode* getParentSoftBodyNode() const;
 
   /// \brief The number of the generalized coordinates by which this node is
@@ -181,6 +204,25 @@ protected:
 
   /// \brief
   void updateMassMatrix();
+
+  //----------------------------------------------------------------------------
+
+  /// \brief Update impulsive bias force for impulse-based forward dynamics
+  /// algorithm
+  void updateImpBiasForce();
+
+  /// \brief Update joint velocity change for impulse-based forward dynamics
+  /// algorithm
+  void updateJointVelocityChange();
+
+  /// \brief Update body velocity change for impulse-based forward dynamics
+  /// algorithm
+  void updateBodyVelocityChange();
+
+  /// \brief
+  void updateBodyImpForceFwdDyn();
+
+  //----------------------------------------------------------------------------
 
   /// \brief
   void aggregateMassMatrix(Eigen::MatrixXd* _MCol, int _col);
@@ -309,10 +351,28 @@ protected:
   /// \brief Whether the node is currently in collision with another node.
   bool mIsColliding;
 
+  //------------------------- Impulse-based Dyanmics ---------------------------
+  /// \brief Velocity change due to constraint impulse
+  Eigen::Vector3d mDelV;
+
+  /// \brief Impulsive bias force due to external impulsive force exerted on
+  ///        bodies of the parent skeleton.
+  Eigen::Vector3d mImpB;
+
+  /// \brief Cache data for mImpB
+  Eigen::Vector3d mImpAlpha;
+
+  /// \brief Cache data for mImpB
+  Eigen::Vector3d mImpBeta;
+
+  /// \brief Generalized impulsive body force w.r.t. body frame.
+  Eigen::Vector3d mImpF;
+
 private:
   EllipsoidShape* mShape;
 
 public:
+  // To get byte-aligned Eigen vectors
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
@@ -325,4 +385,4 @@ public:
 }  // namespace dynamics
 }  // namespace dart
 
-#endif  // SOFT_DYNAMICS_POINTMASS_H_
+#endif  // DART_DYNAMICS_POINTMASS_H_

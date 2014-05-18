@@ -43,17 +43,24 @@
 
 #include "dart/common/Console.h"
 #include "dart/math/Helpers.h"
+#include "dart/optimizer/Problem.h"
+#include "dart/optimizer/Function.h"
+#include "dart/optimizer/nlopt/NloptSolver.h"
 #include "dart/renderer/RenderInterface.h"
 #include "dart/dynamics/Joint.h"
 #include "dart/dynamics/Shape.h"
 #include "dart/dynamics/Skeleton.h"
 #include "dart/dynamics/Marker.h"
 
+#define DART_DEFAULT_FRICTION_COEFF 1.0
+#define DART_DEFAULT_RESTITUTION_COEFF 0.0
+
 namespace dart {
 namespace dynamics {
 
 int BodyNode::msBodyNodeCount = 0;
 
+//==============================================================================
 BodyNode::BodyNode(const std::string& _name)
   : mSkelIndex(-1),
     mName(_name),
@@ -72,6 +79,8 @@ BodyNode::BodyNode(const std::string& _name)
     mIxy(0.0),
     mIxz(0.0),
     mIyz(0.0),
+    mFrictionCoeff(DART_DEFAULT_FRICTION_COEFF),
+    mRestitutionCoeff(DART_DEFAULT_RESTITUTION_COEFF),
     mI(Eigen::Matrix6d::Identity()),
     mW(Eigen::Isometry3d::Identity()),
     mV(Eigen::Vector6d::Zero()),
@@ -85,7 +94,13 @@ BodyNode::BodyNode(const std::string& _name)
     mBeta(Eigen::Vector6d::Zero()),
     mID(BodyNode::msBodyNodeCount++),
     mIsBodyJacobianDirty(true),
-    mIsBodyJacobianTimeDerivDirty(true) {
+    mIsBodyJacobianTimeDerivDirty(true),
+    mDelV(Eigen::Vector6d::Zero()),
+    mImpB(Eigen::Vector6d::Zero()),
+    mImpBeta(Eigen::Vector6d::Zero()),
+    mConstraintImpulse(Eigen::Vector6d::Zero()),
+    mImpF(Eigen::Vector6d::Zero())
+{
 }
 
 BodyNode::~BodyNode() {
@@ -140,6 +155,34 @@ double BodyNode::getMass() const {
   return mMass;
 }
 
+//==============================================================================
+void BodyNode::setFrictionCoeff(double _coeff)
+{
+  assert(0.0 <= _coeff
+         && "Coefficient of friction should be non-negative value.");
+  mFrictionCoeff = _coeff;
+}
+
+//==============================================================================
+double BodyNode::getFrictionCoeff() const
+{
+  return mFrictionCoeff;
+}
+
+//==============================================================================
+void BodyNode::setRestitutionCoeff(double _coeff)
+{
+  assert(0.0 <= _coeff && _coeff <= 1.0
+         && "Coefficient of restitution should be in range of [0, 1].");
+  mRestitutionCoeff = _coeff;
+}
+
+//==============================================================================
+double BodyNode::getRestitutionCoeff() const
+{
+  return mRestitutionCoeff;
+}
+
 BodyNode* BodyNode::getParentBodyNode() const {
   return mParentBodyNode;
 }
@@ -184,6 +227,92 @@ int BodyNode::getNumDependentGenCoords() const {
 int BodyNode::getDependentGenCoordIndex(int _arrayIndex) const {
   assert(0 <= _arrayIndex && _arrayIndex < mDependentGenCoordIndices.size());
   return mDependentGenCoordIndices[_arrayIndex];
+}
+
+void BodyNode::fitWorldTransform(const Eigen::Isometry3d& _target,
+                                 InverseKinematicsPolicy _policy,
+                                 bool _jointLimit)
+{
+  if (_policy == IKP_PARENT_JOINT)
+    fitWorldTransformParentJointImpl(_target, _jointLimit);
+  else if (_policy == IKP_ANCESTOR_JOINTS)
+    fitWorldTransformAncestorJointsImpl(_target, _jointLimit);
+  else if (_policy == IKP_ALL_JOINTS)
+    fitWorldTransformAllJointsImpl(_target, _jointLimit);
+}
+
+void BodyNode::fitWorldLinearVel(const Eigen::Vector3d& _targetLinVel,
+                                 BodyNode::InverseKinematicsPolicy /*_policy*/,
+                                 bool _jointVelLimit)
+{
+  // TODO: Only IKP_PARENT_JOINT policy is supported now.
+
+  Joint* parentJoint = getParentJoint();
+  size_t dof = parentJoint->getNumGenCoords();
+
+  if (dof == 0)
+    return;
+
+  optimizer::Problem prob(dof);
+
+  // Use the current joint configuration as initial guess
+  prob.setInitialGuess(parentJoint->getGenVels());
+
+  // Objective function
+  VelocityObjFunc obj(this, _targetLinVel, VelocityObjFunc::VT_LINEAR, mSkeleton);
+  prob.setObjective(&obj);
+
+  // Joint limit
+  if (_jointVelLimit)
+  {
+    prob.setLowerBounds(parentJoint->getGenVelsMin());
+    prob.setUpperBounds(parentJoint->getGenVelsMax());
+  }
+
+  // Solve with gradient-free local minima algorithm
+  optimizer::NloptSolver solver(&prob, NLOPT_LN_BOBYQA);
+  solver.solve();
+
+  // Set optimal configuration of the parent joint
+  Eigen::VectorXd jointDQ = prob.getOptimalSolution();
+  parentJoint->setGenVels(jointDQ, true, true);
+}
+
+void BodyNode::fitWorldAngularVel(const Eigen::Vector3d& _targetAngVel,
+                                  BodyNode::InverseKinematicsPolicy /*_policy*/,
+                                  bool _jointVelLimit)
+{
+  // TODO: Only IKP_PARENT_JOINT policy is supported now.
+
+  Joint* parentJoint = getParentJoint();
+  size_t dof = parentJoint->getNumGenCoords();
+
+  if (dof == 0)
+    return;
+
+  optimizer::Problem prob(dof);
+
+  // Use the current joint configuration as initial guess
+  prob.setInitialGuess(parentJoint->getGenVels());
+
+  // Objective function
+  VelocityObjFunc obj(this, _targetAngVel, VelocityObjFunc::VT_ANGULAR, mSkeleton);
+  prob.setObjective(&obj);
+
+  // Joint limit
+  if (_jointVelLimit)
+  {
+    prob.setLowerBounds(parentJoint->getGenVelsMin());
+    prob.setUpperBounds(parentJoint->getGenVelsMax());
+  }
+
+  // Solve with gradient-free local minima algorithm
+  optimizer::NloptSolver solver(&prob, NLOPT_LN_BOBYQA);
+  solver.solve();
+
+  // Set optimal configuration of the parent joint
+  Eigen::VectorXd jointDQ = prob.getOptimalSolution();
+  parentJoint->setGenVels(jointDQ, true, true);
 }
 
 const Eigen::Isometry3d& BodyNode::getWorldTransform() const {
@@ -262,6 +391,12 @@ math::Jacobian BodyNode::getWorldJacobianTimeDeriv(
   return math::AdTJac(T, bodyJacobianTimeDeriv);
 }
 
+//==============================================================================
+const Eigen::Vector6d& BodyNode::getBodyVelocityChange() const
+{
+  return mDelV;
+}
+
 void BodyNode::setColliding(bool _isColliding) {
   mIsColliding = _isColliding;
 }
@@ -270,12 +405,13 @@ bool BodyNode::isColliding() {
   return mIsColliding;
 }
 
-void BodyNode::init(Skeleton* _skeleton, int _skeletonIndex) {
+void BodyNode::init(Skeleton* _skeleton, int _skeletonIndex)
+{
   assert(_skeleton);
 
   mSkeleton = _skeleton;
   mSkelIndex = _skeletonIndex;
-  mParentJoint->mSkelIndex = _skeletonIndex;
+  mParentJoint->init(_skeleton, _skeletonIndex);
 
   //--------------------------------------------------------------------------
   // Fill the list of generalized coordinates this node depends on, and sort
@@ -283,6 +419,7 @@ void BodyNode::init(Skeleton* _skeleton, int _skeletonIndex) {
   //--------------------------------------------------------------------------
   if (mParentBodyNode)
     mDependentGenCoordIndices = mParentBodyNode->mDependentGenCoordIndices;
+
   else
     mDependentGenCoordIndices.clear();
   for (int i = 0; i < mParentJoint->getNumGenCoords(); i++)
@@ -293,8 +430,10 @@ void BodyNode::init(Skeleton* _skeleton, int _skeletonIndex) {
 #ifndef NDEBUG
   // Check whether there is duplicated indices.
   int nDepGenCoordIndices = mDependentGenCoordIndices.size();
-  for (int i = 0; i < nDepGenCoordIndices - 1; i++) {
-    for (int j = i + 1; j < nDepGenCoordIndices; j++) {
+  for (int i = 0; i < nDepGenCoordIndices - 1; i++)
+  {
+    for (int j = i + 1; j < nDepGenCoordIndices; j++)
+    {
       assert(mDependentGenCoordIndices[i] !=
           mDependentGenCoordIndices[j] &&
           "Duplicated index is found in mDependentGenCoordIndices.");
@@ -317,6 +456,8 @@ void BodyNode::init(Skeleton* _skeleton, int _skeletonIndex) {
   mPsi.setZero(dof, dof);
   mImplicitPsi.setZero(dof, dof);
   mAlpha.setZero(dof);
+
+  mImpAlpha.setZero(dof);
 }
 
 void BodyNode::aggregateGenCoords(std::vector<GenCoord*>* _genCoords) {
@@ -388,19 +529,6 @@ void BodyNode::updateTransform() {
   mParentJoint->updateJacobian();
 }
 
-void BodyNode::updateTransform_Issue122(double _timeStep) {
-  mParentJoint->updateTransform_Issue122(_timeStep);
-  if (mParentBodyNode) {
-    mW = mParentBodyNode->getWorldTransform()
-         * mParentJoint->getLocalTransform();
-  } else {
-    mW = mParentJoint->getLocalTransform();
-  }
-  assert(math::verifyTransform(mW));
-
-  mParentJoint->updateJacobian_Issue122();
-}
-
 void BodyNode::updateVelocity() {
   //--------------------------------------------------------------------------
   // Body velocity update
@@ -409,7 +537,7 @@ void BodyNode::updateVelocity() {
   //--------------------------------------------------------------------------
 
   if (mParentJoint->getNumGenCoords() > 0) {
-    mV.noalias() = mParentJoint->getLocalJacobian() * mParentJoint->get_dq();
+    mV.noalias() = mParentJoint->getLocalJacobian() * mParentJoint->getGenVels();
     if (mParentBodyNode) {
       mV += math::AdInvT(mParentJoint->getLocalTransform(),
                          mParentBodyNode->getBodyVelocity());
@@ -424,21 +552,9 @@ void BodyNode::updateEta() {
 
   if (mParentJoint->getNumGenCoords() > 0) {
     mEta = math::ad(mV, mParentJoint->getLocalJacobian() *
-                    mParentJoint->get_dq());
+                    mParentJoint->getGenVels());
     mEta.noalias() += mParentJoint->getLocalJacobianTimeDeriv() *
-                      mParentJoint->get_dq();
-    assert(!math::isNan(mEta));
-  }
-}
-
-void BodyNode::updateEta_Issue122() {
-  mParentJoint->updateJacobianTimeDeriv_Issue122();
-
-  if (mParentJoint->getNumGenCoords() > 0) {
-    mEta = math::ad(mV, mParentJoint->getLocalJacobian() *
-                    mParentJoint->get_dq());
-    mEta.noalias() += mParentJoint->getLocalJacobianTimeDeriv() *
-                      mParentJoint->get_dq();
+                      mParentJoint->getGenVels();
     assert(!math::isNan(mEta));
   }
 }
@@ -453,7 +569,7 @@ void BodyNode::updateAcceleration() {
 
   if (mParentJoint->getNumGenCoords() > 0) {
     mdV = mEta;
-    mdV.noalias() += mParentJoint->getLocalJacobian() * mParentJoint->get_ddq();
+    mdV.noalias() += mParentJoint->getLocalJacobian() * mParentJoint->getGenAccs();
     if (mParentBodyNode) {
       mdV += math::AdInvT(mParentJoint->getLocalTransform(),
                           mParentBodyNode->getBodyAcceleration());
@@ -517,7 +633,7 @@ int BodyNode::getNumVisualizationShapes() const {
   return mVizShapes.size();
 }
 
-Shape*BodyNode::getVisualizationShape(int _idx) const {
+Shape* BodyNode::getVisualizationShape(int _idx) const {
   return mVizShapes[_idx];
 }
 
@@ -529,11 +645,11 @@ int BodyNode::getNumCollisionShapes() const {
   return mColShapes.size();
 }
 
-Shape*BodyNode::getCollisionShape(int _idx) const {
+Shape* BodyNode::getCollisionShape(int _idx) const {
   return mColShapes[_idx];
 }
 
-Skeleton*BodyNode::getSkeleton() const {
+Skeleton* BodyNode::getSkeleton() const {
   return mSkeleton;
 }
 
@@ -541,13 +657,16 @@ void BodyNode::setParentJoint(Joint* _joint) {
   mParentJoint = _joint;
 }
 
-Joint*BodyNode::getParentJoint() const {
+Joint* BodyNode::getParentJoint() const {
   return mParentJoint;
 }
 
+//==============================================================================
 void BodyNode::addExtForce(const Eigen::Vector3d& _force,
                            const Eigen::Vector3d& _offset,
-                           bool _isOffsetLocal, bool _isForceLocal) {
+                           bool _isForceLocal,
+                           bool _isOffsetLocal)
+{
   Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
   Eigen::Vector6d F = Eigen::Vector6d::Zero();
 
@@ -564,9 +683,11 @@ void BodyNode::addExtForce(const Eigen::Vector3d& _force,
   mFext += math::dAdInvT(T, F);
 }
 
+//==============================================================================
 void BodyNode::setExtForce(const Eigen::Vector3d& _force,
                            const Eigen::Vector3d& _offset,
-                           bool _isOffsetLocal, bool _isForceLocal) {
+                           bool _isForceLocal, bool _isOffsetLocal)
+{
   Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
   Eigen::Vector6d F = Eigen::Vector6d::Zero();
 
@@ -583,18 +704,22 @@ void BodyNode::setExtForce(const Eigen::Vector3d& _force,
   mFext = math::dAdInvT(T, F);
 }
 
-void BodyNode::addExtTorque(const Eigen::Vector3d& _torque, bool _isLocal) {
+//==============================================================================
+void BodyNode::addExtTorque(const Eigen::Vector3d& _torque, bool _isLocal)
+{
   if (_isLocal)
     mFext.head<3>() += _torque;
   else
-    mFext.head<3>() += mW.linear() * _torque;
+    mFext.head<3>() += mW.linear().transpose() * _torque;
 }
 
-void BodyNode::setExtTorque(const Eigen::Vector3d& _torque, bool _isLocal) {
+//==============================================================================
+void BodyNode::setExtTorque(const Eigen::Vector3d& _torque, bool _isLocal)
+{
   if (_isLocal)
     mFext.head<3>() = _torque;
   else
-    mFext.head<3>() = mW.linear() * _torque;
+    mFext.head<3>() = mW.linear().transpose() * _torque;
 }
 
 const Eigen::Vector6d& BodyNode::getExternalForceLocal() const {
@@ -605,32 +730,75 @@ Eigen::Vector6d BodyNode::getExternalForceGlobal() const {
   return math::dAdInvT(mW, mFext);
 }
 
-void BodyNode::addContactForce(const Eigen::Vector6d& _contactForce) {
-  mContactForces.push_back(_contactForce);
+//==============================================================================
+void BodyNode::addConstraintImpulse(const Eigen::Vector3d& _constImp,
+                                    const Eigen::Vector3d& _offset,
+                                    bool _isImpulseLocal,
+                                    bool _isOffsetLocal)
+{
+  // TODO(JS): Add contact sensor data here (DART 4.1)
+
+  Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
+  Eigen::Vector6d F = Eigen::Vector6d::Zero();
+
+  if (_isOffsetLocal)
+    T.translation() = _offset;
+  else
+    T.translation() = getWorldTransform().inverse() * _offset;
+
+  if (_isImpulseLocal)
+    F.tail<3>() = _constImp;
+  else
+    F.tail<3>() = mW.linear().transpose() * _constImp;
+
+  mConstraintImpulse += math::dAdInvT(T, F);
 }
 
-int BodyNode::getNumContactForces() const {
-  return mContactForces.size();
-}
+//==============================================================================
+void BodyNode::clearConstraintImpulse()
+{
+  mDelV.setZero();
+  mImpB.setZero();
+  mImpAlpha.setZero();
+  mImpBeta.setZero();
+  mConstraintImpulse.setZero();
+  mImpF.setZero();
 
-const Eigen::Vector6d& BodyNode::getContactForce(int _idx) {
-  assert(0 <= _idx && _idx < mContactForces.size());
-  return mContactForces[_idx];
-}
-
-void BodyNode::clearContactForces() {
-  mContactForces.clear();
+  mParentJoint->setConstraintImpulses(
+        Eigen::VectorXd::Zero(mParentJoint->getNumGenCoords()));
+  mParentJoint->setVelsChange(
+        Eigen::VectorXd::Zero(mParentJoint->getNumGenCoords()));
 }
 
 const Eigen::Vector6d& BodyNode::getBodyForce() const {
   return mF;
 }
 
+//==============================================================================
+void BodyNode::setConstraintImpulse(const Eigen::Vector6d& _constImp)
+{
+  assert(!math::isNan(_constImp));
+  mConstraintImpulse = _constImp;
+}
+
+//==============================================================================
+void BodyNode::addConstraintImpulse(const Eigen::Vector6d& _constImp)
+{
+  assert(!math::isNan(_constImp));
+  mConstraintImpulse += _constImp;
+}
+
+//==============================================================================
+const Eigen::Vector6d& BodyNode::getConstraintImpulse() const
+{
+  return mConstraintImpulse;
+}
+
 double BodyNode::getKineticEnergy() const {
   return 0.5 * mV.dot(mI * mV);
 }
 
-double dart::dynamics::BodyNode::getPotentialEnergy(
+double BodyNode::getPotentialEnergy(
     const Eigen::Vector3d& _gravity) const {
   return -mMass * mW.translation().dot(_gravity);
 }
@@ -655,6 +823,11 @@ void BodyNode::updateBodyForce(const Eigen::Vector3d& _gravity,
   mF.noalias() = mI * mdV;       // Inertial force
   if (_withExternalForces)
     mF -= mFext;                 // External force
+
+  // TODO(JS): This will be removed once new constraint solver is done.
+//  mF -= mConstraintImpulse * 1000.0;
+
+  assert(!math::isNan(mF));
   mF -= mFgravity;               // Gravity force
   mF -= math::dad(mV, mI * mV);  // Coriolis force
 
@@ -666,6 +839,9 @@ void BodyNode::updateBodyForce(const Eigen::Vector3d& _gravity,
     mF += math::dAdInvT(childJoint->getLocalTransform(),
                         (*iChildBody)->getBodyForce());
   }
+
+  // TODO(JS): mWrench and mF are duplicated. Remove one of them.
+  mParentJoint->mWrench = mF;
 
   assert(!math::isNan(mF));
 }
@@ -680,7 +856,7 @@ void BodyNode::updateGeneralizedForce(bool _withDampingForces) {
 
   assert(!math::isNan(J.transpose()*mF));
 
-  mParentJoint->set_tau(J.transpose()*mF);
+  mParentJoint->setGenForces(J.transpose()*mF);
 }
 
 void BodyNode::updateArticulatedInertia(double _timeStep) {
@@ -761,9 +937,7 @@ void BodyNode::updateBiasForce(double _timeStep,
     mFgravity.setZero();
   mB = -math::dad(mV, mI * mV) - mFext - mFgravity;
   assert(!math::isNan(mB));
-  for (int i = 0; i < mContactForces.size(); ++i)
-    mB -= mContactForces[i];
-  assert(!math::isNan(mB));
+
   for (std::vector<BodyNode*>::const_iterator it = mChildBodyNodes.begin();
        it != mChildBodyNodes.end(); ++it) {
     mB += math::dAdInvT((*it)->getParentJoint()->getLocalTransform(),
@@ -774,7 +948,7 @@ void BodyNode::updateBiasForce(double _timeStep,
   // Cache data: alpha
   int dof = mParentJoint->getNumGenCoords();
   if (dof > 0) {
-    mAlpha = mParentJoint->get_tau()
+    mAlpha = mParentJoint->getGenForces()
              + mParentJoint->getSpringForces(_timeStep)
              + mParentJoint->getDampingForces();
     for (int i = 0; i < dof; i++) {
@@ -809,16 +983,132 @@ void BodyNode::update_ddq() {
     ddq.noalias() = mImplicitPsi * mAlpha;
   }
 
-  mParentJoint->set_ddq(ddq);
+  mParentJoint->GenCoordSystem::setGenAccs(ddq);
   assert(!math::isNan(ddq));
 
-  updateAcceleration();
+  if (mParentJoint->getNumGenCoords() > 0) {
+    mdV = mEta;
+    mdV.noalias() += mParentJoint->getLocalJacobian() * mParentJoint->getGenAccs();
+    if (mParentBodyNode) {
+      mdV += math::AdInvT(mParentJoint->getLocalTransform(),
+                          mParentBodyNode->getBodyAcceleration());
+    }
+  }
+
+  assert(!math::isNan(mdV));
 }
 
 void BodyNode::update_F_fs() {
   mF = mB;
-  mF.noalias() = mAI * mdV;
+  mF.noalias() += mAI * mdV;
+
+  // TODO(JS): mWrench and mF are duplicated. Remove one of them.
+  mParentJoint->mWrench = mF;
+
   assert(!math::isNan(mF));
+}
+
+//==============================================================================
+bool BodyNode::isImpulseReponsible() const
+{
+  // Should be called at BodyNode::init()
+  // TODO(JS): Once hybrid dynamics is implemented, we should consider joint
+  //           type of parent joint.
+  if (mSkeleton->isMobile() && getNumDependentGenCoords() > 0)
+    return true;
+  else
+    return false;
+}
+
+//==============================================================================
+void BodyNode::updateImpBiasForce()
+{
+  // Update impulsive bias force
+  mImpB = -mConstraintImpulse;
+//  assert(mImpFext == Eigen::Vector6d::Zero());
+
+  for (std::vector<BodyNode*>::const_iterator it = mChildBodyNodes.begin();
+       it != mChildBodyNodes.end(); ++it)
+  {
+    mImpB += math::dAdInvT((*it)->getParentJoint()->getLocalTransform(),
+                           (*it)->mImpBeta);
+  }
+  assert(!math::isNan(mImpB));
+
+  // Cache data: mImpAlpha
+  int dof = mParentJoint->getNumGenCoords();
+  if (dof > 0)
+  {
+    mImpAlpha = mParentJoint->getConstraintImpulses()
+                - mParentJoint->getLocalJacobian().transpose() * mImpB;
+  }
+  assert(!math::isNan(mImpAlpha));
+
+  // Cache data: mImpBeta
+  if (mParentBodyNode)
+  {
+    mImpBeta = mImpB;
+    if (dof > 0)
+      mImpBeta.noalias() += mAI_S_Psi * mImpAlpha;
+  }
+  assert(!math::isNan(mImpBeta));
+}
+
+//==============================================================================
+void BodyNode::updateJointVelocityChange()
+{
+  if (mParentJoint->getNumGenCoords() > 0)
+  {
+    Eigen::VectorXd del_dq = mPsi * mImpAlpha;
+    if (mParentBodyNode)
+    {
+      del_dq -= mAI_S_Psi.transpose()
+                * math::AdInvT(mParentJoint->getLocalTransform(),
+                               mParentBodyNode->mDelV);
+    }
+
+    mParentJoint->setVelsChange(del_dq);
+    assert(!math::isNan(del_dq));
+
+    mDelV = mParentJoint->getLocalJacobian() * mParentJoint->getVelsChange();
+  }
+  else
+  {
+    mDelV.setZero();
+  }
+
+  if (mParentBodyNode)
+  {
+    mDelV += math::AdInvT(mParentJoint->getLocalTransform(),
+                          mParentBodyNode->mDelV);
+  }
+
+  assert(!math::isNan(mDelV));
+}
+
+//==============================================================================
+//void BodyNode::updateBodyVelocityChange()
+//{
+//  if (mParentJoint->getNumGenCoords() > 0)
+//    mDelV = mParentJoint->getLocalJacobian() * mParentJoint->getVelsChange();
+//  else
+//    mDelV.setZero();
+
+//  if (mParentBodyNode)
+//  {
+//    mDelV += math::AdInvT(mParentJoint->getLocalTransform(),
+//                          mParentBodyNode->mDelV);
+//  }
+
+//  assert(!math::isNan(mDelV));
+//}
+
+//==============================================================================
+void BodyNode::updateBodyImpForceFwdDyn()
+{
+  mImpF = mImpB;
+  mImpF.noalias() += mAI * mDelV;
+  assert(!math::isNan(mImpF));
 }
 
 void BodyNode::aggregateCoriolisForceVector(Eigen::VectorXd* _C) {
@@ -907,7 +1197,7 @@ void BodyNode::updateMassMatrix() {
   int dof = mParentJoint->getNumGenCoords();
   if (dof > 0) {
     mM_dV.noalias() += mParentJoint->getLocalJacobian() *
-                       mParentJoint->get_ddq();
+                       mParentJoint->getGenAccs();
     assert(!math::isNan(mM_dV));
   }
   if (mParentBodyNode)
@@ -956,8 +1246,8 @@ void BodyNode::aggregateAugMassMatrix(Eigen::MatrixXd* _MCol, int _col,
     int iStart = mParentJoint->getGenCoord(0)->getSkeletonIndex();
     _MCol->block(iStart, _col, dof, 1).noalias()
         = mParentJoint->getLocalJacobian().transpose() * mM_F
-          + D * (_timeStep * mParentJoint->get_ddq())
-          + K * (_timeStep * _timeStep * mParentJoint->get_ddq());
+          + D * (_timeStep * mParentJoint->getGenAccs())
+          + K * (_timeStep * _timeStep * mParentJoint->getGenAccs());
   }
 }
 
@@ -973,7 +1263,7 @@ void BodyNode::updateInvMassMatrix() {
   // Cache data: mInvM2_a
   int dof = mParentJoint->getNumGenCoords();
   if (dof > 0) {
-    mInvM_a = mParentJoint->get_tau();
+    mInvM_a = mParentJoint->getGenForces();
     mInvM_a.noalias() -= mParentJoint->getLocalJacobian().transpose() * mInvM_c;
     assert(!math::isNan(mInvM_a));
   }
@@ -999,7 +1289,7 @@ void BodyNode::updateInvAugMassMatrix() {
   // Cache data: mInvM2_a
   int dof = mParentJoint->getNumGenCoords();
   if (dof > 0) {
-    mInvM_a = mParentJoint->get_tau();
+    mInvM_a = mParentJoint->getGenForces();
     mInvM_a.noalias() -= mParentJoint->getLocalJacobian().transpose() * mInvM_c;
     assert(!math::isNan(mInvM_a));
   }
@@ -1200,7 +1490,116 @@ void BodyNode::_updateGeralizedInertia() {
 
 void BodyNode::clearExternalForces() {
   mFext.setZero();
-  mContactForces.clear();
+}
+
+void BodyNode::fitWorldTransformParentJointImpl(
+    const Eigen::Isometry3d& _target, bool _jointLimit)
+{
+  Joint* parentJoint = getParentJoint();
+  size_t dof = parentJoint->getNumGenCoords();
+
+  if (dof == 0)
+    return;
+
+  optimizer::Problem prob(dof);
+
+  // Use the current joint configuration as initial guess
+  prob.setInitialGuess(parentJoint->getConfigs());
+
+  // Objective function
+  TransformObjFunc obj(this, _target, mSkeleton);
+  prob.setObjective(&obj);
+
+  // Joint limit
+  if (_jointLimit)
+  {
+    prob.setLowerBounds(parentJoint->getConfigsMin());
+    prob.setUpperBounds(parentJoint->getConfigsMax());
+  }
+
+  // Solve with gradient-free local minima algorithm
+  optimizer::NloptSolver solver(&prob, NLOPT_LN_BOBYQA);
+  solver.solve();
+
+  // Set optimal configuration of the parent joint
+  Eigen::VectorXd jointQ = prob.getOptimalSolution();
+  parentJoint->setConfigs(jointQ, true, true, true);
+}
+
+void BodyNode::fitWorldTransformAncestorJointsImpl(
+    const Eigen::Isometry3d& /*_target*/, bool /*_jointLimit*/)
+{
+  dterr << "Not implemented yet.\n";
+}
+
+void BodyNode::fitWorldTransformAllJointsImpl(
+    const Eigen::Isometry3d& /*_target*/, bool /*_jointLimit*/)
+{
+  dterr << "Not implemented yet.\n";
+}
+
+BodyNode::TransformObjFunc::TransformObjFunc(
+    BodyNode* _body, const Eigen::Isometry3d& _T, Skeleton* _skeleton)
+  : Function(), mBodyNode(_body), mT(_T), mSkeleton(_skeleton)
+{
+}
+
+BodyNode::TransformObjFunc::~TransformObjFunc()
+{
+}
+
+double BodyNode::TransformObjFunc::eval(Eigen::Map<const Eigen::VectorXd>& _x)
+{
+  assert(mBodyNode->getParentJoint()->getNumGenCoords() == _x.size());
+
+  // Update forward kinematics information with _x
+  // We are just insterested in transformation of mBodyNode
+  mBodyNode->getParentJoint()->setConfigs(_x, true, false, false);
+
+  // Compute and return the geometric distance between body node transformation
+  // and target transformation
+  Eigen::Isometry3d bodyT = mBodyNode->getWorldTransform();
+  Eigen::Vector6d dist = math::logMap(bodyT.inverse() * mT);
+  return dist.dot(dist);
+}
+
+BodyNode::VelocityObjFunc::VelocityObjFunc(BodyNode* _body,
+                                           const Eigen::Vector3d& _vel,
+                                           VelocityType _velType,
+                                           Skeleton* _skeleton)
+  : Function(),
+    mBodyNode(_body),
+    mVelocityType(_velType),
+    mSkeleton(_skeleton)
+{
+  if (mVelocityType == VT_LINEAR)
+  {
+    mVelocity.head<3>() = mBodyNode->getWorldVelocity().head<3>();
+    mVelocity.tail<3>() = _vel;
+  }
+  else  // mVelocityType == VT_ANGULAR
+  {
+    mVelocity.head<3>() = _vel;
+    mVelocity.tail<3>() = mBodyNode->getWorldVelocity().tail<3>();
+  }
+}
+
+BodyNode::VelocityObjFunc::~VelocityObjFunc()
+{
+}
+
+double BodyNode::VelocityObjFunc::eval(Eigen::Map<const Eigen::VectorXd>& _x)
+{
+  assert(mBodyNode->getParentJoint()->getNumGenCoords() == _x.size());
+
+  // Update forward kinematics information with _x
+  // We are just insterested in spacial velocity of mBodyNode
+  mBodyNode->getParentJoint()->setGenVels(_x, true, false);
+
+  // Compute and return the geometric distance between body node transformation
+  // and target transformation
+  Eigen::Vector6d diff = mBodyNode->getWorldVelocity() - mVelocity;
+  return diff.dot(diff);
 }
 
 }  // namespace dynamics

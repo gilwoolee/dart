@@ -78,9 +78,6 @@ public:
   // Documentation inherited.
   virtual void updateJacobianTimeDeriv();
 
-  // Documentation inherited.
-  virtual void clampRotation();
-
 protected:
   /// \brief
   GenCoord mCoordinate;
@@ -92,7 +89,7 @@ protected:
   double mPitch;
 
 public:
-  //
+  // To get byte-aligned Eigen vectors
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 

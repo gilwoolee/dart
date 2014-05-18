@@ -39,6 +39,7 @@
 #include <string>
 
 #include "dart/math/Geometry.h"
+#include "dart/math/Helpers.h"
 #include "dart/dynamics/BodyNode.h"
 
 namespace dart {
@@ -46,8 +47,9 @@ namespace dynamics {
 
 PrismaticJoint::PrismaticJoint(const Eigen::Vector3d& axis,
                                const std::string& _name)
-  : Joint(PRISMATIC, _name),
-    mAxis(axis.normalized()) {
+  : Joint(_name),
+    mAxis(axis.normalized())
+{
   mGenCoords.push_back(&mCoordinate);
 
   mS = Eigen::Matrix<double, 6, 1>::Zero();
@@ -71,7 +73,7 @@ const Eigen::Vector3d&PrismaticJoint::getAxis() const {
 
 void PrismaticJoint::updateTransform() {
   mT = mT_ParentBodyToJoint
-       * Eigen::Translation3d(mAxis * mCoordinate.get_q())
+       * Eigen::Translation3d(mAxis * mCoordinate.getPos())
        * mT_ChildBodyToJoint.inverse();
   assert(math::verifyTransform(mT));
 }

@@ -42,20 +42,20 @@
 
 #include <iostream>
 
-#include <dart/math/Helpers.h>
+#include "dart/math/Helpers.h"
 
 #include "dart/utils/Paths.h"
-#include "dart/utils/SoftParser.h"
-#include "dart/dynamics/SoftSkeleton.h"
-#include "dart/simulation/SoftWorld.h"
+#include "dart/utils/SkelParser.h"
+#include "dart/dynamics/Skeleton.h"
+#include "dart/simulation/World.h"
 #include "apps/softArticulatedBodiesTest/MyWindow.h"
 
 int main(int argc, char* argv[])
 {
   // load a skeleton file
   // create and initialize the world
-  dart::simulation::SoftWorld* myWorld
-      = dart::utils::SoftSkelParser::readSoftFile(
+  dart::simulation::World* myWorld
+      = dart::utils::SkelParser::readWorld(
           DART_DATA_PATH"skel/test/test_articulated_bodies_10bodies.skel");
   assert(myWorld != NULL);
 
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
   Eigen::VectorXd initPose = Eigen::VectorXd::Zero(dof);
   for (int i = 0; i < 3; i++)
     initPose[i] = dart::math::random(-0.5, 0.5);
-  myWorld->getSkeleton(1)->setConfig(initPose);
+  myWorld->getSkeleton(1)->setConfigs(initPose, true, true, false);
 
   // create a window and link it to the world
   MyWindow window;

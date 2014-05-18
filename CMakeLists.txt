@@ -6,7 +6,7 @@ set(CMAKE_CXX_WARNING_LEVEL 4)
 project(dart)
 message(STATUS "Generate makefile/project file for DART")
 
-set(DART_MAJOR_VERSION "3")
+set(DART_MAJOR_VERSION "4")
 set(DART_MINOR_VERSION "0")
 set(DART_PATCH_VERSION "0")
 set(PKG_DESC "Dynamic Animation and Robotics Toolkit.")
@@ -16,17 +16,37 @@ set(PKG_EXTERNAL_DEPS "flann, ccd, fcl")
 message(STATUS "CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
 message(STATUS "CMAKE_BINARY_DIR = ${CMAKE_BINARY_DIR}")
 
-option(BUILD_SNOPT "Build with SNOPT optimizer" OFF)
+option(ENABLE_OPENMP "Build with OpenMP parallaization enabled" ON)
 option(BUILD_CORE_ONLY "Build only the core of DART" OFF)
 if(NOT MSVC)
     OPTION(BUILD_SHARED_LIBS "Build shared libraries" ON)
 endif()
 
-IF(NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE Release CACHE STRING
+###############
+message(STATUS "Checking dart build type")
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING
       "Choose the type of build, options are: None Debug Release RelWithDebInfo Profile."
       FORCE)
-ENDIF(NOT CMAKE_BUILD_TYPE)
+endif(NOT CMAKE_BUILD_TYPE)
+string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPERCASE)
+
+set(BUILD_TYPE_PROFILE FALSE)
+set(BUILD_TYPE_RELEASE FALSE)
+set(BUILD_TYPE_RELWITHDEBINFO FALSE)
+set(BUILD_TYPE_DEBUG FALSE)
+
+if("${CMAKE_BUILD_TYPE_UPPERCASE}" STREQUAL "PROFILE")
+  set(BUILD_TYPE_PROFILE TRUE)
+elseif("${CMAKE_BUILD_TYPE_UPPERCASE}" STREQUAL "RELEASE")
+  set(BUILD_TYPE_RELEASE TRUE)
+elseif("${CMAKE_BUILD_TYPE_UPPERCASE}" STREQUAL "RELWITHDEBINFO")
+  set(BUILD_TYPE_RELWITHDEBINFO TRUE)
+elseif("${CMAKE_BUILD_TYPE_UPPERCASE}" STREQUAL "DEBUG")
+  set(BUILD_TYPE_DEBUG TRUE)
+else()
+  build_error("CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} unknown. Valid options are: Debug Release RelWithDebInfo Profile Check")
+endif()
 
 # GCCFilter, if appliciable
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCPP)
@@ -40,12 +60,18 @@ endif()
 if(MSVC)
   message(STATUS "Setup Visual Studio Specific Flags")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /Zi /Gy /W1 /EHsc")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD /Zi /GL /Gy /W1 /EHsc /arch:SSE2 /openmp")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD /Zi /GL /Gy /W1 /EHsc /arch:SSE2")
   set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
-elseif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+elseif(CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "-msse2 -fPIC")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
   set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS_DEBUG}")
+  set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_DEBUG} -pg")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "-msse2 -fPIC")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer -fno-inline-functions -fno-optimize-sibling-calls")
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS_DEBUG}")
   set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_DEBUG} -pg")
 else()
@@ -60,14 +86,6 @@ if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 ###############
-# Generate the path header file
-set(PATH_HEADER_IN ${CMAKE_SOURCE_DIR}/dart/utils/Paths.h.in)
-set(PATH_HEADER_OUT ${CMAKE_BINARY_DIR}/dart/utils/Paths.h)
-message(STATUS "Generate the path header file to ${PATH_HEADER_OUT}")
-configure_file(${PATH_HEADER_IN} ${PATH_HEADER_OUT} @ONLY)
-install(FILES ${PATH_HEADER_OUT} DESTINATION include/dart/utils)
-
-###############
 # Find dependencies
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -75,6 +93,34 @@ find_package(Eigen REQUIRED)
 find_package(FCL REQUIRED)
 find_package(Assimp REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(NLOPT REQUIRED)
+
+# IPOPT
+find_package(IPOPT)
+if(IPOPT_FOUND)
+  message(STATUS "Looking for IPOPT - found")
+  set(HAVE_IPOPT TRUE)
+else(IPOPT_FOUND)
+  message(WARNING "IPOPT not found, for ipopt optimization option, please install coinor-libipopt-dev.")
+  set(HAVE_IPOPT FALSE)
+endif()
+
+# BulletCollision
+if(UNIX)
+  pkg_check_modules(BULLET bullet>=2.82)
+  if (NOT BULLET_FOUND)
+     pkg_check_modules(BULLET bullet2.82>=2.82)
+  endif()
+else()
+  find_package(Bullet COMPONENTS BulletMath BulletCollision)
+endif()
+if(BULLET_FOUND)
+  message(STATUS "Looking for BulletCollision - found")
+  set(HAVE_BULLET_COLLISION TRUE)
+else(BULLET_FOUND)
+  message(WARNING "BulletCollision not found, for bullet collision detector option, please install libbullet-dev.")
+  set(HAVE_BULLET_COLLISION FALSE)
+endif()
 
 # GLUT
 if(WIN32 AND NOT CYGWIN)
@@ -94,11 +140,17 @@ add_definitions(-DBOOST_TEST_DYN_LINK)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
+# OpenMP
+if(ENABLE_OPENMP)
+  find_package(OpenMP)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
 if(NOT BUILD_CORE_ONLY)
   find_package(FLANN REQUIRED)
   find_package(TinyXML REQUIRED)
   find_package(TinyXML2 REQUIRED)
-  
+
   # urdfdom
   find_package(urdfdom REQUIRED)
   if(MSVC)
@@ -117,6 +169,14 @@ include_directories(${Assimp_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLUT_INCLUDE_DIR})
+include_directories(${NLOPT_INCLUDE_DIRS})
+if(HAVE_IPOPT)
+  include_directories(${IPOPT_INCLUDE_DIRS})
+endif()
+if(HAVE_BULLET_COLLISION)
+  include_directories(${BULLET_INCLUDE_DIRS})
+  add_definitions(${BULLET_CFLAGS})
+endif()
 
 if(NOT BUILD_CORE_ONLY)
   include_directories(${FLANN_INCLUDE_DIRS})
@@ -130,19 +190,67 @@ include_directories("${CMAKE_BINARY_DIR}")
 link_directories("${CMAKE_BINARY_DIR}/lib")
 link_directories("${CMAKE_INSTALL_PREFIX}/lib")
 link_directories(${Boost_LIBRARY_DIRS})
+if(HAVE_BULLET_COLLISION)
+  link_directories("${BULLET_LIBRARY_DIRS}")
+endif()
 
-set(DART_CORE_DEPENDENCIES ${FCL_LIBRARIES} ${Assimp_LIBRARIES} ${Boost_LIBRARIES} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
+set(DART_CORE_DEPENDENCIES ${FCL_LIBRARIES}
+                           ${Assimp_LIBRARIES}
+                           ${Boost_LIBRARIES}
+                           ${OPENGL_LIBRARIES}
+                           ${GLUT_LIBRARY}
+                           ${NLOPT_LIBRARIES})
+if(HAVE_IPOPT)
+  set(DART_CORE_DEPENDENCIES ${DART_CORE_DEPENDENCIES} ${IPOPT_LIBRARIES})
+endif()
+if(HAVE_BULLET_COLLISION)
+  set(DART_CORE_DEPENDENCIES ${DART_CORE_DEPENDENCIES} ${BULLET_LIBRARIES})
+endif()
+
 if(NOT BUILD_CORE_ONLY)
-  set(DART_DEPENDENCIES ${urdfdom_LIBRARIES} ${TinyXML_LIBRARIES} ${TinyXML2_LIBRARIES})
+  set(DART_DEPENDENCIES ${urdfdom_LIBRARIES}
+                        ${TinyXML_LIBRARIES}
+                        ${TinyXML2_LIBRARIES})
 endif()
 
 ###############
-# Generate the Dart CMake Config file
+# Generate the dart config file (reference: http://www.vtk.org/Wiki/CMake:How_To_Write_Platform_Checks)
+set(DART_CONFIG_IN cmake/config.h.in)
+set(DART_CONFIG_OUT ${CMAKE_BINARY_DIR}/dart/config.h)
+message(STATUS "Generate the config file to ${DART_CONFIG_OUT}")
+configure_file(${DART_CONFIG_IN} ${DART_CONFIG_OUT} @ONLY)
+install(FILES ${DART_CONFIG_OUT} DESTINATION include/dart)
+
+###############
+# Generate the path header file
+set(PATH_HEADER_IN ${CMAKE_SOURCE_DIR}/dart/utils/Paths.h.in)
+set(PATH_HEADER_OUT ${CMAKE_BINARY_DIR}/dart/utils/Paths.h)
+message(STATUS "Generate the path header file to ${PATH_HEADER_OUT}")
+configure_file(${PATH_HEADER_IN} ${PATH_HEADER_OUT} @ONLY)
+install(FILES ${PATH_HEADER_OUT} DESTINATION include/dart/utils)
+
+###############
+# Generate the Dart CMake Config and version files
+include(WriteBasicConfigVersionFile)
 configure_file(cmake/DARTCoreConfig.cmake.in "${CMAKE_BINARY_DIR}/cmake/DARTCoreConfig.cmake" @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/cmake/DARTCoreConfig.cmake DESTINATION share/dartcore)
+write_basic_config_version_file(cmake/DARTCoreConfigVersion.cmake
+  VERSION ${DART_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+install(FILES
+        ${CMAKE_BINARY_DIR}/cmake/DARTCoreConfig.cmake
+        ${CMAKE_BINARY_DIR}/cmake/DARTCoreConfigVersion.cmake
+        DESTINATION share/dartcore)
 if(NOT BUILD_CORE_ONLY)
   configure_file(cmake/DARTConfig.cmake.in "${CMAKE_BINARY_DIR}/cmake/DARTConfig.cmake" @ONLY)
-  install(FILES ${CMAKE_BINARY_DIR}/cmake/DARTConfig.cmake DESTINATION share/dart)
+  write_basic_config_version_file(cmake/DARTConfigVersion.cmake
+    VERSION ${DART_VERSION}
+    COMPATIBILITY SameMajorVersion
+  )
+  install(FILES
+          ${CMAKE_BINARY_DIR}/cmake/DARTConfig.cmake
+          ${CMAKE_BINARY_DIR}/cmake/DARTConfigVersion.cmake
+          DESTINATION share/dart)
 endif()
 
 set(PC_CONFIG_IN ${CMAKE_SOURCE_DIR}/cmake/dart.pc.in)
@@ -204,7 +312,17 @@ endif()
 set(CPACK_PACKAGE_VERSION_MAJOR ${DART_MAJOR_VERSION})
 set(CPACK_PACKAGE_VERSION_MINOR ${DART_MINOR_VERSION})
 set(CPACK_PACKAGE_VERSION_PATCH ${DART_PATCH_VERSION})
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "freeglut3, freeglut3-dev, libboost1.46-all-dev, libccd (>=1.4.2), fcl (>=0.2.7), libeigen3-dev, libxmu-dev, libxi-dev, libgtest-dev, libtinyxml-dev, libtinyxml2-dev, libassimp3, libassimp-dev (>=3.0~dfsg-1), urdfdom")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS
+    "freeglut3, freeglut3-dev, libboost1.46-all-dev, libccd (>=1.4.2),
+     fcl (>=0.2.7), libeigen3-dev, libxmu-dev, libxi-dev, libgtest-dev,
+     libtinyxml-dev, libtinyxml2-dev, libassimp3, libassimp-dev (>=3.0~dfsg-1),
+     urdfdom, libnlopt-dev")
+if(HAVE_IPOPT)
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_PACKAGE_DEPENDS} "coinor-libipopt-dev")
+endif()
+if(HAVE_BULLET_COLLISION)
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_PACKAGE_DEPENDS} "libbullet-dev (>=2.8.0)")
+endif()
 
 set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CPACK_SYSTEM_NAME}")

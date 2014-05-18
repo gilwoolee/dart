@@ -4,26 +4,25 @@ set_property(DIRECTORY PROPERTY FOLDER Apps)
 # List of all the subdirectories to include
 foreach(APPDIR
     atlasRobot
-    meshCollision
-    #viewer
-    forwardSim
-    cubes
-    #motionAnalysis
-    #pdController
     balance
-    #ik
-    #hybrid
-    #hanging
-    hardcodedDesign
-    closedLoop
-    doublePendulumWithBase
-    sdfLoader
     ballJointConstraintTest
+    closedLoop
+    cube
+    cubes
+    doublePendulumWithBase
+    forwardSim
+    hanging
+    hardcodedDesign
+    harnessTest
     #hingeJointConstraintTest
     #holding
-    harnessTest
-    vehicle
-
+    #hybrid
+    #ik
+    jointLimitTest
+    meshCollision
+    #motionAnalysis
+    #pdController
+    sdfLoader
     softArticulatedBodiesTest
     softCubes
     softDoublePendulumTest
@@ -31,16 +30,12 @@ foreach(APPDIR
     softDropBoxCOMOffsetTest
     softDropBoxLowStiffnessTest
     softDropSphereTest
-    softFeetAtlasRobot
     softOpenChain
     softSingleBodyTest
     softSinglePendulumTest
-
-
-
-
-
-
+    vehicle
+    #viewer
+    #inverseDyn
     )
     add_subdirectory(${APPDIR})
     if(WIN32)
@@ -52,3 +47,13 @@ foreach(APPDIR
         endif(TARGET ${APPTARGET})
     endif(WIN32)
 endforeach(APPDIR)
+
+if(HAVE_BULLET_COLLISION)
+  add_subdirectory(bulletCollision)
+  if(WIN32)
+      if(TARGET ${APPTARGET})
+          set_target_properties(${APPTARGET} PROPERTIES FOLDER Apps)
+          set_target_properties(${APPTARGET} PROPERTIES STATIC_LIBRARY_FLAGS_RELEASE "/LTCG")
+      endif(TARGET ${APPTARGET})
+  endif(WIN32)
+endif(HAVE_BULLET_COLLISION)

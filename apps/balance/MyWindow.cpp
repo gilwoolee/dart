@@ -40,13 +40,14 @@
 #include "dart/math/Helpers.h"
 #include "dart/dynamics/BodyNode.h"
 #include "dart/dynamics/Skeleton.h"
-#include "dart/constraint/ConstraintDynamics.h"
+//#include "dart/constraint/OldConstraintDynamics.h"
 #include "dart/simulation/World.h"
 #include "dart/gui/GLFuncs.h"
+#include "dart/utils/FileInfoWorld.h"
 
 MyWindow::MyWindow(): SimWindow() {
   mForce = Eigen::Vector3d::Zero();
-  mController = NULL;
+//  mController = NULL;
   mImpulseDuration = 0;
 }
 
@@ -54,38 +55,37 @@ MyWindow::~MyWindow() {
 }
 
 void MyWindow::timeStepping() {
-  mWorld->getSkeleton(1)->getBodyNode("h_spine")->addExtForce(
-        Eigen::Vector3d(0.0, 0.0, 0.0), mForce);
+//  mWorld->getSkeleton(1)->getBodyNode("h_spine")->addExtForce(mForce);
 
-  mController->setConstrForces(
-        mWorld->getConstraintHandler()->getTotalConstraintForce(1));
-  mController->computeTorques(mWorld->getSkeleton(1)->get_q(),
-                              mWorld->getSkeleton(1)->get_dq());
-  mWorld->getSkeleton(1)->setInternalForceVector(mController->getTorques());
+//  mController->setConstrForces(
+//        mWorld->getConstraintHandler()->getTotalConstraintForce(1));
+//  mController->computeTorques(mWorld->getSkeleton(1)->getConfigs(),
+//                              mWorld->getSkeleton(1)->getGenVels());
+//  mWorld->getSkeleton(1)->setInternalForceVector(mController->getTorques());
 
   mWorld->step();
 
   // for perturbation test
-  mImpulseDuration--;
-  if (mImpulseDuration <= 0) {
-    mImpulseDuration = 0;
-    mForce.setZero();
-  }
+//  mImpulseDuration--;
+//  if (mImpulseDuration <= 0) {
+//    mImpulseDuration = 0;
+//    mForce.setZero();
+//  }
 }
 
 void MyWindow::drawSkels() {
   for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++)
     mWorld->getSkeleton(i)->draw(mRI);
 
-  // draw arrow
-  if (mImpulseDuration > 0) {
-    Eigen::Vector3d poa =
-        mWorld->getSkeleton(1)->getBodyNode("h_spine")->getWorldTransform()
-        * Eigen::Vector3d(0.0, 0.0, 0.0);
-    Eigen::Vector3d start = poa - mForce / 10.0;
-    double len = mForce.norm() / 10.0;
-    dart::gui::drawArrow3D(start, mForce, len, 0.05, 0.1);
-  }
+//  // draw arrow
+//  if (mImpulseDuration > 0) {
+//    Eigen::Vector3d poa =
+//        mWorld->getSkeleton(1)->getBodyNode("h_spine")->getWorldTransform()
+//        * Eigen::Vector3d(0.0, 0.0, 0.0);
+//    Eigen::Vector3d start = poa - mForce / 10.0;
+//    double len = mForce.norm() / 10.0;
+//    dart::gui::drawArrow3D(start, mForce, len, 0.05, 0.1);
+//  }
 }
 
 void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
@@ -115,7 +115,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
     case ']':  // step forwardward
       if (!mSimulating) {
         mPlayFrame++;
-        if (mPlayFrame >= mBakedStates.size())
+        if (mPlayFrame >= mWorld->getRecording()->getNumFrames())
           mPlayFrame = 0;
         glutPostRedisplay();
       }
@@ -124,12 +124,12 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
       mShowMarkers = !mShowMarkers;
       break;
     case '1':
-      mForce[0] = 20;
+      mForce[0] = 40;
       mImpulseDuration = 100.0;
       std::cout << "push forward" << std::endl;
       break;
     case '2':
-      mForce[0] = -10;
+      mForce[0] = -40;
       mImpulseDuration = 100.0;
       std::cout << "push backward" << std::endl;
       break;
@@ -152,3 +152,4 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y) {
 void MyWindow::setController(Controller* _controller) {
   mController = _controller;
 }
+

@@ -40,10 +40,10 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOFT_GUI_SOFTSIMWINDOW_H_
-#define SOFT_GUI_SOFTSIMWINDOW_H_
+#ifndef DART_GUI_SOFTSIMWINDOW_H_
+#define DART_GUI_SOFTSIMWINDOW_H_
 
-#include <dart/gui/SimWindow.h>
+#include "dart/gui/SimWindow.h"
 
 namespace dart {
 namespace gui {
@@ -72,4 +72,4 @@ protected:
 }  // namespace gui
 }  // namespace dart
 
-#endif  // SOFT_GUI_SOFTSIMWINDOW_H_
+#endif  // DART_GUI_SOFTSIMWINDOW_H_
