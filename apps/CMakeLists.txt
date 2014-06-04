@@ -36,6 +36,7 @@ foreach(APPDIR
     vehicle
     #viewer
     #inverseDyn
+    yunfei
     )
     add_subdirectory(${APPDIR})
     if(WIN32)
