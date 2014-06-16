@@ -36,6 +36,7 @@ foreach(APPDIR
     vehicle
     #viewer
     #inverseDyn
+    handTiltingAngle
     )
     add_subdirectory(${APPDIR})
     if(WIN32)
