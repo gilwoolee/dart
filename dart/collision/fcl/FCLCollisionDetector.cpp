@@ -108,9 +108,9 @@ bool FCLCollisionDetector::detectCollision(bool _checkAllCollisions,
             contactPair.point(0) = contact.pos[0];
             contactPair.point(1) = contact.pos[1];
             contactPair.point(2) = contact.pos[2];
-            contactPair.normal(0) = contact.normal[0];
-            contactPair.normal(1) = contact.normal[1];
-            contactPair.normal(2) = contact.normal[2];
+            contactPair.normal(0) = -contact.normal[0];
+            contactPair.normal(1) = -contact.normal[1];
+            contactPair.normal(2) = -contact.normal[2];
             contactPair.bodyNode1 = findCollisionNode(contact.o1)->getBodyNode();
             contactPair.bodyNode2 = findCollisionNode(contact.o2)->getBodyNode();
             assert(contactPair.bodyNode1 != NULL);

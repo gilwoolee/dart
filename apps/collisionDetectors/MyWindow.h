@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014, Georgia Tech Research Corporation
+ * Copyright (c) 2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Jeongseok Lee <jslee02@gmail.com>
@@ -34,75 +34,39 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_COLLISION_FCL_FCLCOLLISIONNODE_H_
-#define DART_COLLISION_FCL_FCLCOLLISIONNODE_H_
+#ifndef APPS_COLLISIONDETECTORS_MYWINDOW_H_
+#define APPS_COLLISIONDETECTORS_MYWINDOW_H_
 
-#include <vector>
+#include "dart/gui/SimWindow.h"
 
-#include <assimp/scene.h>
-#include <Eigen/Dense>
-#include <fcl/collision.h>
-#include <fcl/BVH/BVH_model.h>
-
-#include "dart/collision/CollisionNode.h"
-
-namespace dart {
-namespace dynamics {
-class BodyNode;
-class Shape;
-}  // namespace dynamics
-}  // namespace dart
-
-namespace dart {
-namespace collision {
-
-/// class FCLCollisionNode
-class FCLCollisionNode : public CollisionNode
+/// class MyWindow
+class MyWindow : public dart::gui::SimWindow
 {
 public:
-  ///
-  explicit FCLCollisionNode(dynamics::BodyNode* _bodyNode);
+  /// Constructor
+  MyWindow();
+
+  /// Destructor
+  virtual ~MyWindow();
 
   ///
-  virtual ~FCLCollisionNode();
+  virtual void timeStepping();
 
   ///
-  int getNumCollisionGeometries() const;
+  virtual void drawSkels();
 
   ///
-  fcl::CollisionGeometry* getCollisionGeometry(int _idx) const;
+  virtual void keyboard(unsigned char _key, int _x, int _y);
 
   ///
-  fcl::Transform3f getFCLTransform(int _idx) const;
-
-  ///
-  static fcl::Transform3f getFclTransform(const Eigen::Isometry3d& _m);
+  void setCollisionDetector(const std::string& _collisionDetector);
 
 private:
   ///
-  std::vector<fcl::CollisionGeometry*> mCollisionGeometries;
+  Eigen::Vector3d mForce;
 
-  ///
-  std::vector<dynamics::Shape*> mShapes;
+  /// Collision detector name
+  std::string mCollisionDetectorName;
 };
 
-///
-template<class BV>
-fcl::BVHModel<BV>* createMesh(float _scaleX, float _scaleY, float _scaleZ,
-                              const aiScene *_mesh,
-                              const fcl::Transform3f& _transform);
-
-/// Create a cube mesh for collision detection
-template<class BV>
-fcl::BVHModel<BV>* createCube(float _sizeX, float _sizeY, float _sizeZ,
-                              const fcl::Transform3f& _transform);
-
-///
-template<class BV>
-fcl::BVHModel<BV>* createEllipsoid(float _sizeX, float _sizeY, float _sizeZ,
-                                   const fcl::Transform3f& _transform);
-
-}  // namespace collision
-}  // namespace dart
-
-#endif  // DART_COLLISION_FCL_FCLCOLLISIONNODE_H_
+#endif  // APPS_COLLISIONDETECTORS_MYWINDOW_H_

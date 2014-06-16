@@ -7,6 +7,7 @@ foreach(APPDIR
     balance
     ballJointConstraintTest
     closedLoop
+    collisionDetectors
     cube
     cubes
     doublePendulumWithBase

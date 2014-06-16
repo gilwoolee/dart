@@ -1,0 +1,177 @@
+/*
+ * Copyright (c) 2014, Georgia Tech Research Corporation
+ * All rights reserved.
+ *
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
+ *
+ * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ *
+ * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
+ * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
+ *
+ * This file is provided under the following "BSD-style" License:
+ *   Redistribution and use in source and binary forms, with or
+ *   without modification, are permitted provided that the following
+ *   conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ *   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ *   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ *   AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *   POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "dart/collision/dart/DARTCollisionNode.h"
+
+#include <assimp/scene.h>
+#include <fcl/shape/geometric_shapes.h>
+#include <fcl/shape/geometric_shape_to_BVH_model.h>
+
+#include "dart/dynamics/BodyNode.h"
+#include "dart/dynamics/BoxShape.h"
+#include "dart/dynamics/EllipsoidShape.h"
+#include "dart/dynamics/CylinderShape.h"
+#include "dart/dynamics/MeshShape.h"
+
+namespace dart {
+namespace collision {
+
+//==============================================================================
+DARTCollisionNode::DARTCollisionNode(dynamics::BodyNode* _bodyNode)
+  : CollisionNode(_bodyNode)
+{
+  for (int i = 0; i < _bodyNode->getNumCollisionShapes(); i++) {
+    dynamics::Shape* shape = _bodyNode->getCollisionShape(i);
+    mShapes.push_back(shape);
+    switch (shape->getShapeType())
+    {
+      case dynamics::Shape::BOX:
+      {
+        dynamics::BoxShape* box
+                    = static_cast<dynamics::BoxShape*>(shape);
+        mCollisionGeometries.push_back(new fcl::Box(box->getSize()[0],
+                                                    box->getSize()[1],
+                                                    box->getSize()[2]));
+        break;
+      }
+      case dynamics::Shape::ELLIPSOID:
+      {
+        dynamics::EllipsoidShape* ellipsoid
+            = static_cast<dynamics::EllipsoidShape*>(shape);
+
+        if (ellipsoid->isSphere())
+          mCollisionGeometries.push_back(
+                new fcl::Sphere(ellipsoid->getSize()[0] * 0.5));
+        else
+          mCollisionGeometries.push_back(
+                createEllipsoid<fcl::OBBRSS>(ellipsoid->getSize()[0],
+                                             ellipsoid->getSize()[1],
+                                             ellipsoid->getSize()[2]));
+        break;
+      }
+      case dynamics::Shape::CYLINDER:
+      {
+        dynamics::CylinderShape* cylinder
+            = static_cast<dynamics::CylinderShape*>(shape);
+        mCollisionGeometries.push_back(
+              new fcl::Cylinder(cylinder->getRadius(), cylinder->getHeight()));
+        break;
+      }
+      case dynamics::Shape::MESH:
+      {
+        dynamics::MeshShape* shapeMesh
+            = dynamic_cast<dynamics::MeshShape *>(shape);
+
+        if (shapeMesh)
+          mCollisionGeometries.push_back(
+                createMesh<fcl::OBBRSS>(shapeMesh->getScale()[0],
+                                        shapeMesh->getScale()[1],
+                                        shapeMesh->getScale()[2],
+                                        shapeMesh->getMesh()));
+        break;
+      }
+      default:
+      {
+        std::cout << "ERROR: Collision checking does not support "
+                  << _bodyNode->getName()
+                  << "'s Shape type\n";
+        break;
+      }
+    }
+  }
+}
+
+//==============================================================================
+DARTCollisionNode::~DARTCollisionNode()
+{
+}
+
+//==============================================================================
+int DARTCollisionNode::getNumCollisionGeometries() const
+{
+  return mCollisionGeometries.size();
+}
+
+//==============================================================================
+fcl::CollisionGeometry*DARTCollisionNode::getCollisionGeometry(int _idx) const
+{
+  return mCollisionGeometries[_idx];
+}
+
+//==============================================================================
+fcl::Transform3f DARTCollisionNode::getFCLTransform(int _idx) const
+{
+  Eigen::Isometry3d worldTrans = mBodyNode->getTransform()
+                                 * mShapes[_idx]->getLocalTransform();
+
+  return fcl::Transform3f(
+        fcl::Matrix3f(worldTrans(0, 0), worldTrans(0, 1), worldTrans(0, 2),
+                      worldTrans(1, 0), worldTrans(1, 1), worldTrans(1, 2),
+                      worldTrans(2, 0), worldTrans(2, 1), worldTrans(2, 2)),
+        fcl::Vec3f(worldTrans(0, 3), worldTrans(1, 3), worldTrans(2, 3)));
+}
+
+//==============================================================================
+template<class BV>
+fcl::BVHModel<BV>* createMesh(float _scaleX, float _scaleY, float _scaleZ,
+                              const aiScene *_mesh)
+{
+  assert(_mesh);
+  fcl::BVHModel<BV>* model = new fcl::BVHModel<BV>;
+  model->beginModel();
+  for (unsigned int i = 0; i < _mesh->mNumMeshes; i++)
+  {
+    for (unsigned int j = 0; j < _mesh->mMeshes[i]->mNumFaces; j++)
+    {
+      fcl::Vec3f vertices[3];
+      for (unsigned int k = 0; k < 3; k++)
+      {
+        const aiVector3D& vertex
+            = _mesh->mMeshes[i]->mVertices[
+              _mesh->mMeshes[i]->mFaces[j].mIndices[k]];
+        vertices[k] = fcl::Vec3f(vertex.x * _scaleX,
+                                 vertex.y * _scaleY,
+                                 vertex.z * _scaleZ);
+      }
+      model->addTriangle(vertices[0], vertices[1], vertices[2]);
+    }
+  }
+  model->endModel();
+  return model;
+}
+
+}  // namespace collision
+}  // namespace dart

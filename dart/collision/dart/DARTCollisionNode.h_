@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014, Georgia Tech Research Corporation
+ * Copyright (c) 2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Jeongseok Lee <jslee02@gmail.com>
@@ -34,8 +34,8 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_COLLISION_FCL_FCLCOLLISIONNODE_H_
-#define DART_COLLISION_FCL_FCLCOLLISIONNODE_H_
+#ifndef DART_COLLISION_FCL_DARTCOLLISIONNODE_H_
+#define DART_COLLISION_FCL_DARTCOLLISIONNODE_H_
 
 #include <vector>
 
@@ -56,15 +56,15 @@ class Shape;
 namespace dart {
 namespace collision {
 
-/// class FCLCollisionNode
-class FCLCollisionNode : public CollisionNode
+/// class DARTCollisionNode
+class DARTCollisionNode : public CollisionNode
 {
 public:
   ///
-  explicit FCLCollisionNode(dynamics::BodyNode* _bodyNode);
+  explicit DARTCollisionNode(dynamics::BodyNode* _bodyNode);
 
   ///
-  virtual ~FCLCollisionNode();
+  virtual ~DARTCollisionNode();
 
   ///
   int getNumCollisionGeometries() const;
@@ -74,9 +74,6 @@ public:
 
   ///
   fcl::Transform3f getFCLTransform(int _idx) const;
-
-  ///
-  static fcl::Transform3f getFclTransform(const Eigen::Isometry3d& _m);
 
 private:
   ///
@@ -88,21 +85,14 @@ private:
 
 ///
 template<class BV>
-fcl::BVHModel<BV>* createMesh(float _scaleX, float _scaleY, float _scaleZ,
-                              const aiScene *_mesh,
-                              const fcl::Transform3f& _transform);
-
-/// Create a cube mesh for collision detection
-template<class BV>
-fcl::BVHModel<BV>* createCube(float _sizeX, float _sizeY, float _sizeZ,
-                              const fcl::Transform3f& _transform);
+fcl::BVHModel<BV>* createMesh(float _sizeX, float _sizeY, float _sizeZ,
+                              const aiScene* _mesh);
 
 ///
 template<class BV>
-fcl::BVHModel<BV>* createEllipsoid(float _sizeX, float _sizeY, float _sizeZ,
-                                   const fcl::Transform3f& _transform);
+fcl::BVHModel<BV>* createEllipsoid(float _sizeX, float _sizeY, float _sizeZ);
 
 }  // namespace collision
 }  // namespace dart
 
-#endif  // DART_COLLISION_FCL_FCLCOLLISIONNODE_H_
+#endif  // DART_COLLISION_FCL_DARTCOLLISIONNODE_H_
