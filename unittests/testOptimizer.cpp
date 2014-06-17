@@ -115,6 +115,53 @@ private:
 };
 
 //==============================================================================
+class SampleConstMultiFunc : public MultiFunction
+{
+public:
+  /// Constructor
+  SampleConstMultiFunc(const Eigen::Vector2d& _a, const Eigen::Vector2d& _b)
+    : MultiFunction(), mA(_a), mB(_b) {}
+
+  /// Destructor
+  virtual ~SampleConstMultiFunc() {}
+
+  // Documentation inherited
+  virtual void operator()(Eigen::Map<const Eigen::VectorXd>& _x,
+                          Eigen::Map<Eigen::VectorXd>& _f,
+                          Eigen::Map<Eigen::MatrixXd>& _grad)
+  {
+    // F
+    assert(_f.size() == 2);
+
+    double tmp1 = mA[0] * _x[0] + mB[0];
+    double tmp2 = mA[1] * _x[0] + mB[1];
+
+    _f[0] = tmp1 * tmp1 * tmp1 - _x[1];
+    _f[1] = tmp2 * tmp2 * tmp2 - _x[1];
+
+    // Grad
+    if (_grad.size() > 0)
+    {
+      assert(_grad.rows() == 2);
+      assert(_grad.cols() == 2);
+
+      _grad(0, 0) = 3 * mA[0] * tmp1 * tmp1;
+      _grad(0, 1) = -1.0;
+
+      _grad(1, 0) = 3 * mA[1] * tmp2 * tmp2;
+      _grad(1, 1) = -1.0;
+    }
+  }
+
+private:
+  /// Data
+  Eigen::Vector2d mA;
+
+  /// Data
+  Eigen::Vector2d mB;
+};
+
+//==============================================================================
 #ifdef HAVE_NLOPT
 TEST(Optimizer, BasicNlopt)
 {
@@ -150,7 +197,7 @@ TEST(Optimizer, BasicNlopt)
 #ifdef HAVE_IPOPT
 TEST(Optimizer, BasicIpopt)
 {
-  dterr << "Ipopt does not pass this test yet. Please see #153.";
+  dterr << "Ipopt does not pass this test yet. Please see #153." << std::endl;
   return;
 
   Problem prob(2);
@@ -185,6 +232,43 @@ TEST(Optimizer, BasicSnopt)
 {
   dterr << "SNOPT is not implemented yet.\n";
   return;
+}
+#endif
+
+//==============================================================================
+#ifdef HAVE_NLOPT
+TEST(Optimizer, BasicMultiFunctionNlopt)
+{
+  // Problem reference: http://ab-initio.mit.edu/wiki/index.php/NLopt_Tutorial
+
+  Problem prob(2);
+
+  prob.setLowerBounds(Eigen::Vector2d(-HUGE_VAL, 0));
+  prob.setInitialGuess(Eigen::Vector2d(1.234, 5.678));
+
+  SampleObjFunc obj;
+  prob.setObjective(&obj);
+
+  SampleConstFunc const1( 2, 0);
+  SampleConstFunc const2(-1, 1);
+  prob.addIneqConstraint(&const1);
+  prob.addIneqConstraint(&const2);
+
+  Eigen::Vector2d A(2, -1);
+  Eigen::Vector2d B(0,  1);
+  SampleConstMultiFunc constraint(A, B);
+  //prob.add
+
+  NloptSolver solver(&prob, NLOPT_LD_MMA);
+  solver.solve();
+
+  double minF = prob.getOptimumValue();
+  Eigen::VectorXd optX = prob.getOptimalSolution();
+
+  EXPECT_NEAR(minF, 0.544330847, 1e-6);
+  EXPECT_EQ(optX.size(), prob.getDimension());
+  EXPECT_NEAR(optX[0], 0.333334, 1e-6);
+  EXPECT_NEAR(optX[1], 0.296296, 1e-6);
 }
 #endif
 

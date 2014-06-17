@@ -44,40 +44,40 @@
 namespace dart {
 namespace optimizer {
 
-/// \brief class Function
+/// class Function
 class Function
 {
 public:
-  /// \brief Constructor
+  /// Constructor
   explicit Function();
 
-  /// \brief Destructor
+  /// Destructor
   virtual ~Function();
 
-  /// \brief Evaluate and return the objective function at the point x
+  /// Evaluate and return the objective function at the point x
   virtual double eval(Eigen::Map<const Eigen::VectorXd>& _x) = 0;
 
-  /// \brief Evaluate and return the objective function at the point x
+  /// Evaluate and return the objective function at the point x
   virtual void evalGradient(Eigen::Map<const Eigen::VectorXd>& _x,
                             Eigen::Map<Eigen::VectorXd> _grad);
 
-  /// \brief Evaluate and return the objective function at the point x
+  /// Evaluate and return the objective function at the point x
   virtual void evalHessian(
       Eigen::Map<const Eigen::VectorXd>& _x,
       Eigen::Map<Eigen::VectorXd, Eigen::RowMajor> _Hess);
 };
 
-/// \brief class MultiFunction
+/// class MultiFunction
 class MultiFunction
 {
 public:
-  /// \brief Constructor
+  /// Constructor
   MultiFunction();
 
-  /// \brief Destructor
+  /// Destructor
   virtual ~MultiFunction();
 
-  /// \brief Operator ()
+  /// Operator ()
   virtual void operator()(Eigen::Map<const Eigen::VectorXd>& _x,
                           Eigen::Map<Eigen::VectorXd>& _f,
                           Eigen::Map<Eigen::MatrixXd>& _grad) = 0;
