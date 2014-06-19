@@ -64,6 +64,7 @@ PGSLCPSolver::~PGSLCPSolver()
 //==============================================================================
 void PGSLCPSolver::solve(ConstrainedGroup* _group)
 {
+  std::cout << "wowo\n" << std::endl;
   // If there is no constraint, then just return true.
   size_t numConstraints = _group->getNumConstraints();
   if (numConstraints == 0)

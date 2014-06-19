@@ -62,7 +62,7 @@ using namespace dynamics;
 ConstraintSolver::ConstraintSolver(double _timeStep)
   : mTimeStep(_timeStep),
     mCollisionDetector(new collision::FCLMeshCollisionDetector()),
-    mLCPSolver(new DantzigLCPSolver(mTimeStep))
+    mLCPSolver(new PGSLCPSolver(mTimeStep))
 {
   assert(_timeStep > 0.0);
 }

@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
   // create and initialize the world
   dart::simulation::World* myWorld
       = dart::utils::SkelParser::readWorld(
-          DART_DATA_PATH"skel/newtons_cradle.skel");
+          DART_DATA_PATH"skel/newtons_cradle2.skel");
   assert(myWorld != NULL);
 
   // create a window and link it to the world
