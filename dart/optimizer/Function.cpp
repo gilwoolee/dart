@@ -43,36 +43,36 @@ namespace dart {
 namespace optimizer {
 
 //==============================================================================
-Function::Function()
+ScalarFunction::ScalarFunction()
 {
 }
 
 //==============================================================================
-Function::~Function()
+ScalarFunction::~ScalarFunction()
 {
 }
 
 //==============================================================================
-void Function::evalGradient(Eigen::Map<const Eigen::VectorXd>& _x,
+void ScalarFunction::evalGradient(Eigen::Map<const Eigen::VectorXd>& _x,
                             Eigen::Map<Eigen::VectorXd> _grad)
 {
   dterr << "Gradient is not provided. Use gradient-free algorithm.\n";
 }
 
 //==============================================================================
-void Function::evalHessian(Eigen::Map<const Eigen::VectorXd>& _x,
+void ScalarFunction::evalHessian(Eigen::Map<const Eigen::VectorXd>& _x,
                            Eigen::Map<Eigen::VectorXd, Eigen::RowMajor> _Hess)
 {
   dterr << "Hessian is not provided. Use Hessian-free algorithm.\n";
 }
 
 //==============================================================================
-MultiFunction::MultiFunction()
+VectorFunction::VectorFunction()
 {
 }
 
 //==============================================================================
-MultiFunction::~MultiFunction()
+VectorFunction::~VectorFunction()
 {
 }
 

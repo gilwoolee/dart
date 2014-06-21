@@ -72,20 +72,20 @@ NloptSolver::NloptSolver(Problem* _problem, nlopt_algorithm _alg)
   nlopt_set_upper_bounds(mOpt, mProblem->getUpperBounds().data());
 
   // Set objective function
-  Function* obj = mProblem->getObjective();
+  ScalarFunction* obj = mProblem->getObjective();
   nlopt_set_min_objective(mOpt, NloptSolver::_nlopt_func, obj);
 
   // Add equality constraint functions
   for (size_t i = 0; i < mProblem->getNumEqConstraints(); ++i)
   {
-    Function* fn = mProblem->getEqConstraint(i);
+    ScalarFunction* fn = mProblem->getEqConstraint(i);
     nlopt_add_equality_constraint(mOpt, NloptSolver::_nlopt_func, fn, 1e-8);
   }
 
   // Add inequality constraint functions
   for (size_t i = 0; i < mProblem->getNumIneqConstraints(); ++i)
   {
-    Function* fn = mProblem->getIneqConstraint(i);
+    ScalarFunction* fn = mProblem->getIneqConstraint(i);
     nlopt_add_inequality_constraint(mOpt, NloptSolver::_nlopt_func, fn, 1e-8);
   }
 }
@@ -122,7 +122,7 @@ double NloptSolver::_nlopt_func(unsigned _n,
                                 double* _gradient,
                                 void* _func_data)
 {
-  Function* fn = static_cast<Function*>(_func_data);
+  ScalarFunction* fn = static_cast<ScalarFunction*>(_func_data);
 
   Eigen::Map<const Eigen::VectorXd> x(_x, _n);
 
@@ -149,7 +149,7 @@ void NloptSolver::_nlopt_mfunc(unsigned _m,
   if (_gradient)
     new (&grad) Eigen::Map<Eigen::MatrixXd, Eigen::RowMajor>(_gradient, _m, _n);
 
-  return (*static_cast<MultiFunction*>(_func_data))(x, f, grad);
+  return (*static_cast<VectorFunction*>(_func_data))(x, f, grad);
 }
 
 }  // namespace optimizer

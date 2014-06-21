@@ -107,27 +107,27 @@ const Eigen::VectorXd& Problem::getUpperBounds() const
 }
 
 //==============================================================================
-void Problem::setObjective(Function* _obj)
+void Problem::setObjective(ScalarFunction* _obj)
 {
   assert(_obj && "NULL pointer is not allowed.");
   mObjective = _obj;
 }
 
 //==============================================================================
-Function* Problem::getObjective() const
+ScalarFunction* Problem::getObjective() const
 {
   return mObjective;
 }
 
 //==============================================================================
-void Problem::addEqConstraint(Function* _eqConst)
+void Problem::addEqConstraint(ScalarFunction* _eqConst)
 {
   assert(_eqConst);
   mEqConstraints.push_back(_eqConst);
 }
 
 //==============================================================================
-void Problem::addIneqConstraint(Function* _ineqConst)
+void Problem::addIneqConstraint(ScalarFunction* _ineqConst)
 {
   assert(_ineqConst);
   mIneqConstraints.push_back(_ineqConst);
@@ -146,21 +146,21 @@ size_t Problem::getNumIneqConstraints()
 }
 
 //==============================================================================
-Function* Problem::getEqConstraint(size_t _idx) const
+ScalarFunction* Problem::getEqConstraint(size_t _idx) const
 {
   assert(_idx < mEqConstraints.size());
   return mEqConstraints[_idx];
 }
 
 //==============================================================================
-Function* Problem::getIneqConstraint(size_t _idx) const
+ScalarFunction* Problem::getIneqConstraint(size_t _idx) const
 {
   assert(_idx < mIneqConstraints.size());
   return mIneqConstraints[_idx];
 }
 
 //==============================================================================
-void Problem::removeEqConstraint(Function* _eqConst)
+void Problem::removeEqConstraint(ScalarFunction* _eqConst)
 {
   // TODO(JS): Need to delete?
   mEqConstraints.erase(
@@ -170,7 +170,7 @@ void Problem::removeEqConstraint(Function* _eqConst)
 }
 
 //==============================================================================
-void Problem::removeIneqConstraint(Function* _ineqConst)
+void Problem::removeIneqConstraint(ScalarFunction* _ineqConst)
 {
   // TODO(JS): Need to delete?
   mIneqConstraints.erase(

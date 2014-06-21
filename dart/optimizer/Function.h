@@ -45,14 +45,14 @@ namespace dart {
 namespace optimizer {
 
 /// \brief class Function
-class Function
+class ScalarFunction
 {
 public:
   /// \brief Constructor
-  explicit Function();
+  explicit ScalarFunction();
 
   /// \brief Destructor
-  virtual ~Function();
+  virtual ~ScalarFunction();
 
   /// \brief Evaluate and return the objective function at the point x
   virtual double eval(Eigen::Map<const Eigen::VectorXd>& _x) = 0;
@@ -68,14 +68,14 @@ public:
 };
 
 /// \brief class MultiFunction
-class MultiFunction
+class VectorFunction
 {
 public:
   /// \brief Constructor
-  MultiFunction();
+  VectorFunction();
 
   /// \brief Destructor
-  virtual ~MultiFunction();
+  virtual ~VectorFunction();
 
   /// \brief Operator ()
   virtual void operator()(Eigen::Map<const Eigen::VectorXd>& _x,

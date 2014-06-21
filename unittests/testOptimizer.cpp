@@ -58,11 +58,11 @@ using namespace dart::optimizer;
 
 //==============================================================================
 /// \brief class SampleObjFunc
-class SampleObjFunc : public Function
+class SampleObjFunc : public ScalarFunction
 {
 public:
   /// \brief Constructor
-  SampleObjFunc() : Function() {}
+  SampleObjFunc() : ScalarFunction() {}
 
   /// \brief Destructor
   virtual ~SampleObjFunc() {}
@@ -83,11 +83,11 @@ public:
 };
 
 //==============================================================================
-class SampleConstFunc : public Function
+class SampleConstFunc : public ScalarFunction
 {
 public:
   /// \brief Constructor
-  SampleConstFunc(double _a, double _b) : Function(), mA(_a), mB(_b) {}
+  SampleConstFunc(double _a, double _b) : ScalarFunction(), mA(_a), mB(_b) {}
 
   /// \brief Destructor
   virtual ~SampleConstFunc() {}

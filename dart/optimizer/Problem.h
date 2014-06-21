@@ -46,7 +46,7 @@
 namespace dart {
 namespace optimizer {
 
-class Function;
+class ScalarFunction;
 
 /// \brief class Problem
 class Problem
@@ -84,16 +84,16 @@ public:
   const Eigen::VectorXd& getUpperBounds() const;
 
   /// \brief Set minimum objective function
-  void setObjective(Function* _obj);
+  void setObjective(ScalarFunction* _obj);
 
   /// \brief Get objective function
-  Function* getObjective() const;
+  ScalarFunction* getObjective() const;
 
   /// \brief Add equality constraint
-  void addEqConstraint(Function* _eqConst);
+  void addEqConstraint(ScalarFunction* _eqConst);
 
   /// \brief Add inequality constraint
-  void addIneqConstraint(Function* _ineqConst);
+  void addIneqConstraint(ScalarFunction* _ineqConst);
 
   /// \brief Get number of equality constraints
   size_t getNumEqConstraints();
@@ -102,16 +102,16 @@ public:
   size_t getNumIneqConstraints();
 
   /// \brief Get equality constraint
-  Function* getEqConstraint(size_t _idx) const;
+  ScalarFunction* getEqConstraint(size_t _idx) const;
 
   /// \brief Get inequality constraint
-  Function* getIneqConstraint(size_t _idx) const;
+  ScalarFunction* getIneqConstraint(size_t _idx) const;
 
   /// \brief Remove equality constraint
-  void removeEqConstraint(Function* _eqConst);
+  void removeEqConstraint(ScalarFunction* _eqConst);
 
   /// \brief Remove inequality constraint
-  void removeIneqConstraint(Function* _ineqConst);
+  void removeIneqConstraint(ScalarFunction* _ineqConst);
 
   /// \brief Remove all equality constraints
   void removeAllEqConstraints();
@@ -147,13 +147,13 @@ protected:
   Eigen::VectorXd mUpperBounds;
 
   /// \brief Objective function
-  Function* mObjective;
+  ScalarFunction* mObjective;
 
   /// \brief Equality constraint functions
-  std::vector<Function*> mEqConstraints;
+  std::vector<ScalarFunction*> mEqConstraints;
 
   /// \brief Inequality constraint functions
-  std::vector<Function*> mIneqConstraints;
+  std::vector<ScalarFunction*> mIneqConstraints;
 
   /// \brief Optimal objective value
   double mOptimumValue;
