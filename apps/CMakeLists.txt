@@ -37,6 +37,7 @@ foreach(APPDIR
     #viewer
     #inverseDyn
     handTiltingAngle
+    handManipulation
     )
     add_subdirectory(${APPDIR})
     if(WIN32)
