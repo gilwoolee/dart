@@ -40,6 +40,8 @@
 #include <vector>
 #include <Eigen/Dense>
 
+#include "dart/common/Deprecated.h"
+
 namespace dart {
 namespace renderer {
 class RenderInterface;
@@ -346,13 +348,14 @@ protected:
   /// algorithm
   void updateBiasImpulse();
 
-  /// Update joint velocity change for impulse-based forward dynamics
-  /// algorithm
-  void updateJointVelocityChange();
+  /// Update joint velocity change given constraint impulses
+  DEPRECATED(4.2) void updateJointVelocityChange();
 
-  /// Update body velocity change for impulse-based forward dynamics
-  /// algorithm
-  void updateBodyVelocityChange();
+  /// Update body velocity change given constraint impulses
+  DEPRECATED(4.2) void updateBodyVelocityChange();
+
+  /// Update body and joint velocity change given constraint impulses
+  virtual void updateBodyAndJointVelocityChange();
 
   ///
   void updateBodyImpForceFwdDyn();

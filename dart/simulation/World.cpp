@@ -117,10 +117,10 @@ void World::step()
     (*it)->computeForwardKinematics(false, true, false);
   }
 
-  // Detect active constraints and compute constraint impulses
+  // Compute constraint impulses and apply them to all the skeletons
   mConstraintSolver->solve();
 
-  // Compute velocity changes given constraint impulses
+  // Compute velocity changes with the applied constraint impulses
   for (std::vector<dynamics::Skeleton*>::iterator it = mSkeletons.begin();
        it != mSkeletons.end(); ++it)
   {
@@ -150,7 +150,6 @@ void World::step()
     (*it)->computeForwardDynamicsRecursionPartA();
     (*it)->resetForces();
     (*it)->clearExternalForces();
-//    (*it)->clearConstraintImpulses();
   }
 
   mTime += mTimeStep;

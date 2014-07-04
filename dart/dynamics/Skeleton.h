@@ -68,6 +68,17 @@ struct GenCoordInfo
   size_t localIndex;
 };
 
+/// Pair of joint and the first index of joint coordinates in skeleton
+/// generalized coordinates
+struct JointMap
+{
+  /// Joint
+  Joint* joint;
+
+  /// The first index of joint coordinates
+  size_t firstSkeletonIndex;
+};
+
 /// class Skeleton
 class Skeleton
 {
@@ -328,11 +339,29 @@ public:
   // Constraint impulse
   //----------------------------------------------------------------------------
 
-  ///
-  void setConstraintImpulses(const Eigen::VectorXd& _impulses);
+  /// \deprecated
+  DEPRECATED(4.2) void setConstraintImpulses(const Eigen::VectorXd& _impulses);
 
+  /// Set joint constraint impulses
   ///
-  Eigen::VectorXd getConstraintImpulses() const;
+  /// DART has two types of constraint impulses, body constraint impulse and
+  /// joint constraint impulse. It is possible to set and get each constraint
+  /// impulses through bodies and joints. If you want to set the joint
+  /// constraint at once, then this fuction might be useful.
+  void setJointConstraintImpulses(const Eigen::VectorXd& _impulses);
+
+  /// \deprecated
+  DEPRECATED(4.2) Eigen::VectorXd getConstraintImpulses() const;
+
+  /// Return joint constraint impulses
+  const Eigen::VectorXd getJointConstraintImpulses() const;
+
+  /// Return body constraint impulses projected on the generalized coordinates
+  const Eigen::VectorXd getBodyConstraintImpulses() const;
+
+  /// Return the sum of joint constraint impulses and body constraint impulses
+  /// projected on the generalized coordinates
+  const Eigen::VectorXd getTotalConstraintImpulses() const;
 
   //----------------------------------------------------------------------------
   // Integration
@@ -457,6 +486,16 @@ public:
 
   /// Get constraint force vector.
   const Eigen::VectorXd& getConstraintForceVector();
+
+  /// Return all the contact constraint forces in generalized coordinates
+  const Eigen::VectorXd getContactConstraintForceVector();
+
+  /// Return all the joint position constraint forces in generalized coordinates
+  const Eigen::VectorXd getJointConstraintForceVector();
+
+  /// Return sum of all the kinds of constraint forces in generalized
+  /// coordinates
+  const Eigen::VectorXd getTotalConstraintForceVector();
 
   /// Set internal force vector.
 //  void setInternalForceVector(const Eigen::VectorXd& _forces);

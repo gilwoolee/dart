@@ -824,6 +824,12 @@ Eigen::VectorXd Skeleton::getVelocityChanges() const
 //==============================================================================
 void Skeleton::setConstraintImpulses(const Eigen::VectorXd& _impulses)
 {
+  setJointConstraintImpulses(_impulses);
+}
+
+//==============================================================================
+void Skeleton::setJointConstraintImpulses(const Eigen::VectorXd& _impulses)
+{
   size_t index = 0;
   size_t dof = getNumDofs();
 
@@ -839,6 +845,12 @@ void Skeleton::setConstraintImpulses(const Eigen::VectorXd& _impulses)
 //==============================================================================
 Eigen::VectorXd Skeleton::getConstraintImpulses() const
 {
+  return getJointConstraintImpulses();
+}
+
+//==============================================================================
+const Eigen::VectorXd Skeleton::getJointConstraintImpulses() const
+{
   size_t index = 0;
   size_t dof = getNumDofs();
   Eigen::VectorXd impulse(dof);
@@ -853,6 +865,18 @@ Eigen::VectorXd Skeleton::getConstraintImpulses() const
   assert(index == dof);
 
   return impulse;
+}
+
+//==============================================================================
+const Eigen::VectorXd Skeleton::getBodyConstraintImpulses() const
+{
+
+}
+
+//==============================================================================
+const Eigen::VectorXd Skeleton::getTotalConstraintImpulses() const
+{
+  return getJointConstraintImpulses() + getBodyConstraintImpulses();
 }
 
 //==============================================================================
@@ -1050,6 +1074,24 @@ const Eigen::VectorXd& Skeleton::getExternalForceVector()
 const Eigen::VectorXd& Skeleton::getConstraintForceVector()
 {
   return mFc;
+}
+
+//==============================================================================
+const Eigen::VectorXd Skeleton::getTotalConstraintForceVector()
+{
+
+}
+
+//==============================================================================
+const Eigen::VectorXd Skeleton::getContactConstraintForceVector()
+{
+
+}
+
+//==============================================================================
+const Eigen::VectorXd Skeleton::getJointConstraintForceVector()
+{
+
 }
 
 //==============================================================================
@@ -1380,6 +1422,8 @@ void Skeleton::updateExternalForceVector()
   {
     (*itr)->aggregateExternalForces(&mFext);
   }
+
+  dterr << "Not implemented yet." << std::endl;
 
 //  for (std::vector<SoftBodyNode*>::iterator it = mSoftBodyNodes.begin();
 //       it != mSoftBodyNodes.end(); ++it)
@@ -1715,7 +1759,7 @@ void Skeleton::updateVelocityChange()
   for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
        it != mBodyNodes.end(); ++it)
   {
-    (*it)->updateJointVelocityChange();
+    (*it)->updateBodyAndJointVelocityChange();
   }
 }
 
@@ -1763,8 +1807,7 @@ void Skeleton::computeImpulseForwardDynamics()
   for (std::vector<BodyNode*>::iterator it = mBodyNodes.begin();
        it != mBodyNodes.end(); ++it)
   {
-    (*it)->updateJointVelocityChange();
-//    (*it)->updateBodyVelocityChange();
+    (*it)->updateBodyAndJointVelocityChange();
     (*it)->updateBodyImpForceFwdDyn();
   }
 

@@ -475,20 +475,17 @@ void SoftBodyNode::updateBiasImpulse()
 //==============================================================================
 void SoftBodyNode::updateJointVelocityChange()
 {
-  BodyNode::updateJointVelocityChange();
-
-  for (size_t i = 0; i < mPointMasses.size(); ++i)
-    mPointMasses.at(i)->updateJointVelocityChange();
+  updateBodyAndJointVelocityChange();
 }
 
 //==============================================================================
-//void SoftBodyNode::updateBodyVelocityChange()
-//{
-//  BodyNode::updateBodyVelocityChange();
+void SoftBodyNode::updateBodyAndJointVelocityChange()
+{
+  BodyNode::updateBodyAndJointVelocityChange();
 
-//  for (size_t i = 0; i < mPointMasses.size(); ++i)
-//    mPointMasses.at(i)->updateBodyVelocityChange();
-//}
+  for (size_t i = 0; i < mPointMasses.size(); ++i)
+    mPointMasses.at(i)->updateBodyAndJointVelocityChange();
+}
 
 //==============================================================================
 void SoftBodyNode::updateBodyImpForceFwdDyn()
