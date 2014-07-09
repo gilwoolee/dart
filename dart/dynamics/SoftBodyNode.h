@@ -173,10 +173,10 @@ protected:
   virtual void updateBiasImpulse();
 
   // Documentation inherited.
-  virtual void updateJointVelocityChange();
+  DEPRECATED(4.2) virtual void updateJointVelocityChange();
 
   // Documentation inherited.
-//  virtual void updateBodyVelocityChange();
+  virtual void updateBodyAndJointVelocityChange();
 
   // Documentation inherited.
   virtual void updateBodyImpForceFwdDyn();

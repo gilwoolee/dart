@@ -543,17 +543,16 @@ protected:
   // Impulse based dynamics
   //----------------------------------------------------------------------------
 
-  /// Update impulsive bias force for impulse-based forward dynamics
-  /// algorithm
+  /// Update impulsive bias force given constraint impulses
   virtual void updateBiasImpulse();
 
-  /// Update joint velocity change for impulse-based forward dynamics
-  /// algorithm
-  virtual void updateJointVelocityChange();
+  /// Update joint velocity change given constraint impulses
+  /// \deprecated Deprecated in 4.2. Replaced by
+  /// updateBodyAndJointVelocityChange()
+  DEPRECATED(4.2) virtual void updateJointVelocityChange();
 
-  /// Update body velocity change for impulse-based forward dynamics
-  /// algorithm
-//  virtual void updateBodyVelocityChange();
+  /// Update body and joint velocity change given constraint impulses
+  virtual void updateBodyAndJointVelocityChange();
 
   ///
   virtual void updateBodyImpForceFwdDyn();

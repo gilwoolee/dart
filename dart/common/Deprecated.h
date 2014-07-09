@@ -38,9 +38,18 @@
 #define DART_COMMON_DEPRECATED_H_
 
 //==============================================================================
-// Deprecated is used for backward compatibility between different minor
-// versions of DART. Every deprecated function should be removed for every major
-// version up.
+// * Any API must be deprecated before being dropped
+// * A deprecated API must be fully supported until its drop
+// * If an API is deprecated in version X.Y, this API will be dropped in version
+//   (X+1).0. Example: an API deprecated in 4.1 is supported in 4.2, 4.3 and is
+//   dropped in version 5.0.
+// * No usage of deprecated API is accepted when releasing DART-core.
+// * An API is marked as deprecated with the doxygen tag \deprecated whose
+//   message must start with "in x.y", for example:
+//
+//   /// \deprecated in 4.2. Replaced by newFoo().
+//   DEPRECATED(4.2) void foo() {}
+//
 //==============================================================================
 
 #ifdef __GNUC__

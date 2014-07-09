@@ -257,6 +257,7 @@ collision::CollisionDetector* ConstraintSolver::getCollisionDetector() const
 //==============================================================================
 void ConstraintSolver::solve()
 {
+  // Clear all the old constranit impulses in the skeletons
   for (size_t i = 0; i < mSkeletons.size(); ++i)
     mSkeletons[i]->clearConstraintImpulses();
 

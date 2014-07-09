@@ -722,6 +722,21 @@ void PointMass::updateBiasImpulse()
 //==============================================================================
 void PointMass::updateJointVelocityChange()
 {
+  updateBodyAndJointVelocityChange();
+}
+
+//==============================================================================
+void PointMass::updateBodyVelocityChange()
+{
+  mDelV = mParentSoftBodyNode->getBodyVelocityChange().head<3>().cross(mX)
+          + mParentSoftBodyNode->getBodyVelocityChange().tail<3>()
+          + mVelocityChanges;
+  assert(!math::isNan(mDelV));
+}
+
+//==============================================================================
+void PointMass::updateBodyAndJointVelocityChange()
+{
   //  Eigen::Vector3d del_dq
   //      = mPsi
   //        * (mImpAlpha - mMass
@@ -738,15 +753,6 @@ void PointMass::updateJointVelocityChange()
   mVelocityChanges = del_dq;
   assert(!math::isNan(del_dq));
 
-  mDelV = mParentSoftBodyNode->getBodyVelocityChange().head<3>().cross(mX)
-          + mParentSoftBodyNode->getBodyVelocityChange().tail<3>()
-          + mVelocityChanges;
-  assert(!math::isNan(mDelV));
-}
-
-//==============================================================================
-void PointMass::updateBodyVelocityChange()
-{
   mDelV = mParentSoftBodyNode->getBodyVelocityChange().head<3>().cross(mX)
           + mParentSoftBodyNode->getBodyVelocityChange().tail<3>()
           + mVelocityChanges;
