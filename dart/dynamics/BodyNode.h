@@ -81,7 +81,6 @@ Runge-Kutta and fourth-order Runge Kutta.
 #include "dart/config.h"
 #include "dart/common/Deprecated.h"
 #include "dart/math/Geometry.h"
-#include "dart/optimizer/Function.h"
 
 namespace dart {
 namespace renderer {
@@ -188,7 +187,7 @@ public:
   void addVisualizationShape(Shape *_p);
 
   /// Return the number of visualization shapes
-  int getNumVisualizationShapes() const;
+  size_t getNumVisualizationShapes() const;
 
   /// Return _index-th visualization shape
   Shape* getVisualizationShape(int _index) const;
@@ -197,7 +196,7 @@ public:
   void addCollisionShape(Shape *_p);
 
   /// Return the number of collision shapes
-  int getNumCollisionShapes() const;
+  size_t getNumCollisionShapes() const;
 
   /// Return _index-th collision shape
   Shape* getCollisionShape(int _index) const;
@@ -218,16 +217,16 @@ public:
   void addChildBodyNode(BodyNode* _body);
 
   /// Return _index-th child bodynode of the bodynode
-  BodyNode* getChildBodyNode(int _index) const;
+  BodyNode* getChildBodyNode(size_t _index) const;
 
   /// Return the number of child bodynodes
-  int getNumChildBodyNodes() const;
+  size_t getNumChildBodyNodes() const;
 
   /// Add a marker into the bodynode
   void addMarker(Marker* _marker);
 
   /// Return the number of markers of the bodynode
-  int getNumMarkers() const;
+  size_t getNumMarkers() const;
 
   /// Return _index-th marker of the bodynode
   Marker* getMarker(int _index) const;
@@ -236,11 +235,11 @@ public:
   bool dependsOn(int _genCoordIndex) const;
 
   /// The number of the generalized coordinates by which this node is affected
-  int getNumDependentGenCoords() const;
+  size_t getNumDependentGenCoords() const;
 
   /// Return a generalized coordinate index from the array index
   /// (< getNumDependentDofs)
-  int getDependentGenCoordIndex(int _arrayIndex) const;
+  size_t getDependentGenCoordIndex(size_t _arrayIndex) const;
 
   //--------------------------------------------------------------------------
   // Properties updated by dynamics (kinematics)
@@ -434,8 +433,15 @@ public:
   //   - Following functions are managed by constraint solver.
   //----------------------------------------------------------------------------
 
+  /// Deprecated in 4.2. Please use isReactive().
+  DEPRECATED(4.2) bool isImpulseReponsible() const;
+
+  /// Return true if the body can react on force or constraint impulse.
   ///
-  bool isImpulseReponsible() const;
+  /// A body node can be called reactive if the parent skeleton is mobile and
+  /// the number of dependent generalized coordinates is non zero. The body
+  /// should be initialized first by calling BodyNode::init().
+  bool isReactive() const;
 
   /// Set constraint impulse
   /// \param[in] _constImp Spatial constraint impulse w.r.t. body frame
@@ -590,9 +596,13 @@ protected:
   virtual void aggregateCombinedVector(Eigen::VectorXd* _Cg,
                                        const Eigen::Vector3d& _gravity);
 
-  /// Aggregate the external forces mFext in the generalized
-  ///        coordinates recursively.
+  /// Aggregate the external forces mFext in the generalized coordinates
+  /// recursively
   virtual void aggregateExternalForces(Eigen::VectorXd* _Fext);
+
+  ///
+  virtual void aggregateSpatialToGeneralized(Eigen::VectorXd* _generalized,
+                                             const Eigen::Vector6d& _spatial);
 
   //--------------------------------------------------------------------------
   // General properties
@@ -728,6 +738,9 @@ protected:
   /// Cache data for inverse mass matrix of the system.
   Eigen::Vector6d mInvM_c;
   Eigen::Vector6d mInvM_U;
+
+  /// Cache data for arbitrary spatial value
+  Eigen::Vector6d mArbitrarySpatial;
 
   //------------------------- Impulse-based Dyanmics ---------------------------
   /// Velocity change due to to external impulsive force exerted on

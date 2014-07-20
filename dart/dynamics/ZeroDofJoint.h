@@ -55,14 +55,17 @@ public:
   ZeroDofJoint(const std::string& _name);
 
   /// Destructor
-  ~ZeroDofJoint();
+  virtual ~ZeroDofJoint();
 
   //----------------------------------------------------------------------------
   // Interface for generalized coordinates
   //----------------------------------------------------------------------------
 
-  /// Get number of generalized coordinates
-  virtual size_t getDof() const;
+  // Documentation inherited
+  DEPRECATED(4.1) virtual size_t getDof() const;
+
+  // Documentation inherited
+  virtual size_t getNumDofs() const;
 
   // Documentation inherited
   virtual void setIndexInSkeleton(size_t _index, size_t _indexInSkeleton);
@@ -370,6 +373,10 @@ protected:
 
   // Documentation inherited
   virtual void addInvMassMatrixSegmentTo(Eigen::Vector6d& _acc);
+
+  // Documentation inherited
+  virtual Eigen::VectorXd getSpatialToGeneralized(
+      const Eigen::Vector6d& _spatial);
 
 private:
 };

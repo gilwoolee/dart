@@ -71,7 +71,7 @@ FCLMeshCollisionNode::FCLMeshCollisionNode(dynamics::BodyNode* _bodyNode)
   using dart::dynamics::SoftMeshShape;
 
   // Create meshes according to types of the shapes
-  for (int i = 0; i < _bodyNode->getNumCollisionShapes(); i++)
+  for (size_t i = 0; i < _bodyNode->getNumCollisionShapes(); i++)
   {
     Shape* shape = _bodyNode->getCollisionShape(i);
     fcl::Transform3f shapeT = getFclTransform(shape->getLocalTransform());
@@ -123,27 +123,17 @@ FCLMeshCollisionNode::FCLMeshCollisionNode(dynamics::BodyNode* _bodyNode)
                                                   shapeT));
         break;
       }
-      default:
-      {
-        std::cout << "ERROR: Collision checking does not support "
-                  << _bodyNode->getName() << "'s Shape type\n";
-        break;
-      }
-    }
-  }
-
-  for (int i = 0; i < _bodyNode->getNumCollisionShapes(); i++)
-  {
-    Shape* shape = _bodyNode->getCollisionShape(i);
-    fcl::Transform3f shapeT = getFclTransform(shape->getLocalTransform());
-
-    switch (shape->getShapeType())
-    {
       case dynamics::Shape::SOFT_MESH:
       {
         SoftMeshShape* softMeshShape = static_cast<SoftMeshShape*>(shape);
         mMeshes.push_back(createSoftMesh<fcl::OBBRSS>(
                             softMeshShape->getAssimpMesh(), shapeT));
+        break;
+      }
+      default:
+      {
+        std::cout << "ERROR: Collision checking does not support "
+                  << _bodyNode->getName() << "'s Shape type\n";
         break;
       }
     }
@@ -153,7 +143,7 @@ FCLMeshCollisionNode::FCLMeshCollisionNode(dynamics::BodyNode* _bodyNode)
 //==============================================================================
 FCLMeshCollisionNode::~FCLMeshCollisionNode()
 {
-  for (int i = 0; i < mMeshes.size(); i++)
+  for (size_t i = 0; i < mMeshes.size(); i++)
     delete mMeshes[i];
 }
 
@@ -166,9 +156,9 @@ bool FCLMeshCollisionNode::detectCollision(FCLMeshCollisionNode* _otherNode,
   _otherNode->evalRT();
   bool collision = false;
 
-  for (int i = 0; i < mMeshes.size(); i++)
+  for (size_t i = 0; i < mMeshes.size(); i++)
   {
-    for (int j = 0; j < _otherNode->mMeshes.size(); j++)
+    for (size_t j = 0; j < _otherNode->mMeshes.size(); j++)
     {
       fcl::CollisionResult res;
       fcl::CollisionRequest req;
@@ -197,7 +187,7 @@ bool FCLMeshCollisionNode::detectCollision(FCLMeshCollisionNode* _otherNode,
       std::vector<Contact> unfilteredContactPoints;
       unfilteredContactPoints.reserve(res.numContacts());
 
-      for (int k = 0; k < res.numContacts(); k++)
+      for (size_t k = 0; k < res.numContacts(); k++)
       {
         // for each pair of intersecting triangles, we create two contact points
         Contact pair1, pair2;
@@ -265,17 +255,17 @@ bool FCLMeshCollisionNode::detectCollision(FCLMeshCollisionNode* _otherNode,
       }
 
       // remove all the co-linear contact points
-      for (unsigned int k = 0; k < unfilteredContactPoints.size(); k++)
+      for (size_t k = 0; k < unfilteredContactPoints.size(); k++)
       {
         if (markForDeletion[k])
           continue;
-        for (unsigned int l = 0; l < unfilteredContactPoints.size(); l++)
+        for (size_t l = 0; l < unfilteredContactPoints.size(); l++)
         {
           if (l == k || markForDeletion[l])
             continue;
           if (markForDeletion[k])
             break;
-          for (int m = l + 1; m < unfilteredContactPoints.size(); m++)
+          for (size_t m = l + 1; m < unfilteredContactPoints.size(); m++)
           {
             if (k == m)
               continue;
@@ -296,7 +286,7 @@ bool FCLMeshCollisionNode::detectCollision(FCLMeshCollisionNode* _otherNode,
         }
       }
 
-      for (unsigned int k = 0; k < unfilteredContactPoints.size(); k++)
+      for (size_t k = 0; k < unfilteredContactPoints.size(); k++)
       {
         if (!markForDeletion[k])
           _contactPoints->push_back(unfilteredContactPoints[k]);
@@ -313,7 +303,7 @@ void FCLMeshCollisionNode::updateShape()
   using dart::dynamics::Shape;
   using dart::dynamics::SoftMeshShape;
 
-  for (int i = 0; i < mBodyNode->getNumCollisionShapes(); i++)
+  for (size_t i = 0; i < mBodyNode->getNumCollisionShapes(); i++)
   {
     Shape* shape = mBodyNode->getCollisionShape(i);
     fcl::Transform3f shapeT = getFclTransform(shape->getLocalTransform());
@@ -437,7 +427,7 @@ void FCLMeshCollisionNode::drawCollisionSkeletonNode(bool _bTrans)
     glMultMatrixd(M);
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glBegin(GL_TRIANGLES);
-  for (int i = 0; i < mMeshes.size(); i++)
+  for (size_t i = 0; i < mMeshes.size(); i++)
   {
     for (int j = 0; j < mMeshes[i]->num_tris; j++)
     {

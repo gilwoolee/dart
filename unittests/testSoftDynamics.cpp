@@ -137,14 +137,14 @@ const std::vector<std::string>& SoftDynamicsTest::getList()
 //==============================================================================
 MatrixXd SoftDynamicsTest::getMassMatrix(dynamics::Skeleton* _skel)
 {
-  int skelDof = _skel->getDof();
+  int skelDof = _skel->getNumDofs();
 
   MatrixXd skelM = MatrixXd::Zero(skelDof, skelDof);  // Mass matrix of skeleton
   MatrixXd M;  // Body mass
   MatrixXd I;  // Body inertia
   MatrixXd J;  // Body Jacobian
 
-  for (int i = 0; i < _skel->getNumBodyNodes(); ++i)
+  for (size_t i = 0; i < _skel->getNumBodyNodes(); ++i)
   {
     dynamics::BodyNode* body = _skel->getBodyNode(i);
 
@@ -217,7 +217,7 @@ MatrixXd SoftDynamicsTest::getMassMatrix(dynamics::Skeleton* _skel)
 //==============================================================================
 MatrixXd SoftDynamicsTest::getAugMassMatrix(dynamics::Skeleton* _skel)
 {
-  int    dof = _skel->getDof();
+  int    dof = _skel->getNumDofs();
   double dt  = _skel->getTimeStep();
 
   MatrixXd M = getMassMatrix(_skel);
@@ -226,7 +226,7 @@ MatrixXd SoftDynamicsTest::getAugMassMatrix(dynamics::Skeleton* _skel)
   MatrixXd AugM;
 
   // Compute diagonal matrices of joint damping and joint stiffness
-  for (int i = 0; i < _skel->getNumBodyNodes(); ++i)
+  for (size_t i = 0; i < _skel->getNumBodyNodes(); ++i)
   {
     dynamics::BodyNode* body  = _skel->getBodyNode(i);
     dynamics::Joint*    joint = body->getParentJoint();
@@ -234,7 +234,7 @@ MatrixXd SoftDynamicsTest::getAugMassMatrix(dynamics::Skeleton* _skel)
     EXPECT_TRUE(body  != NULL);
     EXPECT_TRUE(joint != NULL);
 
-    int dof = joint->getDof();
+    int dof = joint->getNumDofs();
 
     for (int j = 0; j < dof; ++j)
     {
@@ -290,9 +290,9 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
   //---------------------------- Settings --------------------------------------
   // Number of random state tests for each skeletons
 #ifndef NDEBUG  // Debug mode
-  int nRandomItr = 1;
+  size_t nRandomItr = 1;
 #else
-  int nRandomItr = 1;
+  size_t nRandomItr = 1;
 #endif
 
   // Lower and upper bound of configuration for system
@@ -313,13 +313,13 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
   myWorld = utils::SkelParser::readWorld(_fileName);
   EXPECT_TRUE(myWorld != NULL);
 
-  for (int i = 0; i < myWorld->getNumSkeletons(); ++i)
+  for (size_t i = 0; i < myWorld->getNumSkeletons(); ++i)
   {
     dynamics::Skeleton* skel = myWorld->getSkeleton(i);
     dynamics::Skeleton* softSkel
         = dynamic_cast<dynamics::Skeleton*>(skel);
 
-    int dof            = skel->getDof();
+    int dof            = skel->getNumDofs();
 //    int nBodyNodes     = skel->getNumBodyNodes();
     int nSoftBodyNodes = 0;
     if (softSkel != NULL)
@@ -332,14 +332,14 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
       continue;
     }
 
-    for (int j = 0; j < nRandomItr; ++j)
+    for (size_t j = 0; j < nRandomItr; ++j)
     {
       // Random joint stiffness and damping coefficient
-      for (int k = 0; k < skel->getNumBodyNodes(); ++k)
+      for (size_t k = 0; k < skel->getNumBodyNodes(); ++k)
       {
         BodyNode* body     = skel->getBodyNode(k);
         Joint*    joint    = body->getParentJoint();
-        int       localDof = joint->getDof();
+        int       localDof = joint->getNumDofs();
 
         for (int l = 0; l < localDof; ++l)
         {
@@ -424,8 +424,8 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
 
       //------- Coriolis Force Vector and Combined Force Vector Tests --------
       // Get C1, Coriolis force vector using recursive method
-      VectorXd C  = skel->getCoriolisForceVector();
-      VectorXd Cg = skel->getCombinedVector();
+      VectorXd C  = skel->getCoriolisForces();
+      VectorXd Cg = skel->getCoriolisAndGravityForces();
 
       // Get C2, Coriolis force vector using inverse dynamics algorithm
       Vector3d oldGravity = skel->getGravity();
@@ -456,9 +456,9 @@ void SoftDynamicsTest::compareEquationsOfMotion(const std::string& _fileName)
         sbn->setDampingCoefficient(0.0);
       }
 
-      EXPECT_TRUE(skel->getForces()              == VectorXd::Zero(dof));
-      EXPECT_TRUE(skel->getExternalForceVector() == VectorXd::Zero(dof));
-      EXPECT_TRUE(skel->getAccelerations()       == VectorXd::Zero(dof));
+      EXPECT_TRUE(skel->getForces()         == VectorXd::Zero(dof));
+      EXPECT_TRUE(skel->getExternalForces() == VectorXd::Zero(dof));
+      EXPECT_TRUE(skel->getAccelerations()  == VectorXd::Zero(dof));
 
       skel->setGravity(Vector3d::Zero());
       EXPECT_TRUE(skel->getGravity() == Vector3d::Zero());

@@ -58,6 +58,12 @@ ZeroDofJoint::~ZeroDofJoint()
 //==============================================================================
 size_t ZeroDofJoint::getDof() const
 {
+  return getNumDofs();
+}
+
+//==============================================================================
+size_t ZeroDofJoint::getNumDofs() const
+{
   return 0;
 }
 
@@ -584,6 +590,14 @@ void ZeroDofJoint::getInvAugMassMatrixSegment(
 void ZeroDofJoint::addInvMassMatrixSegmentTo(Eigen::Vector6d& _acc)
 {
   // TODO(JS)
+}
+
+//==============================================================================
+Eigen::VectorXd ZeroDofJoint::getSpatialToGeneralized(
+    const Eigen::Vector6d& /*_spatial*/)
+{
+  // Return zero size vector
+  return Eigen::VectorXd::Zero(0);
 }
 
 }  // namespace dynamics

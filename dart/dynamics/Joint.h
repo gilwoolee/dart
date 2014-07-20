@@ -102,7 +102,10 @@ public:
   virtual size_t getIndexInSkeleton(size_t _index) const = 0;
 
   /// Get number of generalized coordinates
-  virtual size_t getDof() const = 0;
+  DEPRECATED(4.1) virtual size_t getDof() const = 0;
+
+  /// Get number of generalized coordinates
+  virtual size_t getNumDofs() const = 0;
 
   //----------------------------------------------------------------------------
   // Position
@@ -492,6 +495,10 @@ protected:
 
   ///
   virtual void addInvMassMatrixSegmentTo(Eigen::Vector6d& _acc) = 0;
+
+  ///
+  virtual Eigen::VectorXd getSpatialToGeneralized(
+      const Eigen::Vector6d& _spatial) = 0;
 
 protected:
   /// Joint name
