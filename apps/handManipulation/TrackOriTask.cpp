@@ -9,7 +9,7 @@
 using namespace Eigen;
 
 namespace tasks {
-	TrackOriTask::TrackOriTask(dynamics::SkeletonDynamics *_model, int _eeIndex, char *_name)
+	TrackOriTask::TrackOriTask(dart::dynamics::Skeleton* _model, int _eeIndex, char *_name)
 		: Task(_model)
 	{
 		mDependTask = NULL;
