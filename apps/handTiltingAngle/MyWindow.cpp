@@ -177,14 +177,14 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
       mWorld->getSkeleton(1)->setPositions(pose);
       mWorld->getSkeleton(1)->computeForwardKinematics(true, true, false);
       std::cout << mWorld->getSkeleton(1)->getBodyNode(0)->getTransform().matrix() << std::endl;
-      // 		std::cout << dart_math::xformHom(mWorld->getSkeleton(1)->getNode(0)->getWorldInvTransform(), mEdges[0]).transpose() << std::endl;
+      // 		std::cout << dart_math::xformHom(mWorld->getSkeleton(1)->getBodyNode(0)->getWorldInvTransform(), mEdges[0]).transpose() << std::endl;
       break;
     case '-': // decrease DoF value
       pose(0) = pose(0) - 0.1;
       mWorld->getSkeleton(1)->setPositions(pose);
       mWorld->getSkeleton(1)->computeForwardKinematics(true, true, false);
       std::cout << mWorld->getSkeleton(1)->getBodyNode(0)->getTransform().matrix() << std::endl;
-      // 		std::cout << dart_math::xformHom(mWorld->getSkeleton(1)->getNode(0)->getWorldInvTransform(), mEdges[0]).transpose() << std::endl;
+      // 		std::cout << dart_math::xformHom(mWorld->getSkeleton(1)->getBodyNode(0)->getWorldInvTransform(), mEdges[0]).transpose() << std::endl;
       break;
     default:
       Win3D::keyboard(key,x,y);

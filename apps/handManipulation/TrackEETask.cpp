@@ -48,9 +48,9 @@ void TrackEETask::evalTorque() {
   int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
   for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
   {
-    if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
     {
-      mJ.col(modelJacobianIndex) = mModel->getNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
+      mJ.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
       nodeJacobianIndex++;
     }
     else
@@ -63,16 +63,16 @@ void TrackEETask::evalTorque() {
   FullPivLU<MatrixXd> lu_decomp(mOmega);
   mNullSpace = lu_decomp.kernel();
 
-  dynamics::BodyNodeDynamics *nodel = static_cast<dynamics::BodyNodeDynamics*>(mModel->getNode(mEEIndex));
+  dynamics::BodyNodeDynamics *nodel = static_cast<dynamics::BodyNodeDynamics*>(mModel->getBodyNode(mEEIndex));
   VectorXd commandF;
 
-  commandF = mPGainTraj*(mModel->getNode(mEEIndex)->getWorldCOM()-mTarget) + mVGainTraj*(mJ*mDofVels-mTargetVel)/*+ mVGainTraj*mJ*mDofVels*/;
+  commandF = mPGainTraj*(mModel->getBodyNode(mEEIndex)->getWorldCOM()-mTarget) + mVGainTraj*(mJ*mDofVels-mTargetVel)/*+ mVGainTraj*mJ*mDofVels*/;
 
   nodeJacobianIndex = 0;
   modelJacobianIndex = 0;
   for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
   {
-    if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
     {
       mJDot.col(modelJacobianIndex) = nodel->mJvDot.col(nodeJacobianIndex);
       nodeJacobianIndex++;
@@ -86,12 +86,12 @@ void TrackEETask::evalTorque() {
 }
 
 void TrackEETask::evalTaskFinish() {
-  if ((mModel->getNode(mEEIndex)->getWorldCOM()-mFinalTarget).norm() < DISTANCE_CLOSE_THRESHOLD_HAND_STRICT)
+  if ((mModel->getBodyNode(mEEIndex)->getWorldCOM()-mFinalTarget).norm() < DISTANCE_CLOSE_THRESHOLD_HAND_STRICT)
     mFinish = true;
 }
 
 bool TrackEETask::evalCloseToTarget() {
-  if ((mModel->getNode(mEEIndex)->getWorldCOM()-mFinalTarget).norm() < DISTANCE_CLOSE_THRESHOLD_HAND_LOOSE)
+  if ((mModel->getBodyNode(mEEIndex)->getWorldCOM()-mFinalTarget).norm() < DISTANCE_CLOSE_THRESHOLD_HAND_LOOSE)
     return true;
   else
     return false;
@@ -112,9 +112,9 @@ Eigen::MatrixXd TrackEETask::getNullSpace() const {
   int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
   for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
   {
-    if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
     {
-      jv.col(modelJacobianIndex) = mModel->getNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
+      jv.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
       nodeJacobianIndex++;
     }
     else
@@ -138,9 +138,9 @@ Eigen::MatrixXd TrackEETask::getTaskSpace() const {
   int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
   for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
   {
-    if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
     {
-      jv.col(modelJacobianIndex) = mModel->getNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
+      jv.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
       nodeJacobianIndex++;
     }
     else

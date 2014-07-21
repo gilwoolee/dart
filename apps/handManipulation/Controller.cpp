@@ -263,8 +263,8 @@ void Controller::computeTorques(const VectorXd& _dof, const VectorXd& _dofVel, c
   for (int i = 0; i < mFingerNum; ++i) {
     if (mContactFingers[i]&&!mInContactFingers[i]&&!mTrackFingers[i]) {
       Vector3d direction = Vector3d::Zero();
-      _contactPoints.push_back(mSkel->getNode(mFingerTipIndices[i])->getWorldCOM());
-      direction = Vector3d(_objDof(0),_objDof(1),_objDof(2))-mSkel->getNode(mFingerTipIndices[i])->getWorldCOM();
+      _contactPoints.push_back(mSkel->getBodyNode(mFingerTipIndices[i])->getWorldCOM());
+      direction = Vector3d(_objDof(0),_objDof(1),_objDof(2))-mSkel->getBodyNode(mFingerTipIndices[i])->getWorldCOM();
       direction = direction.normalized();
       _contactForces.push_back(1.0*direction);
       _contactIndices.push_back(mFingerTipIndices[i]);
@@ -335,7 +335,7 @@ void Controller::evalGravityCompensationForce()
 
   for (int i = 0; i < mSkel->getNumNodes(); ++i)
   {
-    ((BodyNodeDynamics*)mSkel->getNode(i))->addExtForce(mSkel->getNode(i)->getLocalCOM(), -gravity*(mSkel->getNode(i)->getMass()), true, false);
+    ((BodyNodeDynamics*)mSkel->getBodyNode(i))->addExtForce(mSkel->getBodyNode(i)->getLocalCOM(), -gravity*(mSkel->getBodyNode(i)->getMass()), true, false);
   }
 
   mSkel->evalExternalForces(false);
@@ -351,7 +351,7 @@ void Controller::evalObjControlForce(const std::vector<Eigen::Vector3d>& _contac
 
   for (int i = 0; i < _contactForces.size(); ++i)
   {
-    ((BodyNodeDynamics*)mSkel->getNode(_contactIndices[i]))->addExtForce(_contactPoints[i], _contactForces[i], false, false);
+    ((BodyNodeDynamics*)mSkel->getBodyNode(_contactIndices[i]))->addExtForce(_contactPoints[i], _contactForces[i], false, false);
   }
 
   mJVec.clear();
@@ -359,12 +359,12 @@ void Controller::evalObjControlForce(const std::vector<Eigen::Vector3d>& _contac
 
   for (int i = 0; i < _contactForces.size(); ++i) { // only one contact for each link
     MatrixXd J = MatrixXd::Zero(3, mSkel->getNumDofs());
-    int numDepDofs = ((BodyNodeDynamics*)mSkel->getNode(_contactIndices[i]))->getNumDependentDofs();
-    Matrix4d W = ((BodyNodeDynamics*)mSkel->getNode(_contactIndices[i]))->getWorldTransform();
+    int numDepDofs = ((BodyNodeDynamics*)mSkel->getBodyNode(_contactIndices[i]))->getNumDependentDofs();
+    Matrix4d W = ((BodyNodeDynamics*)mSkel->getBodyNode(_contactIndices[i]))->getWorldTransform();
     for(int j=mExtDofNum; j<numDepDofs; j++) { // do not consider the dof at wrist
-      int colIndex = ((BodyNodeDynamics*)mSkel->getNode(_contactIndices[i]))->getDependentDof(j);
-      Matrix4d Wq = ((BodyNodeDynamics*)mSkel->getNode(_contactIndices[i]))->getDerivWorldTransform(j);
-      Vector3d point = ((BodyNodeDynamics*)mSkel->getNode(_contactIndices[i]))->mContacts.at(0).first; // only one contact for each link
+      int colIndex = ((BodyNodeDynamics*)mSkel->getBodyNode(_contactIndices[i]))->getDependentDof(j);
+      Matrix4d Wq = ((BodyNodeDynamics*)mSkel->getBodyNode(_contactIndices[i]))->getDerivWorldTransform(j);
+      Vector3d point = ((BodyNodeDynamics*)mSkel->getBodyNode(_contactIndices[i]))->mContacts.at(0).first; // only one contact for each link
       J.col(colIndex) = dart_math::xformHom(Wq,point);
     }
     mJVec.push_back(J);
@@ -536,7 +536,7 @@ void Controller::evalTaskForce()
 
 void Controller::evalOriForce(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel)
 {
-  kinematics::BodyNode *wrist = mSkel->getNode(mPalmName.c_str());
+  dynamics::BodyNode *wrist = mSkel->getBodyNode(mPalmName.c_str());
   int wristIndex = wrist->getSkelIndex();
   tasks::TrackOriTask *trackWristOri = new tasks::TrackOriTask(mSkel,wristIndex,"trackWristOri");
   trackWristOri->setTarget(Eigen::Vector3d(angleX,angleY,angleZ).normalized());
@@ -570,7 +570,7 @@ void Controller::evalMaintainForce(const Eigen::VectorXd& _dof, const Eigen::Vec
 {
   int wristIndex = 1;
   tasks::MaintainTask *maintainWrist = new tasks::MaintainTask(mSkel,wristIndex,"maintainWrist");
-  maintainWrist->setTarget(mSkel->getNode(wristIndex)->getWorldCOM());
+  maintainWrist->setTarget(mSkel->getBodyNode(wristIndex)->getWorldCOM());
 
   // state of hand
   Eigen::VectorXd state(_dof.size()+_dofVel.size());

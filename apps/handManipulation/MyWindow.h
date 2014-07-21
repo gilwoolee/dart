@@ -77,8 +77,8 @@ class Var;
 
 class Controller;
 
-class MyWindow : public dart::gui::Win3D,
-                 public dart::integration::IntegrableSystem
+class MyWindow : public dart::gui::Win3D
+                 //public dart::integration::IntegrableSystem
 {
 public:
   MyWindow(dart::dynamics::Skeleton* _mList = 0, ...): Win3D()
@@ -175,9 +175,12 @@ public:
   virtual void drag(int x, int y);
 
   // Needed for integration
-  virtual Eigen::VectorXd getState();
-  virtual Eigen::VectorXd evalDeriv();
-  virtual void setState(const Eigen::VectorXd& state);
+//  virtual Eigen::VectorXd getState();
+//  virtual Eigen::VectorXd evalDeriv();
+//  virtual void setState(const Eigen::VectorXd& state);
+
+  // Update forward dynamics
+  void step();
 
 protected:
   // the name for all the output file
@@ -203,7 +206,7 @@ protected:
   std::vector<dart::dynamics::Skeleton*> mSkels;
   dart::integration::EulerIntegrator mIntegrator;
 
-  dart::constraint::ConstraintSolver* mConstraintHandle;
+  dart::constraint::ConstraintSolver* mConstraintSolver;
   Controller* mController;
   std::vector<tasks::Task*> mTasks;
 

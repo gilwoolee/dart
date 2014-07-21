@@ -42,9 +42,9 @@ namespace tasks {
 		int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
 		for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
 		{
-			if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+			if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
 			{
-				mJ.col(modelJacobianIndex) = mModel->getNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
+				mJ.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
 				nodeJacobianIndex++;
 			}
 			else
@@ -52,7 +52,7 @@ namespace tasks {
 				mJ.col(modelJacobianIndex) = VectorXd::Zero(3);
 			}
 		}
-		Eigen::Matrix4d transformMatrix = mModel->getNode(mEEIndex)->getWorldTransform();
+		Eigen::Matrix4d transformMatrix = mModel->getBodyNode(mEEIndex)->getWorldTransform();
 		Eigen::Matrix3d rotationMatrix = transformMatrix.topLeftCorner(3,3);
 		Eigen::Vector3d orientationVector = rotationMatrix*Vector3d(0.0,-1.0,0.0);
 		double angle = acos(orientationVector.dot(mTarget)/(orientationVector.norm()*mTarget.norm()));
@@ -76,9 +76,9 @@ namespace tasks {
 		int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
 		for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
 		{
-			if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+			if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
 			{
-				mJ.col(modelJacobianIndex) = mModel->getNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
+				mJ.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
 				nodeJacobianIndex++;
 			}
 			else
@@ -90,8 +90,8 @@ namespace tasks {
 		mOmega = mJ * (mModel->getMassMatrix().inverse());
 		FullPivLU<MatrixXd> lu_decomp(mOmega);
 		mNullSpace = lu_decomp.kernel();
-		dynamics::BodyNodeDynamics *nodel = static_cast<dynamics::BodyNodeDynamics*>(mModel->getNode(mEEIndex));
-		Eigen::Matrix4d transformMatrix = mModel->getNode(mEEIndex)->getWorldTransform();
+		dynamics::BodyNodeDynamics *nodel = static_cast<dynamics::BodyNodeDynamics*>(mModel->getBodyNode(mEEIndex));
+		Eigen::Matrix4d transformMatrix = mModel->getBodyNode(mEEIndex)->getWorldTransform();
 		Eigen::Matrix3d rotationMatrix = transformMatrix.topLeftCorner(3,3);
 		Eigen::Vector3d orientationVector = rotationMatrix*Vector3d(0.0,-1.0,0.0);
 		double angle = acos(orientationVector.dot(mTarget)/(orientationVector.norm()*mTarget.norm()));
@@ -109,7 +109,7 @@ namespace tasks {
 		modelJacobianIndex = 0; 
 		for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
 		{
-			if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+			if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
 			{
 				mJDot.col(modelJacobianIndex) = nodel->mJwDot.col(nodeJacobianIndex);
 				nodeJacobianIndex++;
@@ -132,7 +132,7 @@ namespace tasks {
 	}
 
 	void TrackOriTask::evalTaskFinish() {
-		Eigen::Matrix4d transformMatrix = mModel->getNode(mEEIndex)->getWorldTransform();
+		Eigen::Matrix4d transformMatrix = mModel->getBodyNode(mEEIndex)->getWorldTransform();
 		Eigen::Matrix3d rotationMatrix = transformMatrix.topLeftCorner(3,3);
 		Eigen::Vector3d orientationVector = rotationMatrix*Vector3d(0.0,-1.0,0.0);
 		double angle = acos(orientationVector.dot(mTarget)/(orientationVector.norm()*mTarget.norm()));
@@ -156,9 +156,9 @@ namespace tasks {
 		int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
 		for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
 		{
-			if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+			if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
 			{
-				jw.col(modelJacobianIndex) = mModel->getNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
+				jw.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
 				nodeJacobianIndex++;
 			}
 			else
@@ -181,9 +181,9 @@ namespace tasks {
 		int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
 		for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
 		{
-			if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+			if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
 			{
-				jw.col(modelJacobianIndex) = mModel->getNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
+				jw.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
 				nodeJacobianIndex++;
 			}
 			else
@@ -197,7 +197,7 @@ namespace tasks {
 	}
 
 	Eigen::Vector3d TrackOriTask::evalTaskError() {
-		Eigen::Matrix4d transformMatrix = mModel->getNode(mEEIndex)->getWorldTransform();
+		Eigen::Matrix4d transformMatrix = mModel->getBodyNode(mEEIndex)->getWorldTransform();
 		Eigen::Matrix3d rotationMatrix = transformMatrix.topLeftCorner(3,3);
 		Eigen::Vector3d orientationVector = rotationMatrix*Vector3d(0.0,-1.0,0.0);
 		double angle = acos(orientationVector.dot(mTarget)/(orientationVector.norm()*mTarget.norm()));

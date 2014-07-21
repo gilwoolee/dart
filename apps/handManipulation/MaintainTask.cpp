@@ -37,13 +37,13 @@ MaintainTask::MaintainTask(dart::dynamics::Skeleton *_model, int _eeIndex, char 
 void MaintainTask::evalTorque() {
   int nodeJacobianIndex = 0; // index of column in Jacobian matrix of a node
   int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
-  dynamics::BodyNodeDynamics *nodel = static_cast<dynamics::BodyNodeDynamics*>(mModel->getNode(mEEIndex));
+  dynamics::BodyNodeDynamics *nodel = static_cast<dynamics::BodyNodeDynamics*>(mModel->getBodyNode(mEEIndex));
 
   for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
   {
-    if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
     {
-      mJ.col(modelJacobianIndex) = mModel->getNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
+      mJ.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
       nodeJacobianIndex++;
     }
     else
@@ -60,7 +60,7 @@ void MaintainTask::evalTorque() {
 
   for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
   {
-    if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
     {
       mJDot.col(modelJacobianIndex) = nodel->mJvDot.col(nodeJacobianIndex);
       nodeJacobianIndex++;
@@ -71,7 +71,7 @@ void MaintainTask::evalTorque() {
     }
   }
   if (mEEIndex == 1) { // maintain the COM of wrist
-    mCommandForce = mPGain*(mModel->getNode(mEEIndex)->getWorldCOM()-mTarget) + mVGain*mJ*mDofVels;
+    mCommandForce = mPGain*(mModel->getBodyNode(mEEIndex)->getWorldCOM()-mTarget) + mVGain*mJ*mDofVels;
   }
   mTorque = mOmega.transpose()*(mOmega*mOmega.transpose()).inverse()*(mCommandForce+mOmega*(mModel->getCombinedVector() - mOtherForce)-mJDot*mDofVels);
 }
@@ -95,9 +95,9 @@ Eigen::MatrixXd MaintainTask::getNullSpace() const {
   int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
   for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
   {
-    if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
     {
-      jv.col(modelJacobianIndex) = mModel->getNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
+      jv.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
       nodeJacobianIndex++;
     }
     else
@@ -120,9 +120,9 @@ Eigen::MatrixXd MaintainTask::getTaskSpace() const {
   int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
   for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
   {
-    if (mModel->getNode(mEEIndex)->dependsOn(modelJacobianIndex))
+    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
     {
-      jv.col(modelJacobianIndex) = mModel->getNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
+      jv.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianLinear().col(nodeJacobianIndex);
       nodeJacobianIndex++;
     }
     else

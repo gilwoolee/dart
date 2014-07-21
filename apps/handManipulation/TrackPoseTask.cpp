@@ -39,7 +39,7 @@ TrackPoseTask::TrackPoseTask(dart::dynamics::Skeleton* _model, const std::vector
   // initialize mPGains and mVGains based on mass
   for(unsigned int i=0; i<numDofs; i++){ // can assign some initial value here
     double mass = 0.0;
-    kinematics::BodyNode *mBodyNode = mModel->getDof(i)->getJoint()->getChildNode();
+    dynamics::BodyNode *mBodyNode = mModel->getDof(i)->getJoint()->getChildNode();
     while(mBodyNode)
     {
       mass += mBodyNode->getMass();
