@@ -2,8 +2,7 @@
  * Copyright (c) 2011, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>,
- *            Tobias Kunz <tobias@gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  * Date: 05/11/2013
  *
  * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
@@ -40,13 +39,14 @@
 #define COLLISION_CONLLISION_DETECTOR_H
 
 #include <vector>
-#include <map>
 #include <Eigen/Dense>
-#include "CollisionNode.h"
+#include "collision/CollisionNode.h"
 
 namespace kinematics { class BodyNode; }
 
 namespace collision {
+
+class CollisionNode;
 
 /// @brief
 struct Contact {
@@ -98,16 +98,9 @@ public:
     virtual CollisionNode* createCollisionNode(
             kinematics::BodyNode* _bodyNode) = 0;
 
-    void enablePair(kinematics::BodyNode* _node1, kinematics::BodyNode* _node2);
-    void disablePair(kinematics::BodyNode* _node1, kinematics::BodyNode* _node2);
-
     /// @brief
     virtual bool checkCollision(bool _checkAllCollisions,
                                 bool _calculateContactPoints) = 0;
-
-    bool checkCollision(kinematics::BodyNode* _node1,
-                        kinematics::BodyNode* _node2,
-                        bool _calculateContactPoints);
 
     /// @brief
     unsigned int getNumContacts() { return mContacts.size(); }
@@ -119,17 +112,17 @@ public:
     void clearAllContacts() { mContacts.clear(); }
 
     /// @brief
-    int getNumMaxContacts() const { return mNumMaxContacts; }
+    void updateSkeletonSelfCollidableState();
 
     /// @brief
-    void setNumMaxContacts(int _num) { mNumMaxContacts = _num; }
+    void updateBodyNodeCollidableState();
 
-protected:
-    virtual bool checkCollision(CollisionNode* _node1,
-                                CollisionNode* _node2,
-                                bool _calculateContactPoints) = 0;
+public:
+    /// @brief
+    void _rebuildBodyNodePairs();
 
-    bool isCollidable(const CollisionNode* _node1, const CollisionNode* _node2);
+    /// @brief
+    void _setAllBodyNodePairsCollidable(bool _collidable);
 
     /// @brief
     std::vector<Contact> mContacts;
@@ -138,19 +131,9 @@ protected:
     std::vector<CollisionNode*> mCollisionNodes;
 
     /// @brief
-    int mNumMaxContacts;
+    std::vector<CollisionNodePair> mCollisionNodePairs;
 
 private:
-    std::vector<bool>::reference getPairCollidable(const CollisionNode* _node1, const CollisionNode* _node2);
-
-    CollisionNode* getCollisionNode(const kinematics::BodyNode* _bodyNode);
-
-    /// @brief
-    std::map<const kinematics::BodyNode*, CollisionNode*> mBodyCollisionMap;
-
-    /// @brief
-    std::vector<std::vector<bool> > mCollidablePairs;
-
 
 };
 

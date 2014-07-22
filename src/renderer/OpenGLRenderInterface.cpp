@@ -163,8 +163,8 @@ namespace renderer {
         glScaled(_size(0), _size(1), _size(2));
 
         GLdouble radius = 0.5;
-        GLint slices = 16;
-        GLint stacks = 16;
+        GLint slices = 64;
+        GLint stacks = 64;
 
         // Code taken from glut/lib/glut_shapes.c
         QUAD_OBJ_INIT;
@@ -226,7 +226,7 @@ namespace renderer {
 
     	GLdouble radius = 1;
     	GLdouble height = 1;
-		GLint slices = 16;
+		GLint slices = 64;
 		GLint stacks = 16;
 
 		// Graphics assumes Cylinder is centered at CoM
@@ -291,12 +291,12 @@ namespace renderer {
         if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_AMBIENT, &ambient))
             color4_to_float4(&ambient, c);
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, c);
-
+		
         set_float4(c, 0.0f, 0.0f, 0.0f, 1.0f);
         if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_EMISSIVE, &emission))
             color4_to_float4(&emission, c);
         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, c);
-
+		
         max = 1;
         ret1 = aiGetMaterialFloatArray(mtl, AI_MATKEY_SHININESS, &shininess, &max);
         if(ret1 == AI_SUCCESS) {
@@ -312,19 +312,20 @@ namespace renderer {
             set_float4(c, 0.0f, 0.0f, 0.0f, 0.0f);
             glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, c);
         }
-
+		
         max = 1;
         if(AI_SUCCESS == aiGetMaterialIntegerArray(mtl, AI_MATKEY_ENABLE_WIREFRAME, &wireframe, &max))
             fill_mode = wireframe ? GL_LINE : GL_FILL;
         else
             fill_mode = GL_FILL;
         glPolygonMode(GL_FRONT_AND_BACK, fill_mode);
-
+		
         max = 1;
         if((AI_SUCCESS == aiGetMaterialIntegerArray(mtl, AI_MATKEY_TWOSIDED, &two_sided, &max)) && two_sided)
             glDisable(GL_CULL_FACE);
         else 
             glEnable(GL_CULL_FACE);
+		
     }
 
 
@@ -343,7 +344,7 @@ namespace renderer {
         for (; n < nd->mNumMeshes; ++n) {
             const struct aiMesh* mesh = sc->mMeshes[nd->mMeshes[n]];
 
-            applyMaterial(sc->mMaterials[mesh->mMaterialIndex]);
+//             applyMaterial(sc->mMaterials[mesh->mMaterialIndex]);
 
             if(mesh->mNormals == NULL) {
                 glDisable(GL_LIGHTING);
@@ -387,12 +388,12 @@ namespace renderer {
     }
 
     void OpenGLRenderInterface::drawMesh(const Vector3d& _size, const aiScene *_mesh) {
-        if(_mesh) {
-            glPushMatrix();
-            glScaled(_size(0), _size(1), _size(2));
-            recursiveRender(_mesh, _mesh->mRootNode);
-            glPopMatrix();
-        }
+    	if(_mesh) {
+             glPushMatrix();
+             glScaled(_size(0), _size(1), _size(2));
+             recursiveRender(_mesh, _mesh->mRootNode);
+             glPopMatrix();
+         }
     }
 
     void OpenGLRenderInterface::drawList(GLuint index) {
@@ -440,7 +441,7 @@ namespace renderer {
 			if(shapeMesh == 0)
 				return;
 
-            shapeMesh->setDisplayList(compileList(shapeMesh->getDim(), shapeMesh->getMesh()));
+			shapeMesh->setDisplayList(compileList(shapeMesh->getDim(), shapeMesh->getMesh()));
 
     		break;
     	}
@@ -544,7 +545,7 @@ namespace renderer {
     		else if(shapeMesh->getDisplayList())
     			drawList(shapeMesh->getDisplayList());
     		else
-                drawMesh(shapeMesh->getDim(), shapeMesh->getMesh());
+    			drawMesh(shapeMesh->getDim(), shapeMesh->getMesh());
 
     		break;
     	}

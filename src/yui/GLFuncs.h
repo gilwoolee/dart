@@ -46,12 +46,12 @@ namespace yui {
     void drawArrow3D(const Eigen::Vector3d& pt, const Eigen::Vector3d& dir, const double length, const double thickness, const double arrowThickness=-1);
     void drawArrow2D(const Eigen::Vector2d& pt, const Eigen::Vector2d& vec, double thickness);
     void drawProgressBar(int currFrame, int totalFrame);
-
+	void drawDot(const Eigen::Vector3d& pt, const double r);
 /*
     BOOL screenShot(FREE_IMAGE_FORMAT fif, int w, int h, char *fname, bool _antialias);
     BOOL screenShot(FREE_IMAGE_FORMAT fif, int x, int y, int w, int h, char *fname, bool _antialias);
-    bool screenShot(int w, int h, char *fname, bool _antialias=false);
 */
+	bool screenShot(int w, int h, const char *fname, bool _antialias=false);
 // todo freeimage
 } // namespace yui
 

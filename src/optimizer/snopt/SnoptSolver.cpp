@@ -110,8 +110,8 @@ namespace optimizer {
 
             SnoptInterface::Return ret = mSnopt->solve(coef_vals, lower_bounds, upper_bounds,mUnit);
 
-            cout << "[VLOG(1)]" << "SnoptSolver " << mOptCount << " : ";
-            cout << "[VLOG(1)]" << "obj = " << mSnopt->mReturnedObj << endl;
+	    //std::cout << "SnoptSolver " << mOptCount << " : ";
+	    //std::cout << "obj = " << mSnopt->mReturnedObj << endl;
 
             delete[] coef_vals;
             delete[] lower_bounds;

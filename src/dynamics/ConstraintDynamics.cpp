@@ -56,11 +56,11 @@ using namespace dart_math;
                     double lb = mSkels[i]->getDof(j)->getMin();
                     if (val >= ub){
                         mLimitingDofIndex.push_back(mIndices[i] + j + 1);
-                        //        cout << "Skeleton " << i << " Dof " << j << " hits upper bound" << endl;
+//                         cout << "Skeleton " << i << " Dof " << j << " hits upper bound" << endl;
                     }
                     if (val <= lb){
                         mLimitingDofIndex.push_back(-(mIndices[i] + j + 1));
-                        //      cout << "Skeleton " << i << " Dof " << j << " hits lower bound" << endl;
+//                         cout << "Skeleton " << i << " Dof " << j << " hits lower bound" << endl;
                     }
                 }
             }
@@ -83,6 +83,77 @@ using namespace dart_math;
             //            t1.stopTimer();
             //            t1.printScreen();
         }
+
+		void ConstraintDynamics::evaluateConstraint() {
+			//            static Timer t1("t1");
+
+			if (getTotalNumDofs() == 0)
+				return;
+			mCollisionChecker->clearAllContacts();
+			mCollisionChecker->checkCollision(true, true);
+
+			//            t1.startTimer();
+			mLimitingDofIndex.clear();
+
+			for (int i = 0; i < mSkels.size(); i++) {
+				if (mSkels[i]->getImmobileState() || !mSkels[i]->getJointLimitState())
+					continue;
+				for (int j = 0; j < mSkels[i]->getNumDofs(); j++) {
+					double val = mSkels[i]->getDof(j)->getValue();
+					double ub = mSkels[i]->getDof(j)->getMax();
+					double lb = mSkels[i]->getDof(j)->getMin();
+					if (val >= ub){
+						mLimitingDofIndex.push_back(mIndices[i] + j + 1);
+						//                         cout << "Skeleton " << i << " Dof " << j << " hits upper bound" << endl;
+					}
+					if (val <= lb){
+						mLimitingDofIndex.push_back(-(mIndices[i] + j + 1));
+						//                         cout << "Skeleton " << i << " Dof " << j << " hits lower bound" << endl;
+					}
+				}
+			}
+
+		}
+
+      void ConstraintDynamics::applyConstraintForces() {
+			
+			if (mCollisionChecker->getNumContacts() == 0 && mLimitingDofIndex.size() == 0) {
+				for (int i = 0; i < mSkels.size(); i++)
+					mContactForces[i].setZero();
+				if (mConstraints.size() == 0) {
+					for (int i = 0; i < mSkels.size(); i++)
+						mTotalConstrForces[i].setZero();
+				} else {
+					computeConstraintWithoutContact();
+				}
+			} else {
+				fillMatrices();
+				solve();
+				applySolution();
+			}
+			//            t1.stopTimer();
+			//            t1.printScreen();
+		}
+
+		void ConstraintDynamics::applyConstraintForcesHand(bool _useODE) {
+			
+			if (mCollisionChecker->getNumContacts() == 0 && mLimitingDofIndex.size() == 0) {
+				for (int i = 0; i < mSkels.size(); i++)
+					mContactForces[i].setZero();
+				if (mConstraints.size() == 0) {
+					for (int i = 0; i < mSkels.size(); i++)
+						mTotalConstrForces[i].setZero();
+				} else {
+					computeConstraintWithoutContact();
+				}
+			} else {
+				fillMatrices();
+				solveHand(_useODE);
+				applySolution();
+			}
+			//            t1.stopTimer();
+			//            t1.printScreen();
+		}
 
         void ConstraintDynamics::addConstraint(Constraint *_constr) {
             mConstraints.push_back(_constr);
@@ -172,6 +243,7 @@ using namespace dart_math;
             // Allocate the Collision Detection class
             //mCollisionChecker = new FCLCollisionDetector();
             mCollisionChecker = new FCLMESHCollisionDetector();
+
             mBodyIndexToSkelIndex.clear();
             // Add all body nodes into mCollisionChecker
             int rows = 0;
@@ -206,6 +278,8 @@ using namespace dart_math;
 
             mMInv = MatrixXd::Zero(rows, cols);
             mTauStar = VectorXd::Zero(rows);
+
+			mQDot = VectorXd::Zero(rows);
 
             // Initialize the index vector:
             // If we have 3 skeletons,
@@ -356,6 +430,12 @@ using namespace dart_math;
             return b;
         }
 
+      bool ConstraintDynamics::solveHand(bool _useODE) {
+	lcpsolver::LCPSolver solver = lcpsolver::LCPSolver();
+	bool b = solver.Solve(mA, mQBar, mX, getNumContacts(), mMu, mNumDir, _useODE);
+	return b;
+      }
+
         void ConstraintDynamics::applySolution() {
             VectorXd contactForces(VectorXd::Zero(getTotalNumDofs()));
             VectorXd jointLimitForces(VectorXd::Zero(getTotalNumDofs()));
@@ -365,6 +445,9 @@ using namespace dart_math;
                 VectorXd f_d = mX.segment(getNumContacts(), getNumContacts() * mNumDir);
                 contactForces.noalias() = mN * f_n;
                 contactForces.noalias() += mB * f_d;
+
+				mQDot = mMInv*(mDt*mN*f_n+mDt*mB*f_d+mTauStar);
+
                 for (int i = 0; i < getNumContacts(); i++) {
                     Contact& contact = mCollisionChecker->getContact(i);
                     contact.force.noalias() = getTangentBasisMatrix(contact.point, contact.normal) * f_d.segment(i * mNumDir, mNumDir);
@@ -431,8 +514,8 @@ using namespace dart_math;
             for (int i = 0; i < getNumContacts(); i++) {
                 Contact& c = mCollisionChecker->getContact(i);
                 Vector3d p = c.point;
-                int skelID1 = mBodyIndexToSkelIndex[c.collisionNode1->getIndex()];
-                int skelID2 = mBodyIndexToSkelIndex[c.collisionNode2->getIndex()];
+                int skelID1 = mBodyIndexToSkelIndex[c.collisionNode1->getBodyNodeID()];
+                int skelID2 = mBodyIndexToSkelIndex[c.collisionNode2->getBodyNodeID()];
 
                 Vector3d N21 = c.normal;
                 Vector3d N12 = -c.normal;

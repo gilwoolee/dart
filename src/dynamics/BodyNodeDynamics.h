@@ -132,6 +132,7 @@ public:
     void evalGravityVector(const Eigen::Vector3d &_gravity);   ///< evaluates the gravity vector mG in the generalized coordinates
     void evalExternalForces(Eigen::VectorXd& _extForce); ///< evaluates the external forces mFext in the generalized coordinates as J^TF
     void evalExternalForcesRecursive(Eigen::VectorXd& _extForce ); ///< evaluates the external forces mFext in the generalized coordinates recursively
+	void evalExternalForcesPartial( Eigen::VectorXd& _extForce , int _extDofNum); 
 
     void jointCartesianToGeneralized(const Eigen::Vector3d& _cForce,
                                      Eigen::VectorXd& _gForce,
@@ -160,7 +161,7 @@ public:
 
     inline Eigen::MatrixXd getJvDeriv(int _qIndex) const { return mJvq[_qIndex]; }
 
-protected:
+public:
     bool mInitializedInvDyn;            ///< true if linear inverse dynamics is initialized; init functions initialize only if false
     bool mInitializedNonRecursiveDyn;   ///< true if non recursive dynamics is initialized; init function initialize only if false
 

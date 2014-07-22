@@ -103,6 +103,7 @@ public:
     /// the necessary Jacobians will be ready. Extra care is needed to make sure
     /// the required quantities are up-to-date when using this function alone.
     void evalExternalForces( bool _useRecursive );
+	void evalExternalForcesPartial( bool _useRecursive, int _extNodeNum, int _extDofNum);
 
     /// @brief Clear all the contacts of external forces.
     /// Automatically called after each (forward/inverse) dynamics computation,
@@ -138,6 +139,7 @@ public:
     Eigen::VectorXd getMinInternalForces() const { return get_tauMin(); }
     void setMaxInternalForces(Eigen::VectorXd _maxForces) { set_tauMax(_maxForces); }
     Eigen::VectorXd getMaxInternalForces() const { return get_tauMax(); }
+	void setExternalForces(Eigen::VectorXd _q) { mFext = _q; }
 
 protected:
     Eigen::MatrixXd mM;    ///< Mass matrix for the skeleton

@@ -22,15 +22,51 @@ namespace collision
 FCLMESHCollisionDetector::~FCLMESHCollisionDetector() {
 }
 
+void FCLMESHCollisionDetector::addCollisionSkeletonNode(kinematics::BodyNode *_bd,
+                                                    bool _bRecursive)
+{
+    if (_bRecursive == false || _bd->getNumChildJoints() == 0)
+    {
+        FCLMESHCollisionNode* csnode = new FCLMESHCollisionNode(_bd);
+        csnode->setBodyNodeID(mCollisionNodes.size());
+        mCollisionNodes.push_back(csnode);
+        mBodyCollisionMap[_bd] = csnode;
+        mActiveMatrix.push_back(vector<bool>(mCollisionNodes.size() - 1));
+
+        for(unsigned int i = 0; i < mCollisionNodes.size() - 1; i++)
+        {
+            //if(mCollisionSkeletonNodeList[i]->mBodyNode->getParentNode() == _bd || _bd->getParentNode() == mCollisionSkeletonNodeList[i]->mBodyNode) {
+            if(mCollisionNodes[i]->getBodyNode()->getSkel() == _bd->getSkel()) {
+                mActiveMatrix.back()[i] = false;
+            }
+            else
+            {
+                mActiveMatrix.back()[i] = true;
+            }
+        }
+    }
+    else
+    {
+        addCollisionSkeletonNode(_bd, false);
+
+        for (int i = 0; i < _bd->getNumChildJoints(); i++)
+            addCollisionSkeletonNode(_bd->getChildNode(i), true);
+    }
+}
 
 CollisionNode*FCLMESHCollisionDetector::createCollisionNode(kinematics::BodyNode* _bodyNode)
 {
-    return new FCLMESHCollisionNode(_bodyNode);
+    CollisionNode* collisionNode = NULL;
+
+    collisionNode = new FCLMESHCollisionNode(_bodyNode);
+
+    return collisionNode;
 }
 
 bool FCLMESHCollisionDetector::checkCollision(bool _checkAllCollisions,
-                                              bool _calculateContactPoints)
+                                       bool _calculateContactPoints)
 {
+    int num_max_contact = 100;
     clearAllContacts();
     bool collision = false;
 
@@ -50,14 +86,14 @@ bool FCLMESHCollisionDetector::checkCollision(bool _checkAllCollisions,
         {
             FCLMESHCollisionNode2 = static_cast<FCLMESHCollisionNode*>(mCollisionNodes[j]);
 
-            if (!isCollidable(FCLMESHCollisionNode1, FCLMESHCollisionNode2))
+            if (!mActiveMatrix[j][i])
             {
                 continue;
             }
             
             if(FCLMESHCollisionNode1->checkCollision(FCLMESHCollisionNode2,
                     _calculateContactPoints ? &mContacts : NULL,
-                    mNumMaxContacts))
+                    num_max_contact))
             {
                 collision = true;
                 mCollisionNodes[i]->getBodyNode()->setColliding(true);
@@ -74,21 +110,26 @@ bool FCLMESHCollisionDetector::checkCollision(bool _checkAllCollisions,
     return collision;
 }
 
-
-bool FCLMESHCollisionDetector::checkCollision(CollisionNode* _node1,
-                                              CollisionNode* _node2,
-                                              bool _calculateContactPoints)
-{
-    FCLMESHCollisionNode* collisionNode1 = static_cast<FCLMESHCollisionNode*>(_node1);
-    FCLMESHCollisionNode* collisionNode2 = static_cast<FCLMESHCollisionNode*>(_node2);
-    return collisionNode1->checkCollision(collisionNode2,
-                                          _calculateContactPoints ? &mContacts : NULL,
-                                          mNumMaxContacts);
-}
-
 void FCLMESHCollisionDetector::draw() {
     for(int i=0;i<mCollisionNodes.size();i++)
         static_cast<FCLMESHCollisionNode*>(mCollisionNodes[i])->drawCollisionSkeletonNode();
 }
 
+void FCLMESHCollisionDetector::activatePair(const kinematics::BodyNode* node1, const kinematics::BodyNode* node2) {
+    int nodeId1 = getCollisionSkeletonNode(node1)->getBodyNodeID();
+    int nodeId2 = getCollisionSkeletonNode(node2)->getBodyNodeID();
+    if(nodeId1 < nodeId2) {
+        swap(nodeId1, nodeId2);
+    }
+    mActiveMatrix[nodeId1][nodeId2] = true;
+}
+
+void FCLMESHCollisionDetector::deactivatePair(const kinematics::BodyNode* node1, const kinematics::BodyNode* node2) {
+    int nodeId1 = getCollisionSkeletonNode(node1)->getBodyNodeID();
+    int nodeId2 = getCollisionSkeletonNode(node2)->getBodyNodeID();
+    if(nodeId1 < nodeId2) {
+        swap(nodeId1, nodeId2);
+    }
+    mActiveMatrix[nodeId1][nodeId2] = false;
+}
 }

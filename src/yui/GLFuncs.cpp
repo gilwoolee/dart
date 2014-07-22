@@ -167,4 +167,74 @@ namespace yui{
         glPopMatrix();
         glMatrixMode(oldMode);
     }
+
+	void drawDot(const Eigen::Vector3d& pt, const double r) {
+		glPushMatrix();
+		glTranslatef(pt[0],pt[1],pt[2]);
+		glutSolidSphere(r,16,16);
+		glPopMatrix();
+	}
+
+	bool screenShot(int w, int h, const char *fname, bool _antialias) {
+		// make sure OpenGL context is current
+		//make_current();
+
+		// read the pixels
+		int numPixels = w*h;
+		unsigned char *pixels = new unsigned char[numPixels*3*sizeof(unsigned char)];
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
+		if(_antialias) glReadBuffer(GL_ACCUM);
+		else glReadBuffer(GL_FRONT);
+		glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+		// swap red and blue, because TGA format is stupid
+		int i;
+		for (i=0; i < numPixels; i++) {
+			pixels[i * 3 + 0] ^= pixels[i * 3 + 2];
+			pixels[i * 3 + 2] ^= pixels[i * 3 + 0];
+			pixels[i * 3 + 0] ^= pixels[i * 3 + 2];
+		}
+
+		// get file name
+		//#if USEFLTK
+		//	if (fname == NULL) {
+		//		fname = (char *)fltk::file_chooser("L", "*.tga", NULL);
+		//	}
+		//#endif
+		if (fname == NULL)
+			return false;
+
+		// open the file
+		FILE *fptr;
+		fptr = fopen(fname, "wb");
+		if (fptr == NULL) {
+			//    PrintOnScreen("Failed to open this file");
+			return false;
+		}
+
+		// create tga header
+		putc(0,fptr);
+		putc(0,fptr);
+		putc(2,fptr);                         // uncompressed RGB
+		putc(0,fptr); putc(0,fptr);
+		putc(0,fptr); putc(0,fptr);
+		putc(0,fptr);
+		putc(0,fptr); putc(0,fptr);           // X origin
+		putc(0,fptr); putc(0,fptr);           // y origin
+		putc((w & 0x00FF),fptr);
+		putc((w & 0xFF00) / 256,fptr);
+		putc((h & 0x00FF),fptr);
+		putc((h & 0xFF00) / 256,fptr);
+		putc(24,fptr);                        // 24 bit bitmap
+		putc(0,fptr);
+
+		// write the data
+		fwrite(pixels, w*h*3*sizeof(char), 1, fptr);
+		fclose(fptr);
+
+		delete []pixels;
+
+		cout << fname << " generated" << endl;
+		return true;
+	}
 } // namespace yui

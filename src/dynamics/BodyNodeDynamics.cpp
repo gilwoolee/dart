@@ -586,6 +586,31 @@ void BodyNodeDynamics::evalExternalForcesRecursive(VectorXd& _extForce)
     }
 }
 
+void BodyNodeDynamics::evalExternalForcesPartial(VectorXd& _extForce, int _extDofNum)
+{
+	int numDepDofs = getNumDependentDofs()-_extDofNum;
+	mFext = VectorXd::Zero(numDepDofs);
+
+	// contribution of linear force
+	for(unsigned int i = 0; i < mContacts.size(); i++)
+	{
+		// compute J
+		MatrixXd J = MatrixXd::Zero(3, numDepDofs);
+		Vector3d force = mW.topLeftCorner<3,3>() * mContacts[i].second;
+		for(int j = _extDofNum; j < numDepDofs+_extDofNum; j++)
+			J.col(j-_extDofNum) = dart_math::xformHom(mWq[j],mContacts[i].first);
+		// compute J^TF
+		mFext.noalias() += J.transpose() * force;
+	}
+
+	// contribution of torque
+	if(mExtTorqueBody.norm() > 0)
+		mFext.noalias() += mJw.transpose() * mW.topLeftCorner<3,3>() * mExtTorqueBody;
+
+	for(int i = _extDofNum; i < getNumDependentDofs(); i++)
+		_extForce(mDependentDofs[i]) += mFext(i-_extDofNum);
+}
+
 void BodyNodeDynamics::jointCartesianToGeneralized(const Vector3d& _cForce,
                                                    VectorXd& _gForce,
                                                    bool _isTorque )

@@ -257,14 +257,14 @@ namespace lcpsolver {
 			_z = VectorXd::Zero(n); //solve failed, return a 0 vector
 		}
 
-// 	    if (err == 1)
-// 		    LOG(ERROR) << "LCP Solver: Iterations exceeded limit";
-// 	    else if (err == 2)
-// 		    LOG(ERROR) << "LCP Solver: Unbounded ray";
-//         else if (err == 3)
-//             LOG(ERROR) << "LCP Solver: Solver converged with numerical issues. Validation failed.";
-//         else if (err == 4)
-//             LOG(ERROR) << "LCP Solver: Iteration diverged.";
+		if (err == 1)
+			std::cout << "LCP Solver: Iterations exceeded limit";
+		else if (err == 2)
+			std::cout << "LCP Solver: Unbounded ray";
+		else if (err == 3)
+			std::cout << "LCP Solver: Solver converged with numerical issues. Validation failed.";
+		else if (err == 4)
+			std::cout << "LCP Solver: Iteration diverged.";
 
 	    return err;
     }

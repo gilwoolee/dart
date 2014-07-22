@@ -14,8 +14,8 @@
 #include <kinematics/BodyNode.h>
 #include <kinematics/Shape.h>
 #include <dynamics/BodyNodeDynamics.h>
-#include <urdf_parser/urdf_parser.h>
-#include <urdf_model/link.h>
+#include "../urdf_parser/urdf_parser.h"
+#include "../urdfdom_headers/urdf_model/link.h"
 
 // For continuous joint limit
 #include <limits>
@@ -99,6 +99,92 @@ kinematics::Joint* DartLoader::createNewDartRootJoint( dynamics::BodyNodeDynamic
   return rootJoint;
 }
 
+/**
+ * @function createNewFixDartRootJoint
+ * @brief Create a new fix joint if no joint is defined between world and rootNode
+ */
+kinematics::Joint* DartLoader::createNewFixDartRootJoint( dynamics::BodyNodeDynamics* _node,
+						       dynamics::SkeletonDynamics* _skel ) {
+
+  
+  // Parent will be NULL.   
+  kinematics::Joint* rootJoint;
+  if(debug) std::cout<<"[debug] Creating joint for root node: "<< _node->getName() <<std::endl;
+
+  // This joint connects with the world 
+  rootJoint = new kinematics::Joint( NULL, _node, "worldJoint" );
+   
+  return rootJoint;
+}
+
+/**
+ * @function createNewYawDartRootJoint
+ * @brief Create a new yaw rotation joint if no joint is defined between world and rootNode
+ */
+kinematics::Joint* DartLoader::createNewYawDartRootJoint( dynamics::BodyNodeDynamics* _node,
+						       dynamics::SkeletonDynamics* _skel ) {
+
+  
+  // Parent will be NULL.   
+  kinematics::Joint* rootJoint;
+  if(debug) std::cout<<"[debug] Creating joint for root node: "<< _node->getName() <<std::endl;
+
+  // This joint connects with the world 
+  rootJoint = new kinematics::Joint( NULL, _node, "worldJoint" );
+   
+  // This will be a YAW joint type. We have 1 DOF for rotation
+  add_DOF( _skel, rootJoint, 0, -3.14, 3.14, GOLEM_YAW );
+
+ 
+  return rootJoint;
+}
+
+/**
+ * @function createNewRotationDartRootJoint
+ * @brief Create a new rotation joint if no joint is defined between world and rootNode
+ */
+kinematics::Joint* DartLoader::createNewRotationDartRootJoint( dynamics::BodyNodeDynamics* _node,
+						       dynamics::SkeletonDynamics* _skel ) {
+
+  
+  // Parent will be NULL.   
+  kinematics::Joint* rootJoint;
+  if(debug) std::cout<<"[debug] Creating joint for root node: "<< _node->getName() <<std::endl;
+
+  // This joint connects with the world 
+  rootJoint = new kinematics::Joint( NULL, _node, "worldJoint" );
+   
+  // This will be a YAW PITCH ROLL joint type. We have 3 DOF for rotation
+  add_DOF( _skel, rootJoint, 0, -3.14, 3.14, GOLEM_YAW );
+  add_DOF( _skel, rootJoint, 0, -3.14, 3.14, GOLEM_PITCH );
+  add_DOF( _skel, rootJoint, 0, -3.14, 3.14, GOLEM_ROLL );
+ 
+  return rootJoint;
+}
+
+/**
+ * @function createSandiaRootJoint
+ * @brief Create a new joint if no joint is defined between world and rootNode
+ */
+kinematics::Joint* DartLoader::createSandiaRootJoint( dynamics::BodyNodeDynamics* _node,
+						       dynamics::SkeletonDynamics* _skel ) {
+
+  
+  // Parent will be NULL.   
+  kinematics::Joint* rootJoint;
+  if(debug) std::cout<<"[debug] Creating joint for root node: "<< _node->getName() <<std::endl;
+
+  // This joint connects with the world 
+  rootJoint = new kinematics::Joint( NULL, _node, "worldJoint" );
+	  
+  // This will 1 DOF for rotation
+  add_DOF( _skel, rootJoint, 0, -3.14, 3.14, GOLEM_ROLL );
+
+  // add a fix rotation transformation
+  add_XyzRpy( rootJoint, 0.0, 0.0, 0.0, 0.3, 0.0, -1.57);
+
+  return rootJoint;
+}
 
 /**
  * @function createDartJoint
@@ -294,13 +380,7 @@ dynamics::BodyNodeDynamics* DartLoader::createDartNode( boost::shared_ptr<urdf::
       std::vector<boost::shared_ptr<urdf::Visual> > visualGroup;
       visualGroup = *(iter->second);
       for( int j = 0; j < visualGroup.size(); ++j ) {
-        if(kinematics::Shape* shape = createShape(visualGroup[j], _rootToSkelPath)) {
-          node->addVisualizationShape(shape);
-        }
-        else {
-          std::cout << "Error loading VizShape" << std::endl;
-          return NULL;
-        }
+	if( add_VizShape( node, visualGroup[j], _rootToSkelPath ) == false ) { std::cout<< "Error loading VizShape" <<std::endl; return NULL; }
       }
     }
  
@@ -319,13 +399,7 @@ dynamics::BodyNodeDynamics* DartLoader::createDartNode( boost::shared_ptr<urdf::
       std::vector<boost::shared_ptr<urdf::Collision> > collisionGroup;
       collisionGroup = *(iter->second);
       for( int j = 0; j < collisionGroup.size(); ++j ) {
-        if(kinematics::Shape* shape = createShape(collisionGroup[j], _rootToSkelPath)) {
-          node->addCollisionShape(shape);
-        }
-        else {
-          std::cout << "Error loading ColShape" << std::endl;
-          return NULL;
-        }
+	if( add_ColShape( node, collisionGroup[j], _rootToSkelPath ) == false ) { std::cout<< "Error loading ColShape" <<std::endl; return NULL; }
       }
     }
     

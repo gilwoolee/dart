@@ -58,7 +58,10 @@ namespace dynamics {
         virtual ~ConstraintDynamics();
 
         void reset();
-        void computeConstraintForces();            
+        void computeConstraintForces();       
+		void evaluateConstraint();
+		void applyConstraintForces();
+		void applyConstraintForcesHand(bool _useODE);
         void addConstraint(Constraint *_constr);
         void deleteConstraint(int _index);
         void addSkeleton(SkeletonDynamics* _newSkel);
@@ -84,13 +87,14 @@ namespace dynamics {
         inline Constraint* getConstraint(int _index) const { return mConstraints[_index]; }
 
 
-    private:
+    public:
         void initialize();
         void destroy();
 
         void computeConstraintWithoutContact();
         void fillMatrices();
         bool solve();
+	bool solveHand(bool _uesODE);
         void applySolution();
 
         void updateMassMat();
@@ -123,6 +127,8 @@ namespace dynamics {
         Eigen::MatrixXd mA;
         Eigen::VectorXd mQBar;
         Eigen::VectorXd mX;
+
+		Eigen::VectorXd mQDot;
 
         std::vector<Eigen::VectorXd> mContactForces; 
         std::vector<Eigen::VectorXd> mTotalConstrForces; // solved constraint force in generalized coordinates; mTotalConstrForces[i] is the constraint force for the ith skeleton

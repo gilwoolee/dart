@@ -2,8 +2,7 @@
  * Copyright (c) 2011, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>,
- *            Tobias Kunz <tobias@gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  * Date: 05/11/2013
  *
  * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
@@ -39,9 +38,31 @@
 #ifndef COLLISION_CONLLISION_NODE_H
 #define COLLISION_CONLLISION_NODE_H
 
+#include <Eigen/Dense>
+#include <fcl/collision.h>
+
 namespace kinematics { class BodyNode; }
 
 namespace collision {
+
+class CollisionNode;
+class CollisionNodePair;
+
+/// @brief BodyNode pair
+///
+/// CollisionDetector creates all possible BodyNode pairs for collision
+/// checking.
+struct CollisionNodePair {
+    /// @brief
+    CollisionNode* collisionNode1;
+
+    /// @brief
+    CollisionNode* collisionNode2;
+
+    /// @brief Collision detector conduct collision detection if collidable is
+    /// true.
+    bool collidable;
+};
 
 /// @brief
 class CollisionNode {
@@ -54,20 +75,23 @@ public: // constructors and destructor
 
 public: // setters and getters
     /// @brief
+    void setBodyNode(kinematics::BodyNode* _bodyNode) { mBodyNode = _bodyNode; }
+
+    /// @brief
     kinematics::BodyNode* getBodyNode() const { return mBodyNode; }
 
     /// @brief
-    void setIndex(int _idx) { mIndex = _idx; }
+    void setBodyNodeID(int _id) { mBodyNodeID = _id; }
 
     /// @brief
-    int getIndex() const { return mIndex; }
+    int getBodyNodeID() const { return mBodyNodeID; }
 
 protected:
     /// @brief
     kinematics::BodyNode* mBodyNode;
 
     /// @brief
-    int mIndex;
+    int mBodyNodeID;
 
 private:
 };

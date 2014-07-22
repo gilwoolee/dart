@@ -72,15 +72,18 @@ FCLMESHCollisionNode::FCLMESHCollisionNode(kinematics::BodyNode* _bodyNode)
                 kinematics::ShapeEllipsoid* ellipsoid
                         = dynamic_cast<kinematics::ShapeEllipsoid*>(shape);
 
+		////////////////
+		//comment it out to make it the same as old version
                 if (ellipsoid->isSphere())
                 {
                     fcl::BVHModel<fcl::OBBRSS>* mesh = new fcl::BVHModel<fcl::OBBRSS>;
                     fcl::generateBVHModel<fcl::OBBRSS>(*mesh, fcl::Sphere(shape->getDim()[0]*0.5), shapeTransform, 10, 10);
                     mMeshes.push_back(mesh);
                 }
-                else {
+		////////////////
+                else
                     mMeshes.push_back(createEllipsoid<fcl::OBBRSS>(shape->getDim()[0], shape->getDim()[1], shape->getDim()[2], shapeTransform));
-                }
+
                 break;
             }
             case kinematics::Shape::P_BOX:
@@ -113,7 +116,7 @@ FCLMESHCollisionNode::FCLMESHCollisionNode(kinematics::BodyNode* _bodyNode)
 
 FCLMESHCollisionNode::~FCLMESHCollisionNode()
 {
-    for(int i = 0; i < mMeshes.size(); i++)
+    for(int i = 0; mMeshes.size(); i++)
         delete mMeshes[i];
 }
 
@@ -211,10 +214,8 @@ bool FCLMESHCollisionNode::checkCollision(
             if(markForDeletion[k])
                 continue;
             for (unsigned int l = 0; l < unfilteredContactPoints.size(); l++) {
-                if (l == k || markForDeletion[l])
+	      if (l == k)
                     continue;
-                if (markForDeletion[k])
-                    break;
                 for (int m = l + 1; m < unfilteredContactPoints.size(); m++) {
                     if (k == m)
                         continue;

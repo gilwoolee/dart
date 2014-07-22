@@ -195,6 +195,20 @@ void SkeletonDynamics::evalExternalForces(bool _useRecursive){
     }
 }
 
+void SkeletonDynamics::evalExternalForcesPartial(bool _useRecursive, int _extNodeNum, int _extDofNum){
+	mFext.setZero();
+	int nNodes = getNumNodes();
+	for (int i = nNodes-1; i > _extNodeNum-1; i--) { // recursive from child to parent
+		BodyNodeDynamics *nodei = static_cast<BodyNodeDynamics*>(getNode(i));
+		if (_useRecursive) {
+			nodei->evalExternalForcesRecursive( mFext );
+		}
+		else {
+			nodei->evalExternalForcesPartial( mFext , _extDofNum);
+		}
+	}
+}
+
 // assumptions made:
 // 1. the pose _q has already been set to the model
 // 2. first derivatives are up-to-date (i.e. consistent with _q )

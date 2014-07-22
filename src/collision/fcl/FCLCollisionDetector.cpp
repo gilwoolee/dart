@@ -2,8 +2,7 @@
  * Copyright (c) 2011, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>,
- *            Tobias Kunz <tobias@gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  * Date: 05/01/2013
  *
  * Geoorgia Tech Graphics Lab and Humanoid Robotics Lab
@@ -43,14 +42,12 @@
 #include "collision/fcl/FCLCollisionNode.h"
 #include "collision/fcl/FCLCollisionDetector.h"
 
-using namespace kinematics;
-
 namespace collision
 {
 
 FCLCollisionDetector::FCLCollisionDetector()
-    : CollisionDetector()
-{
+    : CollisionDetector(),
+      mNumMaxContacts(100) {
 }
 
 FCLCollisionDetector::~FCLCollisionDetector()
@@ -60,7 +57,11 @@ FCLCollisionDetector::~FCLCollisionDetector()
 CollisionNode* FCLCollisionDetector::createCollisionNode(
         kinematics::BodyNode* _bodyNode)
 {
-    return new FCLCollisionNode(_bodyNode);
+    CollisionNode* collisionNode = NULL;
+
+    collisionNode = new FCLCollisionNode(_bodyNode);
+
+    return collisionNode;
 }
 
 bool FCLCollisionDetector::checkCollision(bool _checkAllCollisions,
@@ -80,31 +81,33 @@ bool FCLCollisionDetector::checkCollision(bool _checkAllCollisions,
 //    request.num_max_cost_sources;
 //    request.use_approximate_cost;
 
-    for(int i = 0; i < mCollisionNodes.size(); i++)
-    for(int j = i + 1; j < mCollisionNodes.size(); j++)
-    {        
-        result.clear();
-        FCLCollisionNode* collNode1 = dynamic_cast<FCLCollisionNode*>(mCollisionNodes[i]);
-        FCLCollisionNode* collNode2 = dynamic_cast<FCLCollisionNode*>(mCollisionNodes[j]);
+    unsigned int numCollisionNodePairs = mCollisionNodePairs.size();
+    FCLCollisionNode* collNode1 = NULL;
+    FCLCollisionNode* collNode2 = NULL;
 
-        if (!isCollidable(collNode1, collNode2))
+    for (unsigned int i = 0; i < numCollisionNodePairs; ++i)
+    {
+        const CollisionNodePair& collisionNodePair = mCollisionNodePairs[i];
+
+        if (collisionNodePair.collidable == false)
             continue;
 
-        for(int k = 0; k < collNode1->getNumCollisionGeometries(); k++)
-        for(int l = 0; l < collNode2->getNumCollisionGeometries(); l++)
+        collNode1 = dynamic_cast<FCLCollisionNode*>(collisionNodePair.collisionNode1);
+        collNode2 = dynamic_cast<FCLCollisionNode*>(collisionNodePair.collisionNode2);
+
+        for(int j = 0; j < collNode1->getNumCollisionGeometries(); j++)
+        for(int k = 0; k < collNode2->getNumCollisionGeometries(); k++)
         {
-            int currContactNum = mContacts.size();
-            fcl::collide(collNode1->getCollisionGeometry(k),
-                         collNode1->getFCLTransform(k),
-                         collNode2->getCollisionGeometry(l),
-                         collNode2->getFCLTransform(l),
+            fcl::collide(collNode1->getCollisionGeometry(j),
+                         collNode1->getFCLTransform(j),
+                         collNode2->getCollisionGeometry(k),
+                         collNode2->getFCLTransform(k),
                          request, result);
 
             unsigned int numContacts = result.numContacts();
-
-            for (unsigned int m = 0; m < numContacts; ++m)
+            for (unsigned int l = 0; l < numContacts; ++l)
             {
-                const fcl::Contact& contact = result.getContact(m);
+                const fcl::Contact& contact = result.getContact(l);
 
                 Contact contactPair;
                 contactPair.point(0) = contact.pos[0];
@@ -123,33 +126,10 @@ bool FCLCollisionDetector::checkCollision(bool _checkAllCollisions,
 
                 mContacts.push_back(contactPair);
             }
-            
-            std::vector<bool> markForDeletion(numContacts, false);
-            for (int m = 0; m < numContacts; m++) {
-                for (int n = m + 1; n < numContacts; n++) {
-                    Vector3d diff = mContacts[currContactNum + m].point - mContacts[currContactNum + n].point;
-                    if (diff.dot(diff) < 1e-6) {
-                        markForDeletion[m] = true;
-                        break;
-                    }
-                }
-            }
-            for (int m = numContacts - 1; m >= 0; m--) {
-                if (markForDeletion[m])
-                    mContacts.erase(mContacts.begin() + currContactNum + m);
-            }
         }
     }
 
     return !mContacts.empty();
-}
-
-bool FCLCollisionDetector::checkCollision(CollisionNode* _node1,
-                                          CollisionNode* _node2,
-                                          bool _calculateContactPoints)
-{
-    assert(false); // function not implemented
-    return false;
 }
 
 CollisionNode* FCLCollisionDetector::findCollisionNode(

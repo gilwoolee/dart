@@ -11,9 +11,9 @@
 #include <string>
 #include <map>
 #include <boost/shared_ptr.hpp>
-#include <urdf_model/pose.h>
-#include <urdf_model/link.h>
-#include <urdf_model/color.h>
+#include <robotics/parser/urdfdom_headers/urdf_model/pose.h>
+#include <robotics/parser/urdfdom_headers/urdf_model/link.h>
+#include <robotics/parser/urdfdom_headers/urdf_model/color.h>
 
 const bool debug = false;
 
@@ -26,7 +26,6 @@ namespace simulation {
 }
 namespace kinematics {
 	class Joint;
-	class Shape;
 }
 namespace urdf {
 	class ModelInterface;
@@ -43,6 +42,11 @@ enum TypeOfDOF {
   GOLEM_FLOATING
 };
 
+// Type of root
+enum TypeOfRoot {
+	ROOT_FREE, ROOT_SANDIA
+};
+
 /**
  * @class DartLoader
  */
@@ -52,14 +56,19 @@ class DartLoader {
   DartLoader();
   ~DartLoader();
   
-  dynamics::SkeletonDynamics* parseSkeleton( std::string _urdfFile );
+  dynamics::SkeletonDynamics* parseSkeleton( std::string _urdfFile, TypeOfRoot _rootType );
+
+  dynamics::SkeletonDynamics* parseSkeleton( std::string _urdfFile);
   
   simulation::World* parseWorld( std::string _urdfFile );
   
   void parseWorldToEntityPaths( const std::string &_xml_string );
 
+  dynamics::SkeletonDynamics* modelInterfaceToSkeleton( boost::shared_ptr<urdf::ModelInterface> _model, TypeOfRoot _rootType,
+	  std::string _rootToSkelPath = "" );
+
   dynamics::SkeletonDynamics* modelInterfaceToSkeleton( boost::shared_ptr<urdf::ModelInterface> _model,
-							std::string _rootToSkelPath = "" );
+	  std::string _rootToSkelPath = "" );
   
   // Utilities
   dynamics::BodyNodeDynamics* getNode( std::string _nodeName );
@@ -76,17 +85,26 @@ class DartLoader {
 	       int _DOF_TYPE,
 	       double _x = 0, double _y = 0, double _z = 0 );
 
-  template <class VisualOrCollision>
-  kinematics::Shape* createShape(boost::shared_ptr<VisualOrCollision> _vizOrCol,
-                                 std::string  _rootToSkelPath);
-
+  bool add_VizShape( dynamics::BodyNodeDynamics* _node,
+		     boost::shared_ptr<urdf::Visual> _viz,
+		     std::string  _rootToSkelPath );
+  bool add_ColShape( dynamics::BodyNodeDynamics* _node,
+		     boost::shared_ptr<urdf::Collision> _col,
+		     std::string _rootToSkelPath );
 
   // ToDart utils
   kinematics::Joint* createDartRootJoint( boost::shared_ptr<urdf::Joint> _jt,
 					  dynamics::SkeletonDynamics* _skel ); 
   kinematics::Joint* createNewDartRootJoint( dynamics::BodyNodeDynamics* _node,
 					     dynamics::SkeletonDynamics* _skel );
-
+  kinematics::Joint* createNewFixDartRootJoint( dynamics::BodyNodeDynamics* _node,
+	  dynamics::SkeletonDynamics* _skel );
+  kinematics::Joint* createNewYawDartRootJoint( dynamics::BodyNodeDynamics* _node,
+	  dynamics::SkeletonDynamics* _skel );
+  kinematics::Joint* createNewRotationDartRootJoint( dynamics::BodyNodeDynamics* _node,
+	  dynamics::SkeletonDynamics* _skel );
+  kinematics::Joint* createSandiaRootJoint( dynamics::BodyNodeDynamics* _node,
+	  dynamics::SkeletonDynamics* _skel );
 
   kinematics::Joint* createDartJoint( boost::shared_ptr<urdf::Joint> _jt,
 				      dynamics::SkeletonDynamics* _skel );
