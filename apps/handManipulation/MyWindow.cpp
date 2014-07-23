@@ -84,7 +84,7 @@ const char * const MyWindow::mFileName = "roll_cube";
 nv::GlutUIContext ui;
 #endif
 float initPose[] = {-0.8000000119, 0, 0, 0, 0, 0, 0, -0.7428935766, 0, 0, 0, 0, 1.072659612, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.8000000119, 0, 0.200000003};
-float initObjPose[] = {0.08, 0.05, 0.43, 0.0, 0.0, 0.0};
+float initObjPose[] = {0.0, 0.0, 0.0, 0.08, 0.15, 0.43};
 
 static dart::common::Timer tIter("timeIter");
 static dart::common::Timer tInternal("timeInternal");
@@ -183,7 +183,7 @@ MyWindow::MyWindow(Skeleton* _mList, ...): Win3D()
   }
 
   // TODO(JS): Just commented out
-  //initDyn();
+  initDyn();
 }
 
 void MyWindow::initDyn()
@@ -194,6 +194,7 @@ void MyWindow::initDyn()
 
   for (unsigned int i = 0; i < mSkels.size(); i++)
   {
+    mSkels[i]->init();
     mDofs[i].resize(mSkels[i]->getNumDofs());
     mDofVels[i].resize(mSkels[i]->getNumDofs());
     mDofAccs[i].resize(mSkels[i]->getNumDofs());
@@ -203,7 +204,7 @@ void MyWindow::initDyn()
   }
 
   // initial position of the ground
-  mDofs[0][1] = -0.3;
+  mDofs[0][4] = -0.3;
 
   // initial pose for hand
   for (int i = 0; i < mSkels[1]->getNumDofs(); i++)
@@ -218,7 +219,6 @@ void MyWindow::initDyn()
 
   for (unsigned int i = 0; i < mSkels.size(); i++)
   {
-    mSkels[i]->init();
     mSkels[i]->setGravity(mGravity);
     mSkels[i]->setPositions(mDofs[i]);
     mSkels[i]->setVelocities(mDofVels[i]);
@@ -336,7 +336,8 @@ void MyWindow::initDyn()
   mSkels[0]->setMobile(false);
 
   // set self collidable
-  mSkels[1]->enableSelfCollision(true);
+  // TODO(JS): Disabled self collision
+  mSkels[1]->disableSelfCollision();
 
   // create a collision handler
   // set the number of friction basis
@@ -347,7 +348,7 @@ void MyWindow::initDyn()
   // Set friction coefficient as 1.5
   for (size_t i = 0; i < mSkels.size(); ++i)
   {
-    for (size_t j = 0; mSkels[i]->getNumBodyNodes(); ++j)
+    for (size_t j = 0; j < mSkels[i]->getNumBodyNodes(); ++j)
       mSkels[i]->getBodyNode(j)->setFrictionCoeff(1.5);
   }
 
@@ -421,7 +422,6 @@ void MyWindow::initDyn()
   updateHandPose();
 
   // 	mSkels[1]->setPose(mController->mFingerEndPose, true, true);
-
 
   mConstraintSolver->solve();
 
@@ -713,26 +713,28 @@ void MyWindow::displayTimer(int _val)
   else if (mSim)
   {
     // 		tHandIK.startTimer();
-    updateHandPose();
+    // TODO(JS): Just commented out
+    //updateHandPose();
     // 		tHandIK.stopTimer();
     for (int i = 0; i < numIter; i++)
     {
+      // TODO(JS): Just commented out
       // 			tIter.startTimer();
-      setPose();
+      //setPose();
       // 			updateHandPose();
-      updateContact();
+      //updateContact();
       // 			tInternal.startTimer();
       // evaluate all the other hand control force before evaluating object control force, and updateIntForce is inside updateConact, then comment
-      updateIntForce(); // evaluate the hand control force including object control force, the force evaluation is not inside updateContact
+      //updateIntForce(); // evaluate the hand control force including object control force, the force evaluation is not inside updateContact
       // 			tInternal.stopTimer();
       // 			tExternal.startTimer();
-      updateExtForce();
+      //updateExtForce();
       // 			tExternal.stopTimer();
       // 			tSimulation.startTimer();
       //mIntegrator.integrate(this, mTimeStep);
       step();
       // 			tSimulation.stopTimer();
-      bake();
+      //bake();
       mSimFrame++;
       // 			tIter.stopTimer();
     }
@@ -889,6 +891,8 @@ Vector3d MyWindow::objToEllipsoid(Vector3d _obj)
 void MyWindow::draw()
 {
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+  mSkels[0]->draw(mRI);
 
   if (mDrawModel)
     mSkels[2]->draw(mRI);
