@@ -97,6 +97,95 @@ static dart::common::Timer tJointLimit("timeJointLimit");
 
 double extTorque = 0.0;
 
+MyWindow::MyWindow(Skeleton* _mList, ...): Win3D()
+{
+  mBackground[0] = 1.0;
+  mBackground[1] = 1.0;
+  mBackground[2] = 1.0;
+  mBackground[3] = 1.0;
+
+  mSim = false;
+  mPlay = false;
+  mSimFrame = 0;
+  mPlayFrame = 0;
+  mShowMarkers = false;
+  mDrawOri = false;
+  mDrawIK = false;
+  mDrawModel = true;
+  mDrawTarget = false;
+  mDrawBoundEllipsoid = false;
+  mDrawContactForce = false;
+
+  liftFlag = false;
+  mAxisAngle.setZero();
+  mTargetAxisAngle.setZero();
+
+  mPersp = 30.f;
+
+  mGravity = Eigen::Vector3d(0.0, -9.81, 0.0);
+  mForce = Eigen::Vector3d::Zero();
+  mFingerNum = 5;
+  mTimeStep = 1.0/1000.0;
+  mFrictionBasis = 4;
+  mBoundEllipsoidR = Eigen::Vector3d(0.0,0.0,0.0);
+  mObjRadius = 0.032787;
+  int numEdges = 4;
+  mEdges.resize(numEdges);
+  // the order is determined by the order of pivoting, related to roll direction
+  mEdges[3] = Eigen::Vector3d(0.0,-0.02,-0.02);
+  mEdges[2] = Eigen::Vector3d(0.0,0.02,-0.02);
+  mEdges[1] = Eigen::Vector3d(0.0,0.02,0.02);
+  mEdges[0] = Eigen::Vector3d(0.0,-0.02,0.02);
+  mCorners.resize(numEdges);
+  for (int i = 0; i < numEdges; ++i)
+  {
+    mCorners[i].resize(2);
+    mCorners[i][0] = mCorners[i][1] = mEdges[i];
+    mCorners[i][0](0) = 0.02;
+    mCorners[i][1](0) = -0.02;
+  }
+  mN = 3;
+  mBackN = 0;
+  mRollNum = 0;
+  mRollBackNum = 0;
+  mRollBackIndex = 0;
+  mAngles.resize(mN);
+
+  mAngles[0] = 0.740675;
+  mAngles[1] = 0.137237;
+  mAngles[2] = -0.358023;
+
+  if (_mList) {
+    mSkels.push_back(_mList);
+    va_list ap;
+    va_start(ap, _mList);
+    while (true) {
+      dart::dynamics::Skeleton* skel = va_arg(ap, dart::dynamics::Skeleton*);
+      if(skel)
+        mSkels.push_back(skel);
+      else
+        break;
+    }
+    va_end(ap);
+  }
+
+  mDofNum = mSkels[1]->getPositions().size();
+  mActiveDofIndex = 0;
+  mObjDofNum = mSkels[2]->getPositions().size();
+  mObjActiveDofIndex = 0;
+
+  int sumNDofs = 0;
+  mIndices.push_back(sumNDofs);
+  for (unsigned int i = 0; i < mSkels.size(); i++) {
+    int nDofs = mSkels[i]->getNumDofs();
+    sumNDofs += nDofs;
+    mIndices.push_back(sumNDofs);
+  }
+
+  // TODO(JS): Just commented out
+  //initDyn();
+}
+
 void MyWindow::initDyn()
 {
   mDofs.resize(mSkels.size());
@@ -814,10 +903,10 @@ void MyWindow::draw()
         int size = mDofs[i].size();
 
         // TODO(JS):
-//        mSkels[1]->getJoint(0)->setPosition(tratrmRootTrans[mPlayFrame](0));
-//        mSkels[1]->getJoint(0)->getTransform(0)->getDof(1)->setValue(mRootTrans[mPlayFrame](1));
-//        mSkels[1]->getJoint(0)->getTransform(0)->getDof(2)->setValue(mRootTrans[mPlayFrame](2));
-//        mSkels[1]->getJoint(0)->updateStaticTransform();
+        //        mSkels[1]->getJoint(0)->setPosition(tratrmRootTrans[mPlayFrame](0));
+        //        mSkels[1]->getJoint(0)->getTransform(0)->getDof(1)->setValue(mRootTrans[mPlayFrame](1));
+        //        mSkels[1]->getJoint(0)->getTransform(0)->getDof(2)->setValue(mRootTrans[mPlayFrame](2));
+        //        mSkels[1]->getJoint(0)->updateStaticTransform();
 
         mSkels[i]->setPositions(mBakedStates[mPlayFrame].segment(start, size));
         mSkels[i]->computeForwardKinematics(true, false, false);
@@ -1158,7 +1247,7 @@ void MyWindow::click(int button, int state, int x, int y)
     if(mMouseDown && mask == GLUT_ACTIVE_SHIFT){
       mZooming = true;
     }
-    else if (mMouseDown && mask == GLUT_ACTIVE_ALT) {
+    else if (mMouseDown && mask == GLUT_ACTIVE_CTRL) {
       mRotate = true;
       mTrackBall.startBall(x,mWinHeight-y);
     }
