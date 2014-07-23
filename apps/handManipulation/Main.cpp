@@ -71,8 +71,7 @@ int main(int argc, char* argv[])
   cube->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
 
   DartLoader dl;
-  Skeleton* handSkeleton
-      = dl.parseSkeleton(DART_DATA_PATH"other/shadow_hand.urdf");
+  Skeleton* handSkeleton = dl.parseSkeleton(DART_DATA_PATH"urdf/shadow_hand.urdf");
 
   // Create window and run main loop
   MyWindow window(ground, handSkeleton, cube, NULL);
