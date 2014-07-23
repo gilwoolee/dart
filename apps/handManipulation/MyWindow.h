@@ -228,7 +228,8 @@ protected:
   int mFrictionBasis;
   Eigen::Vector3d mGravity;
   Eigen::Vector3d mForce; // user input force for object
-  std::vector<int> mContactIndices; // the length is determined by the number of contacts
+  //std::vector<int> mContactIndices; // the length is determined by the number of contacts
+  std::vector<std::string> mContactBodyNames; // the length is determined by the number of contacts
   std::vector<Eigen::VectorXd> mContactPointsBallStart; // the length is determined by the number of fingers
   std::vector<Eigen::VectorXd> mContactPointsBallEnd; // the length is determined by the number of fingers
   std::vector<Eigen::Vector3d> mTargetContactPoints; // the length is determined by the number of fingers
@@ -306,8 +307,8 @@ protected:
   Eigen::VectorXd updateForceTorqueConstraint();
   void updateContactPoint();
   Eigen::Vector3d evalFingerTipTraj(Eigen::VectorXd _start, Eigen::VectorXd _end, int _curFrame, int _totalFrame);
-  Eigen::Matrix4d evalHandTransform();
-  Eigen::Matrix4d evalHandTransformInv();
+  Eigen::Isometry3d evalHandTransform();
+  Eigen::Isometry3d evalHandTransformInv();
   Eigen::Vector3d applyHandTransform(Eigen::Vector3d _x);
   Eigen::Vector3d applyHandTransformDir(Eigen::Vector3d _v);
   Eigen::Vector3d applyHandTransformInv(Eigen::Vector3d _x);

@@ -304,7 +304,8 @@ void MyWindow::initDyn()
 
   // plan related
 
-  mController->mOriFlag = true;
+  // TODO(JS): Just commented out
+//  mController->mOriFlag = true;
   mTargetOri = Vector3d(0.0,0.0,1.0).normalized();
   mPalmObjAngle = 0.0;
 
@@ -874,55 +875,56 @@ void MyWindow::draw()
 
   if (mDrawBoundEllipsoid) {
     for (int i = 0; i < mFingerNum; ++i) {
-      if (mController->mActiveFingers[i]) {
-        Vector2d startPointB = mContactPointsBallStart[i];
-        Vector2d endPointB = mContactPointsBallEnd[i];
-        Vector2d middlePointB;
+      // TODO(JS): Just commented out
+//      if (mController->mActiveFingers[i]) {
+//        Vector2d startPointB = mContactPointsBallStart[i];
+//        Vector2d endPointB = mContactPointsBallEnd[i];
+//        Vector2d middlePointB;
 
-        Vector3d startPointC = ballToCartesian(startPointB);
-        Vector3d endPointC = ballToCartesian(endPointB);
-        Vector3d middlePointC;
+//        Vector3d startPointC = ballToCartesian(startPointB);
+//        Vector3d endPointC = ballToCartesian(endPointB);
+//        Vector3d middlePointC;
 
-        Vector3d startPointCW
-            = mSkels[2]->getBodyNode(0)->getTransform() * startPointC;
-        Vector3d endPointCW
-            = mSkels[2]->getBodyNode(0)->getTransform() * endPointC;
-        Vector3d middlePointCW;
+//        Vector3d startPointCW
+//            = mSkels[2]->getBodyNode(0)->getTransform() * startPointC;
+//        Vector3d endPointCW
+//            = mSkels[2]->getBodyNode(0)->getTransform() * endPointC;
+//        Vector3d middlePointCW;
 
-        // draw the bounding ball
-        /*
-        mRI->setPenColor(Vector3d(0.0, 0.0, 1.0));
-        mRI->pushMatrix();
-        glTranslated(mDofs[2][0], mDofs[2][1], mDofs[2][2]);
-        glScaled(mBoundEllipsoidR(0),mBoundEllipsoidR(1),mBoundEllipsoidR(2));
-        glutSolidSphere(1.0,64,64);
-        mRI->popMatrix();
-        */
+//        // draw the bounding ball
+//        /*
+//        mRI->setPenColor(Vector3d(0.0, 0.0, 1.0));
+//        mRI->pushMatrix();
+//        glTranslated(mDofs[2][0], mDofs[2][1], mDofs[2][2]);
+//        glScaled(mBoundEllipsoidR(0),mBoundEllipsoidR(1),mBoundEllipsoidR(2));
+//        glutSolidSphere(1.0,64,64);
+//        mRI->popMatrix();
+//        */
 
-        mRI->setPenColor(Vector3d(1.0, 0.0, 0.0));
-        mRI->pushMatrix();
-        glTranslated(startPointCW(0), startPointCW(1), startPointCW(2));
-        mRI->drawEllipsoid(Vector3d(0.01, 0.01, 0.01));
-        mRI->popMatrix();
+//        mRI->setPenColor(Vector3d(1.0, 0.0, 0.0));
+//        mRI->pushMatrix();
+//        glTranslated(startPointCW(0), startPointCW(1), startPointCW(2));
+//        mRI->drawEllipsoid(Vector3d(0.01, 0.01, 0.01));
+//        mRI->popMatrix();
 
-        // draw the end point
-        /*
-        mRI->setPenColor(Vector3d(1.0, 1.0, 0.0));
-        mRI->pushMatrix();
-        glTranslated(endPointCW(0), endPointCW(1), endPointCW(2));
-        mRI->drawEllipsoid(Vector3d(0.01, 0.01, 0.01));
-        mRI->popMatrix();
-        */
+//        // draw the end point
+//        /*
+//        mRI->setPenColor(Vector3d(1.0, 1.0, 0.0));
+//        mRI->pushMatrix();
+//        glTranslated(endPointCW(0), endPointCW(1), endPointCW(2));
+//        mRI->drawEllipsoid(Vector3d(0.01, 0.01, 0.01));
+//        mRI->popMatrix();
+//        */
 
-        for (int j = 1; j < 10; ++j) {
-          middlePointCW = evalFingerTipTraj(startPointB,endPointB,j,10);
-          mRI->setPenColor(Vector3d(0.0, 1.0, 0.0));
-          mRI->pushMatrix();
-          glTranslated(middlePointCW(0), middlePointCW(1), middlePointCW(2));
-          mRI->drawEllipsoid(Vector3d(0.01, 0.01, 0.01));
-          mRI->popMatrix();
-        }
-      }
+//        for (int j = 1; j < 10; ++j) {
+//          middlePointCW = evalFingerTipTraj(startPointB,endPointB,j,10);
+//          mRI->setPenColor(Vector3d(0.0, 1.0, 0.0));
+//          mRI->pushMatrix();
+//          glTranslated(middlePointCW(0), middlePointCW(1), middlePointCW(2));
+//          mRI->drawEllipsoid(Vector3d(0.01, 0.01, 0.01));
+//          mRI->popMatrix();
+//        }
+//      }
     }
   }
 
@@ -934,7 +936,8 @@ void MyWindow::draw()
     if (mSim)
     {
       VectorXd currentPose = mSkels[1]->getPositions();
-      mSkels[1]->setPositions(mController->mFingerEndPose);
+      // TODO(JS): Just commented out
+//      mSkels[1]->setPositions(mController->mFingerEndPose);
       mSkels[1]->computeForwardKinematics(true, true, false);
       mSkels[1]->draw(mRI, Vector4d(1.0, 0.0, 1.0, 1.0), false);
       mSkels[1]->setPositions(currentPose);
@@ -1049,9 +1052,11 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
                 mObjRadius);
       }
       updateHandPose();
-      mSkels[1]->setPositions(mController->mFingerEndPose);
+      // TODO(JS): Just commented out
+//      mSkels[1]->setPositions(mController->mFingerEndPose);
       mSkels[1]->computeForwardKinematics(true, false, false);
-      mDofs[1] = mController->mFingerEndPose;
+      // TODO(JS): Just commented out
+//      mDofs[1] = mController->mFingerEndPose;
       break;
     case 'o':
       mDrawOri = !mDrawOri;
@@ -1342,7 +1347,7 @@ void MyWindow::updateContact()
   //mConstraintSolver->evaluateConstraint();
   mConstraintSolver->solve();
 
-  mContactIndices.clear();
+  mContactBodyNames.clear();
   mContactPoints.clear();
   mTargetContactForces.clear();
 
@@ -1398,22 +1403,23 @@ void MyWindow::updateContact()
   }
 
   // only keep part of contacts for each finger
-  for (int i = cd->getNumContacts() - 1; i >= 0; --i)
-  {
-    for (int j = 0; j < mFingerNum; ++j)
-    {
-      if (cd->getContact(i).bodyNode1->getName() == mFingerNames[j])
-      {
-        if (contactEraseCount[j] < contactEraseTotal[j]
-            && contactEraseCount[j] < numContact[j] - contactLeastKeep[j])
-        {
-          cd->mContacts.erase(cd->mContacts.begin() + i);
-          contactEraseCount[j]++;
-          break;
-        }
-      }
-    }
-  }
+  // TODO(JS): Just commented out
+//  for (int i = cd->getNumContacts() - 1; i >= 0; --i)
+//  {
+//    for (int j = 0; j < mFingerNum; ++j)
+//    {
+//      if (cd->getContact(i).bodyNode1->getName() == mFingerNames[j])
+//      {
+//        if (contactEraseCount[j] < contactEraseTotal[j]
+//            && contactEraseCount[j] < numContact[j] - contactLeastKeep[j])
+//        {
+//          cd->mContacts.erase(cd->mContacts.begin() + i);
+//          contactEraseCount[j]++;
+//          break;
+//        }
+//      }
+//    }
+//  }
 
   for (int i = 0; i < mFingerNum; ++i) {
     numContact[i] = 0;
@@ -1425,7 +1431,8 @@ void MyWindow::updateContact()
   {
     for (int j = 0; j < mFingerNum; ++j)
     {
-      if (strcmp(mConstraintSolver->getCollisionDetector()->getContact(i).collisionNode1->getBodyNode()->getName(),mFingerNames[j].c_str()) == 0) {
+      if (cd->getContact(i).bodyNode1->getName() == mFingerNames[j])
+      {
         numContact[j]++;
         contactPointsOnHand[j].push_back(mConstraintSolver->getCollisionDetector()->getContact(i).point);
         contactNormalsOnHand[j].push_back(mConstraintSolver->getCollisionDetector()->getContact(i).normal);
@@ -1454,72 +1461,76 @@ void MyWindow::updateContact()
   double deviateAngleToLF = acos(mObjOri.dot(dirToLF)/(mObjOri.norm()*dirToLF.norm()));
 
   if (abs(deviateAngleToLF-1.57) < 0.01) {
-    for (int i = 0; i < mFingerNum; ++i) {
-      mController->mRestFingers[i] = true;
-      mController->mActiveFingers[i] = false;
-      mController->mContactFingers[i] = false;
-      mController->mInContactFingers[i] = false;
-      mController->mActiveSimFrame[i] = 0;
-    }
+    // TODO(JS): Just commented out
+//    for (int i = 0; i < mFingerNum; ++i) {
+//      mController->mRestFingers[i] = true;
+//      mController->mActiveFingers[i] = false;
+//      mController->mContactFingers[i] = false;
+//      mController->mInContactFingers[i] = false;
+//      mController->mActiveSimFrame[i] = 0;
+//    }
   }
   // set the contact finger from acitve finger
   for (int i = 0; i < mFingerNum; ++i) {
-    if (mController->mActiveSimFrame[i] >=  mController->mActiveNumFrame[i]) {
-      // find the moment the finger changes from active to contact
-      if (mController->mActiveFingers[i] == true) {
-        mController->mTrackFingers[i] = true;
-      }
-      mController->mActiveFingers[i] = false;
-      mController->mContactFingers[i] = true;
-      mController->mActiveSimFrame[i] = mController->mActiveNumFrame[i];
-      mController->mTrackSimFrame[i]++;
-    }
+    // TODO(JS): Just commented out
+//    if (mController->mActiveSimFrame[i] >=  mController->mActiveNumFrame[i]) {
+//      // find the moment the finger changes from active to contact
+//      if (mController->mActiveFingers[i] == true) {
+//        mController->mTrackFingers[i] = true;
+//      }
+//      mController->mActiveFingers[i] = false;
+//      mController->mContactFingers[i] = true;
+//      mController->mActiveSimFrame[i] = mController->mActiveNumFrame[i];
+//      mController->mTrackSimFrame[i]++;
+//    }
   }
 
   // set the in contact fingers
   for (int i = 0; i < mFingerNum; ++i) {
-    if (mController->mContactFingers[i] && numContact[i] > 0) {
-      mController->mInContactFingers[i] = true;
-      mController->mInContactFrame[i]++;
-      mController->mTrackFingers[i] = false;
-      mController->mControlFlag = true;
-      mController->mTrackSimFrame[i] = 0;
-    }
-    else if (mController->mContactFingers[i] && mController->mTrackSimFrame[i] >= mController->mTrackNumFrame[i]) {
-      mController->mTrackFingers[i] = false;
-      mController->mInContactFingers[i] = false;
-      mController->mControlFlag = true;
-      mController->mTrackSimFrame[i] = 0;
+    // TODO(JS): Just commented out
+//    if (mController->mContactFingers[i] && numContact[i] > 0) {
+//      mController->mInContactFingers[i] = true;
+//      mController->mInContactFrame[i]++;
+//      mController->mTrackFingers[i] = false;
+//      mController->mControlFlag = true;
+//      mController->mTrackSimFrame[i] = 0;
+//    }
+//    else if (mController->mContactFingers[i] && mController->mTrackSimFrame[i] >= mController->mTrackNumFrame[i]) {
+//      mController->mTrackFingers[i] = false;
+//      mController->mInContactFingers[i] = false;
+//      mController->mControlFlag = true;
+//      mController->mTrackSimFrame[i] = 0;
 
-    }
-    else {
-      mController->mInContactFingers[i] = false;
-    }
+//    }
+//    else {
+//      mController->mInContactFingers[i] = false;
+//    }
   }
 
   // update the orientation of the object
   dynamics::BodyNode* object = mSkels[2]->getBodyNode(0);
-  Matrix4d objTransformMatrix = object->getWorldTransform();
-  Matrix3d objRotationMatrix = objTransformMatrix.topLeftCorner(3,3);
+  Isometry3d objTransformMatrix = object->getTransform();
+  Matrix3d objRotationMatrix = objTransformMatrix.linear();
   mObjOri = objRotationMatrix*Vector3d(0.0,1.0,0.0);
 
   // update the orientation of the palm
   dynamics::BodyNode* wrist = mSkels[1]->getBodyNode(mPalmName.c_str());
-  Matrix4d palmTransformMatrix = wrist->getWorldTransform();
-  Matrix3d palmRotationMatrix = palmTransformMatrix.topLeftCorner(3,3);
+  Isometry3d palmTransformMatrix = wrist->getTransform();
+  Matrix3d palmRotationMatrix = palmTransformMatrix.linear();
   Vector3d orientationVector = palmRotationMatrix*Vector3d(0.0,-1.0,0.0);
 
   // update the angle between the object and the palm
   double angle = acos(orientationVector.dot(mObjOri)/(orientationVector.norm()*mObjOri.norm()));
   if (abs(angle - mPalmObjAngle) < 0.001)
   {
-    mController->mOriSimFrame++;
+    // TODO(JS): Just commented out
+//    mController->mOriSimFrame++;
 
-    if (mController->mOriSimFrame > mController->mOriNumFrame && mController->mOriFlag == true)
-    { // the relative orientation between palm and object does not change
-      mController->mOriFlag = false;
-      mController->mOriSimFrame = 0;
-    }
+//    if (mController->mOriSimFrame > mController->mOriNumFrame && mController->mOriFlag == true)
+//    { // the relative orientation between palm and object does not change
+//      mController->mOriFlag = false;
+//      mController->mOriSimFrame = 0;
+//    }
 
   }
   mPalmObjAngle = angle;
@@ -1545,15 +1556,16 @@ void MyWindow::updateContact()
   Vector3d normalVector;
   for (int i = 0; i < mFingerNum; ++i)
   {
-    if (mController->mInContactFingers[i])
-    {
-      normalVector = -mSkels[2]->getBodyNode(0)->getTransform().inverse() * mFingerContactPoints[i];
-      normalVector = normalVector.normalized();
-      normals.push_back(rotationMatrix*normalVector);
-      mContactNormals[i] = rotationMatrix*normalVector;
-      mContactPoints.push_back(mFingerContactPoints[i]);
-      mContactIndices.push_back(mFingerTipIndices[i]);
-    }
+    // TODO(JS): Just commented out
+//    if (mController->mInContactFingers[i])
+//    {
+//      normalVector = -(mSkels[2]->getBodyNode(0)->getTransform().inverse() * mFingerContactPoints[i]);
+//      normalVector = normalVector.normalized();
+//      normals.push_back(rotationMatrix*normalVector);
+//      mContactNormals[i] = rotationMatrix*normalVector;
+//      mContactPoints.push_back(mFingerContactPoints[i]);
+//      mContactBodyNames.push_back(mFingerNames[i]);
+//    }
   }
 
   // the force and torque should be based on the hand frame
@@ -1573,126 +1585,122 @@ void MyWindow::updateContact()
   // have no feedback for contact force
   int kp = 0.0;
 
+  // TODO(JS): Just commented out
   // solve the desired contact forces using approximated contact points
-  if (mContactPoints.size() > 0) {
-    ContactForceProblem prob(mContactPoints, normals, totalForce, totalTorque, objCOM);
-    snopt::SnoptSolver solver(&prob);
-    solver.solve();
+//  if (mContactPoints.size() > 0)
+//  {
+//    ContactForceProblem prob(mContactPoints, normals, totalForce, totalTorque, objCOM);
+//    snopt::SnoptSolver solver(&prob);
+//    solver.solve();
 
-    VectorXd z = solver.getState();
+//    VectorXd z = solver.getState();
 
-    for (int i = 0; i < mContactPoints.size(); ++i) {
-      for (int j = 0; j < mFingerNum; ++j) {
-        if (fingerFlag[j] && mController->mInContactFingers[j]) {
-          fingerFlag[j] = false;
-          mTargetContactForces.push_back(z.segment(i*3,3));
-          std::cout << "ID " << j << " contact force:" << std::endl << mTargetContactForces[i].transpose() << std::endl;
-          break;
-        }
-      }
-    }
-  }
-
+//    for (int i = 0; i < mContactPoints.size(); ++i) {
+//      for (int j = 0; j < mFingerNum; ++j) {
+//        if (fingerFlag[j] && mController->mInContactFingers[j]) {
+//          fingerFlag[j] = false;
+//          mTargetContactForces.push_back(z.segment(i*3,3));
+//          std::cout << "ID " << j << " contact force:" << std::endl << mTargetContactForces[i].transpose() << std::endl;
+//          break;
+//        }
+//      }
+//    }
+//  }
 }
 
 void MyWindow::updateTaskTarget()
 {
-  // update task target example
-  // state of hand
-  VectorXd state(mDofs[1].size()+mDofVels[1].size());
-  state.head(mDofs[1].size()) = mDofs[1];
-  state.tail(mDofVels[1].size()) = mDofVels[1];
+  // TODO(JS): Just commented out
+//  // update task target example
+//  // state of hand
+//  VectorXd state(mDofs[1].size()+mDofVels[1].size());
+//  state.head(mDofs[1].size()) = mDofs[1];
+//  state.tail(mDofVels[1].size()) = mDofVels[1];
 
-  // other force
-  VectorXd otherForce = VectorXd::Zero(mSkels[1]->getNumDofs());
-  otherForce = mSkels[1]->getExternalForces();
-  otherForce += mController->mGravityCompensationForce+mController->mObjControlForce+mController->mTrackForce+mController->mDampForce/*+mController->mOriForce+mController->mMaintainForce*/;
-  for (int i = 0; i < mTasks.size(); ++i) {
-    if (mTasks[i]->mTaskType == tasks::MAINTAIN) {
-      dynamic_cast<tasks::MaintainTask*>(mTasks[i])->updateTask(state,Vector3d(0.0,0.0,0.0),otherForce);
-    }
-    else if (mTasks[i]->mTaskType == tasks::ORI) {
-      dynamic_cast<tasks::TrackOriTask*>(mTasks[i])->updateTask(state,Vector3d(angleX,angleY,angleZ).normalized(),otherForce);
-    }
-    else if (mTasks[i]->mTaskType == tasks::EE) {
-      Vector3d curPos;
-      int endEffector = dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEEIndex();
-      curPos = mSkels[1]->getBodyNode(dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEEIndex())->getWorldCOM();
-      if (i == 0) {
-        curPos += dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->getEndPoint() - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[0]);
-      }
-      else if (i == 1) {
-        curPos += dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->getEndPoint() - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[1]);
-      }
-      else if (i == 2) {
-        curPos += dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->getEndPoint() - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[2]);
-      }
+//  // other force
+//  VectorXd otherForce = VectorXd::Zero(mSkels[1]->getNumDofs());
+//  otherForce = mSkels[1]->getExternalForces();
+//  otherForce += mController->mGravityCompensationForce+mController->mObjControlForce+mController->mTrackForce+mController->mDampForce/*+mController->mOriForce+mController->mMaintainForce*/;
+//  for (int i = 0; i < mTasks.size(); ++i)
+//  {
+//    if (mTasks[i]->mTaskType == tasks::MAINTAIN)
+//    {
+//      dynamic_cast<tasks::MaintainTask*>(mTasks[i])->updateTask(state,Vector3d(0.0,0.0,0.0),otherForce);
+//    }
+//    else if (mTasks[i]->mTaskType == tasks::ORI)
+//    {
+//      dynamic_cast<tasks::TrackOriTask*>(mTasks[i])->updateTask(state,Vector3d(angleX,angleY,angleZ).normalized(),otherForce);
+//    }
+//    else if (mTasks[i]->mTaskType == tasks::EE)
+//    {
+//      Vector3d curPos;
+//      int endEffector = dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEEIndex();
+//      curPos = mSkels[1]->getBodyNode(dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEEIndex())->getWorldCOM();
+//      if (i == 0)
+//        curPos += dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->getEndPoint() - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[0];
+//      else if (i == 1)
+//        curPos += dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->getEndPoint() - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[1];
+//      else if (i == 2)
+//        curPos += dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->getEndPoint() - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[2];
 
-      Vector3d curTarget;
-      if (i == 0) {
-        curTarget = dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->evalNextTarget(curPos) - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[0]);
-      }
-      else if (i == 1) {
-        curTarget = dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->evalNextTarget(curPos) - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[1]);
-      }
-      else if (i == 2) {
-        curTarget = dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->evalNextTarget(curPos) - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[2]);
-      }
+//      Vector3d curTarget;
+//      if (i == 0)
+//        curTarget = dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->evalNextTarget(curPos) - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[0];
+//      else if (i == 1)
+//        curTarget = dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->evalNextTarget(curPos) - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[1];
+//      else if (i == 2)
+//        curTarget = dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->evalNextTarget(curPos) - mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[2];
 
-      Vector3d curTargetVel;
-      curTargetVel = dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->evalNextTargetVel(curPos);
-      dynamic_cast<tasks::TrackEETask*>(mTasks[i])->setTargetVel(curTargetVel);
-      if (i == 0) {
-        dynamic_cast<tasks::TrackEETask*>(mTasks[i])->setFinalTarget(mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[0]));
-      }
-      else if (i == 1) {
-        dynamic_cast<tasks::TrackEETask*>(mTasks[i])->setFinalTarget(mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[1]));
-      }
-      else if (i == 2) {
-        dynamic_cast<tasks::TrackEETask*>(mTasks[i])->setFinalTarget(mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[2]));
-      }
+//      Vector3d curTargetVel;
+//      curTargetVel = dynamic_cast<tasks::TrackEETask*>(mTasks[i])->getEETraj()->evalNextTargetVel(curPos);
+//      dynamic_cast<tasks::TrackEETask*>(mTasks[i])->setTargetVel(curTargetVel);
+//      if (i == 0)
+//        dynamic_cast<tasks::TrackEETask*>(mTasks[i])->setFinalTarget(mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[0]);
+//      else if (i == 1)
+//        dynamic_cast<tasks::TrackEETask*>(mTasks[i])->setFinalTarget(mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[1]);
+//      else if (i == 2)
+//        dynamic_cast<tasks::TrackEETask*>(mTasks[i])->setFinalTarget(mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[2]);
 
-      // not use trajectory
-      if (i == 0) {
-        curTarget = mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[0]);
-      }
-      else if (i == 1) {
-        curTarget = mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[1]);
-      }
-      else if (i == 2) {
-        curTarget = mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[2]);
-      }
-      else if (i == 3) {
-        curTarget = mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[3]);
-      }
-      else if (i == 4) {
-        curTarget = mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[4]);
-      }
-      curTargetVel = Vector3d(0.0,0.0,0.0);
+//      // not use trajectory
+//      if (i == 0)
+//        curTarget = mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[0];
+//      else if (i == 1)
+//        curTarget = mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[1];
+//      else if (i == 2)
+//        curTarget = mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[2];
+//      else if (i == 3)
+//        curTarget = mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[3];
+//      else if (i == 4)
+//        curTarget = mSkels[2]->getBodyNode(0)->getTransform() * mTargetContactPoints[4];
+//      curTargetVel = Vector3d(0.0,0.0,0.0);
 
-      dynamic_cast<tasks::TrackEETask*>(mTasks[i])->updateTask(state,curTarget,otherForce);
-    }
-  }
-
+//      dynamic_cast<tasks::TrackEETask*>(mTasks[i])->updateTask(state,curTarget,otherForce);
+//    }
+//  }
 }
 
 void MyWindow::updateIntForce()
 {
-  mController->computeTorques(mDofs[1], mDofVels[1], mDofAccs[1], mDofs[2], mDofVels[2], mContactPoints, mTargetContactForces, mContactIndices, mTargetOri, mObjOri);
-  mSkels[1]->setInternalForces(mController->getTorques());
+  // TODO(JS): Just commented out
+//  mController->computeTorques(mDofs[1], mDofVels[1], mDofAccs[1], mDofs[2],
+//                              mDofVels[2], mContactPoints, mTargetContactForces,
+//                              mContactBodyNames, mTargetOri, mObjOri);
+//  mSkels[1]->setForces(mController->getTorques());
 }
 
 void MyWindow::updateExtForce()
 {
-  
-  // compute all the constraint force, including contact force and joint limit force
+  // compute all the constraint force, including contact force and joint limit
+  // force
   bool ODEFlag = true;
 
-  mConstraintSolver->applyConstraintForcesHand(ODEFlag);
+  // TODO(JS): Just commented out
+  //mConstraintSolver->applyConstraintForcesHand(ODEFlag);
 
   std::vector<int> numContact;
   numContact.resize(mFingerNum);
-  for (int i = 0; i < mFingerNum; ++i) {
+  for (int i = 0; i < mFingerNum; ++i)
+  {
     mContactForces[i] = Vector3d::Zero();
     numContact[i] = 0;
   }
@@ -1700,40 +1708,69 @@ void MyWindow::updateExtForce()
   // tangent relative velocity to be baked
   VectorXd bakeTanRelVel = VectorXd::Zero(mConstraintSolver->getCollisionDetector()->getNumContacts()*3);
 
-  for (int i = 0; i < mConstraintSolver->getCollisionDetector()->getNumContacts(); ++i) {
-    for (int j = 0; j < mFingerNum; ++j) {
-      if (strcmp(mConstraintSolver->getCollisionDetector()->getContact(i).collisionNode1->getBodyNode()->getName(),mFingerNames[j].c_str()) == 0) {
+  collision::CollisionDetector* cd = mConstraintSolver->getCollisionDetector();
+
+  for (int i = 0; i < cd->getNumContacts(); ++i)
+  {
+    for (int j = 0; j < mFingerNum; ++j)
+    {
+      if (cd->getContact(i).bodyNode1->getName() == mFingerNames[j])
+      {
         numContact[j]++;
-        mContactForces[j] = mContactForces[j] - mConstraintSolver->getCollisionDetector()->getContact(i).force;
+        mContactForces[j] = mContactForces[j] - cd->getContact(i).force;
         break;
       }
     }
-    Vector3d normalForce = mConstraintSolver->getCollisionDetector()->getContact(i).force.dot(mConstraintSolver->getCollisionDetector()->getContact(i).normal.normalized())*mConstraintSolver->getCollisionDetector()->getContact(i).normal.normalized();
-    Vector3d tangentForce = mConstraintSolver->getCollisionDetector()->getContact(i).force-normalForce;
 
-    MatrixXd B = mConstraintSolver->getTangentBasisMatrix(mConstraintSolver->getCollisionDetector()->getContact(i).point, mConstraintSolver->getCollisionDetector()->getContact(i).normal);
-    bakeTanRelVel.segment(i*3,3) = mConstraintSolver->mB.col(i*mFrictionBasis).dot(mConstraintSolver->mQDot)*B.col(0);
-    for (int j = 1; j < mFrictionBasis/2; ++j) {
-      bakeTanRelVel.segment(i*3,3) += mConstraintSolver->mB.col(i*mFrictionBasis+j*2).dot(mConstraintSolver->mQDot)*B.col(j*2);
-    }
+    Vector3d normalForce
+        = mConstraintSolver->getCollisionDetector()->getContact(i).force.dot(
+            mConstraintSolver->getCollisionDetector()->getContact(i).normal.normalized())
+          * mConstraintSolver->getCollisionDetector()->getContact(i).normal.normalized();
+    Vector3d tangentForce
+        = mConstraintSolver->getCollisionDetector()->getContact(i).force
+          - normalForce;
+
+    // TODO(JS): Just commented out
+//    MatrixXd B
+//        = mConstraintSolver->getTangentBasisMatrix(
+//            mConstraintSolver->getCollisionDetector()->getContact(i).point,
+//            mConstraintSolver->getCollisionDetector()->getContact(i).normal);
+//    bakeTanRelVel.segment(i * 3, 3)
+//        = mConstraintSolver->mB.col(i * mFrictionBasis).dot(
+//            mConstraintSolver->mQDot)*B.col(0);
+
+//    for (int j = 1; j < mFrictionBasis/2; ++j)
+//    {
+//      bakeTanRelVel.segment(i * 3, 3)
+//          += mConstraintSolver->mB.col(i * mFrictionBasis + j * 2).dot(
+//               mConstraintSolver->mQDot) * B.col(j * 2);
+//    }
+
     // bake the tangent relative velocity
     mBakedTanRelVels.push_back(bakeTanRelVel);
   }
 
-  mController->mConstraintForce = mConstraintSolver->getTotalConstraintForce(1);
+  // TODO(JS): Just commented out
+  //mController->mConstraintForce = mConstraintSolver->getTotalConstraintForce(1);
 }
 
 VectorXd MyWindow::updateForceTorqueConstraint()
 {
-
   // example of setting force torque constraint
   // update initial direction
-  mFirstInitDir = mSkels[2]->getBodyNode(0)->getTransform() * mFirstInitPoint)-Vector3d(mDofs[2][0],mDofs[2][1],mDofs[2][2]);
-  mSecondInitDir = mSkels[2]->getBodyNode(0)->getTransform() * mSecondInitPoint)-Vector3d(mDofs[2][0],mDofs[2][1],mDofs[2][2]);
+  mFirstInitDir = mSkels[2]->getBodyNode(0)->getTransform() * mFirstInitPoint
+                  - Vector3d(mDofs[2][0], mDofs[2][1], mDofs[2][2]);
+  mSecondInitDir = mSkels[2]->getBodyNode(0)->getTransform() * mSecondInitPoint
+                   - Vector3d(mDofs[2][0], mDofs[2][1], mDofs[2][2]);
 
-  Vector3d v = applyHandTransformInvDir(dart_math::xformHomDir(mSkels[2]->getBodyNode(0)->getWorldTransform(),static_cast<dynamics::BodyNodeDynamics*>(mSkels[2]->getBodyNode(0))->mVelBody));
+  Vector3d v
+      = applyHandTransformInvDir(
+          mSkels[2]->getBodyNode(0)->getWorldLinearVelocity());
   Vector3d p = applyHandTransformInv(mSkels[2]->getBodyNode(0)->getWorldCOM());
-  double w = applyHandTransformInvDir(dart_math::xformHomDir(mSkels[2]->getBodyNode(0)->getWorldTransform(),static_cast<dynamics::BodyNodeDynamics*>(mSkels[2]->getBodyNode(0))->mOmegaBody)).norm();
+  double w
+      = applyHandTransformInvDir(
+          mSkels[2]->getBodyNode(0)->getWorldAngularVelocity()
+        ).norm();
 
   Vector3d totalForce = Vector3d::Zero();
   Vector3d totalTorque = Vector3d::Zero();
@@ -1757,20 +1794,25 @@ void MyWindow::updateContactPoint()
   double phi = 0.0;
   double r = mObjRadius; // the radius of the approximate sphere
 
-
   theta = 2.0;
   phi = 1.2;
-  Vector3d center(mDofs[2][0],mDofs[2][1],mDofs[2][2]);
-  Vector3d position = center + Vector3d(r*cos(theta)*sin(phi),r*cos(phi),-r*sin(theta)*sin(phi));
-  Vector3d localPosition = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), position);
+  Vector3d center(mDofs[2][0], mDofs[2][1], mDofs[2][2]);
+  Vector3d position = center + Vector3d(r * cos(theta) * sin(phi),
+                                        r * cos(phi),
+                                        -r * sin(theta) * sin(phi));
+  Vector3d localPosition = mSkels[2]->getBodyNode(0)->getTransform().inverse()
+                           * position;
   Vector2d localBallPosition = cartesianToBall(localPosition, r);
   mContactPointsBallEnd[0] = localBallPosition;
   mTargetContactPoints[0] = ballToCartesian(localBallPosition, r);
 
   theta = -2.5;
   phi = 1.5;
-  position = center + Vector3d(r*cos(theta)*sin(phi),r*cos(phi),-r*sin(theta)*sin(phi));
-  localPosition = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), position);
+  position = center + Vector3d(r * cos(theta) * sin(phi),
+                               r * cos(phi),
+                               -r * sin(theta) * sin(phi));
+  localPosition = mSkels[2]->getBodyNode(0)->getTransform().inverse()
+                  * position;
   localBallPosition = cartesianToBall(localPosition, r);
   mContactPointsBallEnd[1] = localBallPosition;
   mTargetContactPoints[1] = ballToCartesian(localBallPosition, r);
@@ -1778,7 +1820,8 @@ void MyWindow::updateContactPoint()
   theta = -1.8;
   phi = 1.5;
   position = center + Vector3d(r*cos(theta)*sin(phi),r*cos(phi),-r*sin(theta)*sin(phi));
-  localPosition = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), position);
+  localPosition = mSkels[2]->getBodyNode(0)->getTransform().inverse()
+                  * position;
   localBallPosition = cartesianToBall(localPosition, r);
   mContactPointsBallEnd[2] = localBallPosition;
   mTargetContactPoints[2] = ballToCartesian(localBallPosition, r);
@@ -1786,7 +1829,8 @@ void MyWindow::updateContactPoint()
   theta = -1.0;
   phi = 1.5;
   position = center + Vector3d(r*cos(theta)*sin(phi),r*cos(phi),-r*sin(theta)*sin(phi));
-  localPosition = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), position);
+  localPosition = mSkels[2]->getBodyNode(0)->getTransform().inverse()
+                  * position;
   localBallPosition = cartesianToBall(localPosition, r);
   mContactPointsBallEnd[3] = localBallPosition;
   mTargetContactPoints[3] = ballToCartesian(localBallPosition, r);
@@ -1794,48 +1838,47 @@ void MyWindow::updateContactPoint()
   theta = 0.5;
   phi = 1.5;
   position = center + Vector3d(r*cos(theta)*sin(phi),r*cos(phi),-r*sin(theta)*sin(phi));
-  localPosition = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), position);
+  localPosition = mSkels[2]->getBodyNode(0)->getTransform().inverse()
+                  * position;
   localBallPosition = cartesianToBall(localPosition, r);
   mContactPointsBallEnd[4] = localBallPosition;
   mTargetContactPoints[4] = ballToCartesian(localBallPosition, r);
-
-
 }
 
-Matrix4d MyWindow::evalHandTransform()
+Isometry3d MyWindow::evalHandTransform()
 {
-  return mSkels[1]->getBodyNode(1)->getWorldTransform();
+  return mSkels[1]->getBodyNode(1)->getTransform();
 }
 
-Matrix4d MyWindow::evalHandTransformInv()
+Isometry3d MyWindow::evalHandTransformInv()
 {
-  return mSkels[1]->getBodyNode(1)->getWorldInvTransform();
+  return mSkels[1]->getBodyNode(1)->getTransform();
 }
 
 Vector3d MyWindow::applyHandTransform(Vector3d _x)
 {
-  return evalHandTransform().topLeftCorner(3,3)*_x + evalHandTransform().col(3).head(3);
+  return evalHandTransform() *_x;
 }
 
 Vector3d MyWindow::applyHandTransformDir(Vector3d _v)
 {
-  return evalHandTransform().topLeftCorner(3,3)*_v;
+  return evalHandTransform().linear() * _v;
 }
 
 Vector3d MyWindow::applyHandTransformInv(Vector3d _x)
 {
-  return evalHandTransformInv().topLeftCorner(3,3)*_x + evalHandTransformInv().col(3).head(3);
+  return evalHandTransformInv() * _x;
 }
 
 Vector3d MyWindow::applyHandTransformInvDir(Vector3d _v)
 {
-  return evalHandTransformInv().topLeftCorner(3,3)*_v;
+  return evalHandTransformInv().linear() * _v;
 }
 
 Vector4d MyWindow::matrixToAxisAngle(Matrix3d& _m)
 {
-  Quaterniond q = dart_math::matrixToQuat(_m);
-  Vector3d exp = dart_math::quatToExp(q);
+  Quaterniond q = Quaterniond(_m);
+  Vector3d exp = math::quatToExp(q);
   Vector4d a;
   a(3) = exp.norm();
   a.head(3) = exp.normalized();
@@ -1845,8 +1888,8 @@ Vector4d MyWindow::matrixToAxisAngle(Matrix3d& _m)
 Matrix3d MyWindow::axisAngleToMatrix(Vector4d& _v)
 {
   Vector3d exp = _v(3)*_v.head(3);
-  Quaterniond q = dart_math::expToQuat(exp);
-  Matrix3d m = dart_math::quatToMatrix(q);
+  Quaterniond q = math::expToQuat(exp);
+  Matrix3d m = Matrix3d(q);
   return m;
 }
 
@@ -1854,49 +1897,50 @@ Matrix3d MyWindow::applyAxisAngle(Vector4d& _v1, Vector4d& _v2)
 {
   Matrix3d m1 = axisAngleToMatrix(_v1);
   Matrix3d m2 = axisAngleToMatrix(_v2);
-  return m2*m1;
+
+  return m2 * m1;
 }
 
 Vector3d MyWindow::evalVelOnObj(Vector3d& _l)
 {
-  MatrixXd Jv = MatrixXd::Zero(3,6);
-  for (unsigned int i=0; i<6; i++) {
-    VectorXd Ji = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getDerivWorldTransform(i),_l);
-    Jv(0, i) = Ji(0);
-    Jv(1, i) = Ji(1);
-    Jv(2, i) = Ji(2);
-  }
-  return Jv*mDofVels[2];
+  Matrix<double, 3, 6> Jv
+      = mSkels[2]->getBodyNode(0)->getWorldLinearJacobian(_l);
+
+  return Jv * mDofVels[2];
 }
 
 bool MyWindow::forceAchievable(int _index, Vector3d _point, Vector3d _force)
 {
-  int numDepDofs = mSkels[1]->getBodyNode(_index)->getNumDependentDofs()-4;
-  MatrixXd J = MatrixXd::Zero(3, numDepDofs);
-  for(int j=4; j<numDepDofs+4; j++) {
-    J.col(j-4) = dart_math::xformHom(mSkels[1]->getBodyNode(_index)->getDerivWorldTransform(j),_point);
-  }
+  // TODO(JS): Just commented out
+//  int numDepDofs = mSkels[1]->getBodyNode(_index)->getNumDependentGenCoords()
+//                   - 4;
+//  MatrixXd J = MatrixXd::Zero(3, numDepDofs);
 
-  MatrixXd B = J*J.transpose();
-  FullPivLU<MatrixXd> lu_decompB(B);
-  if (lu_decompB.rank() < 3) {
-    return false;
-  }
+//  //J =
 
-  MatrixXd A = B.inverse()*J;
-  MatrixXd Aug = MatrixXd::Zero(3,A.cols()+1);
-  Aug.block(0,0,3,A.cols()) = A;
-  Aug.block(0,A.cols(),3,1) = _force;
+//  for (int j = 4; j < numDepDofs + 4; j++)
+//    J.col(j - 4) = dart_math::xformHom(mSkels[1]->getBodyNode(_index)->getDerivWorldTransform(j),_point);
 
-  FullPivLU<MatrixXd> lu_decompA(A);
-  FullPivLU<MatrixXd> lu_decompAug(Aug);
-  if (lu_decompA.rank() == lu_decompAug.rank()) {
-    return true;
-  }
-  else {
-    return false;
-  }
+//  MatrixXd B = J*J.transpose();
+//  FullPivLU<MatrixXd> lu_decompB(B);
 
+//  if (lu_decompB.rank() < 3)
+//    return false;
+
+//  MatrixXd A = B.inverse()*J;
+//  MatrixXd Aug = MatrixXd::Zero(3,A.cols()+1);
+
+//  Aug.block(0, 0, 3, A.cols()) = A;
+//  Aug.block(0, A.cols(), 3, 1) = _force;
+
+//  FullPivLU<MatrixXd> lu_decompA(A);
+//  FullPivLU<MatrixXd> lu_decompAug(Aug);
+
+//  if (lu_decompA.rank() == lu_decompAug.rank())
+//    return true;
+//  else
+//    return false;
+  return true;
 }
 
 void MyWindow::setHandAngle(double _angle)
@@ -1916,116 +1960,123 @@ void MyWindow::setHandAngle(double _angle)
 
 void MyWindow::setHandTrans(Vector3d _preOri, Vector3d _axis)
 {
-  VectorXd pose = mSkels[1]->getPose();
-  Vector3d curOri = pose.head(3);
-  VectorXd prePose = pose;
-  prePose.head(3) = _preOri;
-  mSkels[1]->setPose(prePose);
-  dynamics::BodyNode *wrist = mSkels[1]->getBodyNode(mPalmName.c_str());
-  Matrix4d preWorldTransformation = wrist->getWorldTransform();
-  Matrix3d preWorldRotation = preWorldTransformation.topLeftCorner(3,3);
-  Vector3d preWorldTranslation = preWorldTransformation.block(0,3,3,1);
-  mSkels[1]->setPose(pose);
-  Matrix4d curWorldTransformation = wrist->getWorldTransform();
-  Matrix3d curWorldRotation = curWorldTransformation.topLeftCorner(3,3);
-  Vector3d curWorldTranslation = preWorldRotation*_axis+preWorldTranslation-curWorldRotation*_axis;
-  mSkels[1]->getJoint(0)->getTransform(0)->getDof(0)->setValue(mSkels[1]->getJoint(0)->getTransform(0)->getDof(0)->getValue()+(curWorldTranslation(0) - preWorldTranslation(0)));
-  mSkels[1]->getJoint(0)->getTransform(0)->getDof(1)->setValue(mSkels[1]->getJoint(0)->getTransform(0)->getDof(1)->getValue()+(curWorldTranslation(1) - preWorldTranslation(1)));
-  mSkels[1]->getJoint(0)->getTransform(0)->getDof(2)->setValue(mSkels[1]->getJoint(0)->getTransform(0)->getDof(2)->getValue()+(curWorldTranslation(2) - preWorldTranslation(2)));
-  mSkels[1]->getJoint(0)->updateStaticTransform();
-  mSkels[1]->setPose(pose);
+  // TODO(JS): Just commented out
+//  VectorXd pose = mSkels[1]->getPose();
+//  Vector3d curOri = pose.head(3);
+//  VectorXd prePose = pose;
+//  prePose.head(3) = _preOri;
+//  mSkels[1]->setPose(prePose);
+//  dynamics::BodyNode *wrist = mSkels[1]->getBodyNode(mPalmName.c_str());
+//  Matrix4d preWorldTransformation = wrist->getWorldTransform();
+//  Matrix3d preWorldRotation = preWorldTransformation.topLeftCorner(3,3);
+//  Vector3d preWorldTranslation = preWorldTransformation.block(0,3,3,1);
+//  mSkels[1]->setPose(pose);
+//  Matrix4d curWorldTransformation = wrist->getWorldTransform();
+//  Matrix3d curWorldRotation = curWorldTransformation.topLeftCorner(3,3);
+//  Vector3d curWorldTranslation = preWorldRotation*_axis+preWorldTranslation-curWorldRotation*_axis;
+//  mSkels[1]->getJoint(0)->getTransform(0)->getDof(0)->setValue(mSkels[1]->getJoint(0)->getTransform(0)->getDof(0)->getValue()+(curWorldTranslation(0) - preWorldTranslation(0)));
+//  mSkels[1]->getJoint(0)->getTransform(0)->getDof(1)->setValue(mSkels[1]->getJoint(0)->getTransform(0)->getDof(1)->getValue()+(curWorldTranslation(1) - preWorldTranslation(1)));
+//  mSkels[1]->getJoint(0)->getTransform(0)->getDof(2)->setValue(mSkels[1]->getJoint(0)->getTransform(0)->getDof(2)->getValue()+(curWorldTranslation(2) - preWorldTranslation(2)));
+//  mSkels[1]->getJoint(0)->updateStaticTransform();
+//  mSkels[1]->setPose(pose);
 }
 
 int MyWindow::evalContactEdge()
 {
-  std::vector<bool> inContactEdges;
-  inContactEdges.resize(mEdges.size());
-  for (int i = 0; i < mEdges.size(); ++i) {
-    inContactEdges[i] = false;
-  }
+  // TODO(JS): Just commented out
+//  std::vector<bool> inContactEdges;
+//  inContactEdges.resize(mEdges.size());
+//  for (int i = 0; i < mEdges.size(); ++i) {
+//    inContactEdges[i] = false;
+//  }
 
-  for (int i = 0; i < mConstraintSolver->getCollisionDetector()->getNumContacts(); ++i) {
-    Vector3d contactPos = mConstraintSolver->getCollisionDetector()->getContact(i).point;
-    Vector3d contactLocalPos = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), contactPos);
-    for (int j = 0; j < mEdges.size(); ++j) {
-      if ((contactLocalPos.tail(2)-mEdges[j].tail(2)).norm() < 0.001) {
-        inContactEdges[j] = true;
-      }
-    }
-  }
+//  for (int i = 0; i < mConstraintSolver->getCollisionDetector()->getNumContacts(); ++i) {
+//    Vector3d contactPos = mConstraintSolver->getCollisionDetector()->getContact(i).point;
+//    Vector3d contactLocalPos = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), contactPos);
+//    for (int j = 0; j < mEdges.size(); ++j) {
+//      if ((contactLocalPos.tail(2)-mEdges[j].tail(2)).norm() < 0.001) {
+//        inContactEdges[j] = true;
+//      }
+//    }
+//  }
 
-  int contactEdgeIndex = -1;
-  for (int i = 0; i < mEdges.size(); ++i) {
-    if (inContactEdges[i] == true) {
-      for (int j = 0; j < mEdges.size(); ++j) {
-        if (j != i && inContactEdges[j]) { // there are more than one contact edges
-          return -1;
-        }
-      }
-      contactEdgeIndex = i;
-    }
-  }
-
-  return contactEdgeIndex;
+//  int contactEdgeIndex = -1;
+//  for (int i = 0; i < mEdges.size(); ++i) {
+//    if (inContactEdges[i] == true) {
+//      for (int j = 0; j < mEdges.size(); ++j) {
+//        if (j != i && inContactEdges[j]) { // there are more than one contact edges
+//          return -1;
+//        }
+//      }
+//      contactEdgeIndex = i;
+//    }
+//  }
+//
+//  return contactEdgeIndex;
+  return 0;
 }
 
 bool MyWindow::evalEdgeInContact(int _edgeIndex)
 {
-  for (int i = 0; i < mConstraintSolver->getCollisionDetector()->getNumContacts(); ++i) {
-    Vector3d contactPos = mConstraintSolver->getCollisionDetector()->getContact(i).point;
-    Vector3d contactLocalPos = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), contactPos);
-    if ((contactLocalPos.tail(2)-mEdges[_edgeIndex].tail(2)).norm() < 0.001) {
-      return true;
-    }
-  }
+  // TODO(JS): Just commented out
+//  for (int i = 0; i < mConstraintSolver->getCollisionDetector()->getNumContacts(); ++i) {
+//    Vector3d contactPos = mConstraintSolver->getCollisionDetector()->getContact(i).point;
+//    Vector3d contactLocalPos = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), contactPos);
+//    if ((contactLocalPos.tail(2)-mEdges[_edgeIndex].tail(2)).norm() < 0.001) {
+//      return true;
+//    }
+//  }
   return false;
 }
 
 Matrix3d MyWindow::evalObjOri()
 {
-  Vector3d oriAxisX = (mCorners[2][1]-mCorners[2][0]).normalized();
-  Vector3d oriAxisY = (mCorners[3][1]-mCorners[2][1]).normalized();
-  Vector3d oriAxisZ = oriAxisX.cross(oriAxisY);
-  Vector3d axisX = (mSkels[2]->getBodyNode(0)->getTransform() * mCorners[2][1])-mSkels[2]->getBodyNode(0)->getTransform() * mCorners[2][0])).normalized();
-  Vector3d axisY = (mSkels[2]->getBodyNode(0)->getTransform() * mCorners[3][1])-mSkels[2]->getBodyNode(0)->getTransform() * mCorners[2][1])).normalized();
-  Vector3d axisZ = axisX.cross(axisY);
-  Matrix3d oriRotMat;
-  oriRotMat.col(0) = oriAxisX;
-  oriRotMat.col(1) = oriAxisY;
-  oriRotMat.col(2) = oriAxisZ;
-  Matrix3d rotMat;
-  rotMat.col(0) = axisX;
-  rotMat.col(1) = axisY;
-  rotMat.col(2) = axisZ;
-  return rotMat*oriRotMat.inverse();
+  // TODO(JS): Just commented out
+//  Vector3d oriAxisX = (mCorners[2][1]-mCorners[2][0]).normalized();
+//  Vector3d oriAxisY = (mCorners[3][1]-mCorners[2][1]).normalized();
+//  Vector3d oriAxisZ = oriAxisX.cross(oriAxisY);
+//  Vector3d axisX = (mSkels[2]->getBodyNode(0)->getTransform() * mCorners[2][1])-mSkels[2]->getBodyNode(0)->getTransform() * mCorners[2][0])).normalized();
+//  Vector3d axisY = (mSkels[2]->getBodyNode(0)->getTransform() * mCorners[3][1])-mSkels[2]->getBodyNode(0)->getTransform() * mCorners[2][1])).normalized();
+//  Vector3d axisZ = axisX.cross(axisY);
+//  Matrix3d oriRotMat;
+//  oriRotMat.col(0) = oriAxisX;
+//  oriRotMat.col(1) = oriAxisY;
+//  oriRotMat.col(2) = oriAxisZ;
+//  Matrix3d rotMat;
+//  rotMat.col(0) = axisX;
+//  rotMat.col(1) = axisY;
+//  rotMat.col(2) = axisZ;
+//  return rotMat*oriRotMat.inverse();
 }
 
 int MyWindow::evalUpFace() 
 {
-  int highVerIndex = -1;
+  // TODO(JS): Just commented out
+//  int highVerIndex = -1;
 
-  double height = 10.0;
-  Matrix3d rotMat = evalObjOri();
-  Vector3d transVec(mDofs[2](0),mDofs[2](1),mDofs[2](2));
-  for (int i = 0; i < mCorners.size(); ++i) {
-    if (dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[i][0]+transVec)(1) < height) {
-      height = dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[i][0]+transVec)(1);
-      highVerIndex = i;
-    }
-  }
+//  double height = 10.0;
+//  Matrix3d rotMat = evalObjOri();
+//  Vector3d transVec(mDofs[2](0),mDofs[2](1),mDofs[2](2));
+//  for (int i = 0; i < mCorners.size(); ++i) {
+//    if (dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[i][0]+transVec)(1) < height) {
+//      height = dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[i][0]+transVec)(1);
+//      highVerIndex = i;
+//    }
+//  }
 
-  if (dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[(highVerIndex+1)%mCorners.size()][0]+transVec)(1) < dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[(highVerIndex-1)%mCorners.size()][0]+transVec)(1)) {
-    return ((highVerIndex+1)%mCorners.size());
-  }
-  else return highVerIndex;
+//  if (dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[(highVerIndex+1)%mCorners.size()][0]+transVec)(1) < dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[(highVerIndex-1)%mCorners.size()][0]+transVec)(1)) {
+//    return ((highVerIndex+1)%mCorners.size());
+//  }
+//  else return highVerIndex;
 }
 
 // can be implemented as get every corners global coordinate, translate to local coordinate, and sort based on the coordinates in other dimensions
 void MyWindow::evalHighCorners()
 {
   int upFaceIndex = evalUpFace();
-  mCurHighCorners[0] = dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), mSkels[2]->getBodyNode(0)->getTransform() * mCorners[(upFaceIndex-1)%mCorners.size()][0]));
-  mCurHighCorners[1] = dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), mSkels[2]->getBodyNode(0)->getTransform() * mCorners[upFaceIndex][0]));
+  // TODO(JS): Just commented out
+//  mCurHighCorners[0] = dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), mSkels[2]->getBodyNode(0)->getTransform() * mCorners[(upFaceIndex-1)%mCorners.size()][0]));
+//  mCurHighCorners[1] = dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), mSkels[2]->getBodyNode(0)->getTransform() * mCorners[upFaceIndex][0]));
 }
 
 bool MyWindow::evalCornerChange()
