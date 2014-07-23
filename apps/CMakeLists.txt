@@ -12,6 +12,7 @@ foreach(APPDIR
     hardcodedDesign
     jointConstraints
     mixedChain
+    shadowHand
     softBodies
     vehicle
     )
