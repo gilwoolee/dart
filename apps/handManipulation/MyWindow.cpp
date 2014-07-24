@@ -337,7 +337,7 @@ void MyWindow::initDyn()
 
   // set self collidable
   // TODO(JS): Disabled self collision
-  mSkels[1]->disableSelfCollision();
+  mSkels[1]->enableSelfCollision();
 
   // create a collision handler
   // set the number of friction basis
