@@ -6,6 +6,7 @@ foreach(APPDIR
     addDeleteSkels
     atlasSimbicon
     bipedStand
+    cubli
     rigidLoop
     rigidCubes
     rigidChain

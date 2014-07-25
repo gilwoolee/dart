@@ -1,0 +1,176 @@
+<?xml version="1.0" ?>
+<skel version="1.0">
+    <world name="world 1">
+        <physics>
+            <time_step>0.001</time_step>
+            <gravity>0 -9.81 0</gravity>
+            <collision_detector>dart</collision_detector>
+        </physics>
+        
+        <skeleton name="grount skeleton">
+            <body name="ground">
+                <transformation>0 -0.375 0 0 0 0</transformation>
+                <visualization_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <box>
+                            <size>2.5 0.05 2.5</size>
+                        </box>
+                    </geometry>
+                    <color>0.95 0.95 0.95</color>
+                </visualization_shape>
+                <collision_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <box>
+                            <size>2.5 0.05 2.5</size>
+                        </box>
+                    </geometry>
+                </collision_shape>                                
+            </body>
+            <joint type="weld" name="joint 1">
+                <parent>world</parent>
+                <child>ground</child>
+            </joint>
+        </skeleton>	
+        
+        <skeleton name="cubli">
+            <transformation>0 -0.225 0 0 0 0</transformation>
+            <body name="box">
+                <gravity>1</gravity>
+                <transformation>0 0 0 0 0 0</transformation>
+                <inertia>
+                    <mass>1</mass>
+                    <offset>0 0 0</offset>
+                </inertia>
+                <visualization_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <box>
+                            <size>0.1 0.1 0.1</size>
+                        </box>
+                    </geometry>
+                    <color>0.8 0.3 0.3</color>
+                </visualization_shape>
+                <collision_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <box>
+                            <size>0.1 0.1 0.1</size>
+                        </box>
+                    </geometry>
+                </collision_shape>                                
+            </body>
+            <body name="rotor_x">
+                <gravity>1</gravity>
+                <transformation>0 0 0 0 1.57 0</transformation>
+                <inertia>
+                    <mass>1</mass>
+                    <offset>0 0 0</offset>
+                </inertia>
+                <visualization_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <cylinder>
+                            <radius>0.05</radius>
+                            <height>0.01</height>
+                        </cylinder>
+                    </geometry>
+                    <color>0.8 0.3 0.3</color>
+                </visualization_shape>
+                <collision_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <cylinder>
+                            <radius>0.05</radius>
+                            <height>0.01</height>
+                        </cylinder>
+                    </geometry>
+                </collision_shape>                                
+            </body>
+            <body name="rotor_y">
+                <gravity>1</gravity>
+                <transformation>0 0 0 -1.57 0 0</transformation>
+                <inertia>
+                    <mass>1</mass>
+                    <offset>0 0 0</offset>
+                </inertia>
+                <visualization_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <cylinder>
+                            <radius>0.05</radius>
+                            <height>0.01</height>
+                        </cylinder>
+                    </geometry>
+                    <color>0.3 0.8 0.3</color>
+                </visualization_shape>
+                <collision_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <cylinder>
+                            <radius>0.05</radius>
+                            <height>0.01</height>
+                        </cylinder>
+                    </geometry>
+                </collision_shape>                                
+            </body>
+            <body name="rotor_z">
+                <gravity>1</gravity>
+                <transformation>0 0 0 0 0 0</transformation>
+                <inertia>
+                    <mass>1</mass>
+                    <offset>0 0 0</offset>
+                </inertia>
+                <visualization_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <cylinder>
+                            <radius>0.05</radius>
+                            <height>0.01</height>
+                        </cylinder>
+                    </geometry>
+                    <color>0.3 0.3 0.8</color>
+                </visualization_shape>
+                <collision_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <cylinder>
+                            <radius>0.05</radius>
+                            <height>0.01</height>
+                        </cylinder>
+                    </geometry>
+                </collision_shape>                                
+            </body>
+            
+            <joint type="free" name="joint 1">
+                <parent>world</parent>
+                <child>box</child>
+            </joint>
+            <joint type="revolute" name="joint_rotor_x">
+                <parent>box</parent>
+                <child>rotor_x</child>
+                <axis>
+                    <xyz>0 0 1</xyz>
+                </axis>
+            </joint>
+            <joint type="revolute" name="joint_rotor_y">
+                <parent>box</parent>
+                <child>rotor_y</child>
+                <axis>
+                    <xyz>0 0 1</xyz>
+                </axis>
+            </joint>
+            <joint type="revolute" name="joint_rotor_z">
+                <parent>box</parent>
+                <child>rotor_z</child>
+                <axis>
+                    <xyz>0 0 1</xyz>
+                </axis>
+            </joint>
+
+
+        </skeleton>	
+
+    </world>
+</skel>
