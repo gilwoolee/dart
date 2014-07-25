@@ -1,0 +1,117 @@
+<robot name="inertiabot3" >
+    <link name="body">
+        <inertial>
+            <!--origin rpy="0 0 0" xyz="0.0 0.0 0.034035"/-->
+            <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+            <mass value="0.2102"/>
+            <!--inertia ixx="7.89356e-005" ixy="-2.58573e-009" ixz="7.32601e-008" iyy="0.000214169" iyz="-2.34865e-008" izz="0.000149969"/-->
+            <inertia ixx="7.89356e-005" ixy="0" ixz="0" iyy="0.000214169" iyz="0" izz="0.000149969"/>
+            <!--inertia ixx="1.0e-004" ixy="0.0" ixz="0.0" iyy="2.0e-004" iyz="0.0" izz="1.0e-004"/-->
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+            <geometry name="body_visual">
+                <mesh filename="inertiabot3_description/robot_sim_body.dae" scale="0.001 0.001 0.001"/>
+                <!--box size="0.04 0.04 0.10"/-->
+            </geometry>
+            <material name="Blue"/>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0.0 0.0 0.035"/>
+            <geometry name="body_collision">
+                <box size="0.085 0.030 0.070"/>
+            </geometry>
+        </collision>
+    </link>
+    <link name="leg_A">
+        <inertial>
+            <!--origin rpy="0 0 0" xyz="-0.054388 0.0 0.0342105"/-->
+            <origin rpy="0 0 0" xyz="-0.054388 0.0 0.0"/>
+            <mass value="0.1202"/>
+            <!--inertia ixx="4.41383e-005" ixy="1.2767e-008" ixz="-9.93802e-007" iyy="0.00012073" iyz="-2.0215e-008" izz="8.95086e-005"/-->
+            <inertia ixx="4.41383e-005" ixy="0" ixz="0" iyy="0.00012073" iyz="0" izz="8.95086e-005"/>
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="-0.054388 0.0 0.0"/>
+            <geometry name="leg_A_visual">
+                <mesh filename="inertiabot3_description/robot_sim_leg.dae" scale="0.001 0.001 0.001"/>
+                <!--box size="0.03 0.03 0.10"/-->
+            </geometry>
+            <material name="Grey"/>
+        </visual>
+        <collision>
+            <!--origin rpy="0 0 0" xyz="-0.111 0.000 0.035"/-->
+            <origin rpy="0 0 0" xyz="-0.054388 0.000 0.035"/>
+            <geometry name="leg_A_collision">
+                <box size="0.085 0.030 0.070"/>
+            </geometry>
+        </collision>
+    </link>
+    <link name="leg_B">
+        <inertial>
+            <!--origin rpy="0 0 0" xyz="0.054388 0.0 0.0342105"/-->
+            <origin rpy="0 0 0" xyz="0.054388 0.0 0.0"/>
+            <mass value="0.1202"/>
+            <!--inertia ixx="4.41383e-005" ixy="1.2767e-008" ixz="9.93802e-007" iyy="0.00012073" iyz="2.0215e-008" izz="8.95086e-005"/-->
+            <inertia ixx="4.41383e-005" ixy="0" ixz="0" iyy="0.00012073" iyz="0" izz="8.95086e-005"/>
+        </inertial>
+        <visual>
+            <origin rpy="0 0 3.14159265359" xyz="0.054388 0.0 0.0"/>
+            <geometry name="leg_B_visual">
+                <mesh filename="inertiabot3_description/robot_sim_leg.dae" scale="0.001 0.001 0.001"/>
+                <!--box size="0.03 0.03 0.10"/-->
+            </geometry>
+            <material name="Grey"/>
+        </visual>
+        <collision>
+            <!--origin rpy="0 0 0" xyz="0.111 0.000 0.035"/-->
+            <origin rpy="0 0 0" xyz="0.054388 0.000 0.035"/>
+            <geometry name="leg_B_collision">
+                <box size="0.085 0.030 0.070"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="HipA" type="revolute">
+        <parent link="body"/>
+        <child link="leg_A"/>
+        <origin rpy="0.0 0.0 0.0" xyz="-0.056 0.0 0.0"/>
+        <axis xyz="0 0 1"/>
+        <!--Large joint limit-->
+        <limit effort="10" lower="-1.57079632679" upper="1.57079632679" velocity="1.0"/>
+        <!--Small joint limit-->
+        <!--limit effort="10" lower="0" upper="1.57079632679" velocity="1.0"/-->
+        <dynamics damping="10.5"/>
+    </joint>
+    <joint name="HipB" type="revolute">
+        <parent link="body"/>
+        <child link="leg_B"/>
+        <origin rpy="0.0 0.0 0.0" xyz="0.056 0.0 0.0"/>
+        <axis xyz="0 0 1"/>
+        <!--Large joint limit-->
+        <limit effort="10" lower="-1.57079632679" upper="1.57079632679" velocity="1.0"/>
+        <!--Small joint limit-->
+        <!--limit effort="10" lower="-1.57079632679" upper="0" velocity="1.0"/-->
+        <dynamics damping="10.5"/>
+    </joint>
+    
+    
+    <material name="Blue">
+        <color rgba="0.0 0.0 0.8 1.0"/>
+    </material>
+    <material name="Green">
+        <color rgba="0.0 0.8 0.0 1.0"/>
+    </material>
+    <material name="Grey">
+        <color rgba="0.2 0.2 0.2 1.0"/>
+    </material>
+    <material name="LightGrey">
+        <color rgba="0.6 0.6 0.6 1.0"/>
+    </material>
+    <material name="Red">
+        <color rgba="0.8 0.0 0.0 1.0"/>
+    </material>
+    <material name="White">
+        <color rgba="1.0 1.0 1.0 1.0"/>
+    </material>
+</robot>
