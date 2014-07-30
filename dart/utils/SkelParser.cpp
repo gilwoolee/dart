@@ -1079,6 +1079,15 @@ dynamics::PrismaticJoint* SkelParser::readPrismaticJoint(
       newPrismaticJoint->setDampingCoefficient(0, damping);
     }
 
+    // stiffness
+    if (hasElement(axisElement, "stiffness")) {
+      double stiffness = getValueDouble(axisElement, "stiffness");
+      newPrismaticJoint->setSpringStiffness(0, stiffness);
+      std::cout << "stiffness: " << stiffness << std::endl;
+      std::cout << "newPrismaticJoint->getSpringStiffness(0): " << newPrismaticJoint->getSpringStiffness(0) << std::endl;
+
+    }
+
     // limit
     if (hasElement(axisElement, "limit")) {
       tinyxml2::XMLElement* limitElement
