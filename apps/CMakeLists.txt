@@ -34,6 +34,7 @@ foreach(APPDIR
     softOpenChain
     softSingleBodyTest
     softSinglePendulumTest
+    springDamper
     vehicle
     #viewer
     #inverseDyn
