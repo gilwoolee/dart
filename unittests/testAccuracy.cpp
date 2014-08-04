@@ -53,7 +53,27 @@
 using namespace Eigen;
 
 using namespace dart;
+using namespace math;
 using namespace dynamics;
+
+//==============================================================================
+void setPosition(Skeleton* _skel, const Vector3d& _pos);
+void setLinearVelocity(Skeleton* _skel, const Vector3d& _linVel);
+void setAngularVelocity(Skeleton* _skel, const Vector3d& _angVel);
+
+//==============================================================================
+void setPosition(Skeleton* _skel, const Vector3d& _pos)
+{
+  // Assume that the root joint is FreeJoint
+  FreeJoint* freeJoint =
+      dynamic_cast<FreeJoint*>(_skel->getBodyNode(0)->getParentJoint());
+  assert(freeJoint);
+
+  const Vector6d& S = freeJoint->getPositions();
+  Isometry3d T = expMap(S);
+  T.translation() = _pos;
+  freeJoint->setPositions(logMap(T));
+}
 
 //==============================================================================
 class AccuracyTest : public ::testing::Test
@@ -102,8 +122,12 @@ void AccuracyTest::Boxes(double _dt,
   BodyNode* box = new BodyNode();
   BoxShape* boxVizShape = new BoxShape(Vector3d(dx, dy, dz));
   BoxShape* boxColShape = new BoxShape(Vector3d(dx, dy, dz));
+  FreeJoint* boxJoint = new FreeJoint();
   box->addVisualizationShape(boxVizShape);
   box->addCollisionShape(boxColShape);
+  box->setParentJoint(boxJoint);
+  box->setMomentOfInertia(Ixx, Iyy, Izz);
+  box->setMass(mass);
   boxSkel->addBodyNode(box);
   world->addSkeleton(boxSkel);
 
@@ -135,22 +159,75 @@ void AccuracyTest::Boxes(double _dt,
   for (int i = 0; i < _boxCount; ++i)
   {
     Skeleton* skel = world->getSkeleton(i);
+    BodyNode* bodyNode = skel->getBodyNode(0);
 
     // give models unique names
     skel->setName("model");
 
     // give models unique positions
-    msgs::Set(msgModel.mutable_pose()->mutable_position(),
-              math::Vector3(dz*2*i, 0.0, 0.0));
+    setPosition(skel, Vector3d(dz*2*i, 0.0, 0.0));
 
     // Set initial conditions
-    link->SetLinearVel(v0);
-    link->SetAngularVel(w0);
+
+    skel->setVelocity(0, w0[0]);
+    skel->setVelocity(1, w0[1]);
+    skel->setVelocity(2, w0[2]);
+
+    skel->setVelocity(3, v0[0]);
+    skel->setVelocity(4, v0[1]);
+    skel->setVelocity(5, v0[2]);
+
+    skel->computeForwardKinematics(true, true, false);
+
+    Vector3d linVel = bodyNode->getWorldLinearVelocity();
+    Vector3d angVel = bodyNode->getWorldAngularVelocity();
+
+    double mag = linVel.norm();
+
+    ASSERT_EQ(linVel, v0);
+    ASSERT_EQ(angVel, w0);
+
+//    ASSERT_EQ(v0, bodyNode->GetWorldCoGLinearVel());
+//    ASSERT_EQ(w0, bodyNode->GetWorldAngularVel());
+//    ASSERT_EQ(I0, bodyNode->GetInertial()->GetMOI());
+//    ASSERT_NEAR(link->GetWorldEnergy(), E0, 1e-6);
   }
-  ASSERT_EQ(v0, link->GetWorldCoGLinearVel());
-  ASSERT_EQ(w0, link->GetWorldAngularVel());
-  ASSERT_EQ(I0, link->GetInertial()->GetMOI());
-  ASSERT_NEAR(link->GetWorldEnergy(), E0, 1e-6);
+
+  const double simDuration = 10.0;
+  const double t0 = 0.0;
+  // initial linear position in global frame
+  Vector3d p0 = box->getTransform().translation();
+  int steps = ceil(simDuration / _dt);
+
+  for (int i = 0; i < steps; ++i)
+  {
+    world->step();
+
+    // current time
+    double t = world->getTime() - t0;
+
+    // linear velocity error
+    Vector3d v = box->getWorldLinearVelocity();
+    Vector3d linVelErr = v - (v0 + g*t);
+//    linearVelocityError.InsertData(v - (v0 + g*t));
+//    std::cout << "linVelErr: " << linVelErr.transpose() << std::endl;
+
+    double mag2 = v.norm();
+    double mag3 = box->getBodyVelocity().tail<3>().norm();
+
+    // linear position error
+    Vector3d p = box->getTransform().translation();
+    Vector3d posErr = p - (p0 + v0 * t + 0.5*g*t*t);
+//    linearPositionError.InsertData(p - (p0 + v0 * t + 0.5*g*t*t));
+    std::cout << "posErr: " << posErr.transpose() << std::endl;
+
+    // angular momentum error
+//    Vector3d H = link->GetWorldInertiaMatrix()*link->GetWorldAngularVel();
+//    angularMomentumError.InsertData((H - H0) / H0mag);
+
+    // energy error
+//    energyError.InsertData((link->GetWorldEnergy() - E0) / E0);
+  }
 
   delete world;
 }
