@@ -1300,6 +1300,75 @@ TEST(MATH, PerformanceComparisonOfAdTJac)
 }
 
 //==============================================================================
+Isometry3d expMap2(const Eigen::Vector6d& _S)
+{
+  Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
+
+  double theta = _S.head<3>().norm();
+  Eigen::Vector3d w = _S.head<3>() / theta;
+  Eigen::Matrix3d skew = math::makeSkewSymmetric(w.normalized());
+
+  T.linear() = Eigen::Matrix3d::Identity()
+               + std::sin(theta) * skew
+               + (1.0 - std::cos(theta)) * skew * skew;
+
+  return T;
+}
+
+//==============================================================================
+TEST(MATH, SE3AccuracyTest)
+{
+  double dt0_001 = 0.001;
+  double dt0_01 = 0.01;
+  double dt0_1 = 0.1;
+  double dt1_0 = 1.0;
+
+  double totalT = 10.0;
+
+  double dt = 0.00001;
+  size_t numFrame = 100000;
+
+  Eigen::Vector6d se3Random = Eigen::Vector6d::Zero();
+  se3Random.head<3>() = Eigen::Vector3d::Random();
+
+  Eigen::Vector6d se3RotX;
+  Eigen::Vector6d se3RotY;
+  Eigen::Vector6d se3RotZ;
+
+  Eigen::Vector6d se3TranX;
+  Eigen::Vector6d se3TranY;
+  Eigen::Vector6d se3TranZ;
+
+  se3RotX << 1.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+  se3RotY << 0.0, 1.0, 0.0, 0.0, 0.0, 0.0;
+  se3RotZ << 0.0, 0.0, 1.0, 0.0, 0.0, 0.0;
+
+  se3TranX << 0.0, 0.0, 0.0, 1.0, 0.0, 0.0;
+  se3TranY << 0.0, 0.0, 0.0, 0.0, 1.0, 0.0;
+  se3TranZ << 0.0, 0.0, 0.0, 0.0, 0.0, 1.0;
+
+  Eigen::Isometry3d T1 = Eigen::Isometry3d::Identity();
+  Eigen::Isometry3d T2 = Eigen::Isometry3d::Identity();
+  Eigen::Isometry3d T3 = Eigen::Isometry3d::Identity();
+  Eigen::Isometry3d T4 = Eigen::Isometry3d::Identity();
+  Eigen::Isometry3d T5 = Eigen::Isometry3d::Identity();
+
+  std::cout << "T1: " << std::endl << T1.matrix() << std::endl;
+  std::cout << "T2: " << std::endl << T2.matrix() << std::endl;
+
+  for (size_t i = 0; i < numFrame; ++i)
+  {
+    T1 = T1 * math::expMap(DART_2PI * se3Random * dt);
+    T2 = T2 * expMap2(DART_2PI * se3Random * dt);
+    T3 = T3 * Eigen::AngleAxisd(DART_2PI * dt, se3Random.head<3>());
+  }
+
+  std::cout << "T1: " << std::endl << T1.matrix() << std::endl;
+  std::cout << "T2: " << std::endl << T2.matrix() << std::endl;
+  std::cout << "T3: " << std::endl << T3.matrix() << std::endl;
+}
+
+//==============================================================================
 int main(int argc, char* argv[])
 {
 	::testing::InitGoogleTest(&argc, argv);
