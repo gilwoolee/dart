@@ -1014,6 +1014,14 @@ void BodyNode::updateBiasForce(const Eigen::Vector3d& _gravity,
   // Set bias force
   mBiasForce = -math::dad(mV, mI * mV) - mFext - mFgravity;
 
+  Eigen::Vector6d mImV = mI * mV;
+
+  Eigen::Vector3d tmp = mV.tail<3>().cross(mImV.tail<3>());
+
+  Eigen::Vector3d w = mV.head<3>();
+
+  Eigen::Vector3d Iw = (mI * mV).head<3>();
+
   // Verifycation
   assert(!math::isNan(mBiasForce));
 

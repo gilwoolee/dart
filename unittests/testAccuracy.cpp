@@ -56,6 +56,93 @@ using namespace dart;
 using namespace math;
 using namespace dynamics;
 
+Eigen::Isometry3d integrate(Eigen::Vector6d& _V, double _dt)
+{
+  Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
+
+  T.translation() = _dt * _V.tail<3>();
+  T.linear()      = math::expMapRot(_dt * _V.head<3>());
+
+  return T;
+}
+
+Isometry3d expMap2(const Eigen::Vector6d& _S)
+{
+  Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
+
+  double theta = _S.head<3>().norm();
+  Eigen::Vector3d w = _S.head<3>() / theta;
+  Eigen::Matrix3d skew = math::makeSkewSymmetric(w.normalized());
+
+  T.linear() = Eigen::Matrix3d::Identity()
+               + std::sin(theta) * skew
+               + (1.0 - std::cos(theta)) * skew * skew;
+
+  return T;
+}
+
+class DiscreteBodyNode
+{
+public:
+  DiscreteBodyNode()
+  {
+    mG = Eigen::Matrix6d::Identity();
+    mW = Eigen::Isometry3d::Identity();
+    mV << 1.5e-1, 0.0, 0.0, 0.1, 0.4, 0.9;
+//    mV << 0.0, 0.0, 0.0, 0.1, 0.4, 0.9;
+    mA.setZero();
+    mTimeStep = 0.001;
+  }
+
+  virtual ~DiscreteBodyNode() {}
+
+  void updateVelocity()
+  {
+    Eigen::Vector3d pWorldOld = mW.translation();
+
+//    mV = mG.inverse() * math::dAdT(expMap2(/*mTimeStep * */mV), mG * mV);
+    mV = mG.inverse() * math::dAdT(integrate(mV, 0.001), mG * mV);
+    mW = mW * integrate(mV, 0.001);
+
+    Eigen::Vector3d vWorld = mW.linear() * mV.tail<3>();
+
+    Eigen::Vector3d pWorld = mW.translation();
+    Eigen::Vector3d pWorld2 = mW.linear().inverse() * mW.translation();
+    int a = 10;
+  }
+
+  void updateVelocity2()
+  {
+    Eigen::Vector3d pWorldOld = mW.translation();
+
+    mW = mW * integrate(mV, 0.001);
+//    mV = mG.inverse() * math::dAdT(expMap2(/*mTimeStep * */mV), mG * mV);
+    //mV = mG.inverse() * math::dAdT(integrate(mV, 0.001), mG * mV);
+
+    mV = mV + 0.001 * mG.inverse() * math::dad(mV, mG * mV);
+
+    Eigen::Vector3d vWorld = mW.linear() * mV.tail<3>();
+
+    Eigen::Vector3d pWorld = mW.translation();
+    Eigen::Vector3d pWorld2 = mW.linear().inverse() * mW.translation();
+    int a = 10;
+  }
+
+  Eigen::Matrix6d mG;
+
+  Eigen::Isometry3d mW;
+
+  Eigen::Vector6d mV;
+
+  Eigen::Vector6d mA;
+
+  double mTimeStep;
+
+protected:
+
+private:
+};
+
 //==============================================================================
 void setPosition(Skeleton* _skel, const Vector3d& _pos);
 void setLinearVelocity(Skeleton* _skel, const Vector3d& _linVel);
@@ -181,6 +268,7 @@ void AccuracyTest::Boxes(double _dt,
 
     Vector3d linVel = bodyNode->getWorldLinearVelocity();
     Vector3d angVel = bodyNode->getWorldAngularVelocity();
+    Vector3d wBody = box->getBodyAngularVelocity();
 
     double mag = linVel.norm();
 
@@ -199,15 +287,20 @@ void AccuracyTest::Boxes(double _dt,
   Vector3d p0 = box->getTransform().translation();
   int steps = ceil(simDuration / _dt);
 
+  DiscreteBodyNode dbody;
+
   for (int i = 0; i < steps; ++i)
   {
     world->step();
+    dbody.updateVelocity();
 
     // current time
     double t = world->getTime() - t0;
 
     // linear velocity error
     Vector3d v = box->getWorldLinearVelocity();
+    Vector3d wBody = box->getBodyAngularVelocity();
+    Vector3d wWorld = box->getWorldAngularVelocity();
     Vector3d linVelErr = v - (v0 + g*t);
 //    linearVelocityError.InsertData(v - (v0 + g*t));
 //    std::cout << "linVelErr: " << linVelErr.transpose() << std::endl;
@@ -217,9 +310,13 @@ void AccuracyTest::Boxes(double _dt,
 
     // linear position error
     Vector3d p = box->getTransform().translation();
+    Vector3d p2 = dbody.mW.translation();
+    Vector3d v2World = dbody.mV.tail<3>();
     Vector3d posErr = p - (p0 + v0 * t + 0.5*g*t*t);
+    Vector3d posErr2 = p2 - (p0 + v0 * t + 0.5*g*t*t);
 //    linearPositionError.InsertData(p - (p0 + v0 * t + 0.5*g*t*t));
     std::cout << "posErr: " << posErr.transpose() << std::endl;
+//    std::cout << "posErr2: " << posErr2.transpose() << std::endl;
 
     // angular momentum error
 //    Vector3d H = link->GetWorldInertiaMatrix()*link->GetWorldAngularVel();
