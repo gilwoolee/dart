@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
   window.evalN();
   window.evalGeometry();
   window.evalInertia();
-  window.setInitVel(Eigen::Vector3d(0.0,0.0,0.0));
+  window.setInitVel(Eigen::Vector3d::Zero());
   window.evalAngles();
 
   VectorXd initPose = myWorld->getSkeleton(0)->getPositions();

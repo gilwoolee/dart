@@ -52,20 +52,35 @@ using namespace dart;
 using namespace dynamics;
 
 //==============================================================================
+MyWindow::MyWindow(): SimWindow()
+{
+  mForce = Eigen::Vector3d::Zero();
+  mRollNum = 0;
+}
+
+//==============================================================================
+MyWindow::~MyWindow()
+{
+}
+
+//==============================================================================
 void MyWindow::timeStepping()
 {
   mWorld->step();
 
   int contactEdgeIndex = evalContactEdge();
-  if (contactEdgeIndex == mRollNum%mEdges.size())
+  if (contactEdgeIndex == mRollNum % mEdges.size())
   {
     // (Original Code) Eigen::Vector3d contactPos = mWorld->getSkeleton(1)->getBodyNode(0)->evalWorldPos(mEdges[contactEdgeIndex]); // contact edge position in world coordinate
-    Eigen::Vector3d contactPos = mWorld->getSkeleton(1)->getBodyNode(0)->getTransform() * mEdges[contactEdgeIndex]; // contact edge position in world coordinate
+
+    BodyNode* bodyNode = mWorld->getSkeleton(1)->getBodyNode(0);
+    Isometry3d T = bodyNode->getTransform();
+
+    // contact edge position in world coordinate
+    Vector3d contactPos = T * mEdges[contactEdgeIndex];
 
     //
-    Vector3d contactLocalPos
-        = mWorld->getSkeleton(0)->getBodyNode(0)->getTransform().inverse()
-          * contactPos;
+    Vector3d contactLocalPos = T.inverse() * contactPos;
 
     //
     if (mWorld->getSkeleton(1)->getWorldCOM()(0)-contactPos(0) < -0.0)
@@ -73,20 +88,19 @@ void MyWindow::timeStepping()
       //
       if (mRollNum < mN - 1)
       {
-        //
-        Eigen::Vector3d liftEdge
-            = mWorld->getSkeleton(1)->getBodyNode(0)->getTransform()
-              * mEdges[(mRollNum+mEdges.size()-1) % mEdges.size()];
+        size_t index = 0;
 
         //
-        Eigen::Vector3d dropEdge
-            = mWorld->getSkeleton(1)->getBodyNode(0)->getTransform()
-              * mEdges[(mRollNum+mEdges.size()+1) % mEdges.size()];
+        index = (mRollNum + mEdges.size() - 1) % mEdges.size();
+        Eigen::Vector3d liftEdge = T * mEdges[index];
 
         //
-        Eigen::Vector3d contactEdge
-            = mWorld->getSkeleton(1)->getBodyNode(0)->getTransform()
-              * mEdges[(mRollNum)%mEdges.size()];
+        index = (mRollNum + mEdges.size() + 1) % mEdges.size();
+        Eigen::Vector3d dropEdge = T * mEdges[index];
+
+        //
+        index = (mRollNum) % mEdges.size();
+        Eigen::Vector3d contactEdge = T * mEdges[index];
 
         double liftAngle
             = atan((liftEdge(1)-contactEdge(1))/(liftEdge(0)-contactEdge(0)));
@@ -208,50 +222,59 @@ void MyWindow::evalN()
 //==============================================================================
 void MyWindow::evalGeometry()
 {
-  int numEdges = 4;
-  mEdges.resize(numEdges);
   // the order is determined by the order of pivoting
+  size_t numEdges = 4;
+  mEdges.resize(numEdges);
 
-  mEdges[0] = Eigen::Vector3d(-0.02,-0.02,0.0);
-  mEdges[1] = Eigen::Vector3d(-0.02,0.02,0.0);
-  mEdges[2] = Eigen::Vector3d(0.02,0.02,0.0);
-  mEdges[3] = Eigen::Vector3d(0.02,-0.02,0.0);
+  mEdges[0] = Vector3d(-0.02, -0.02, 0.0);
+  mEdges[1] = Vector3d(-0.02,  0.02, 0.0);
+  mEdges[2] = Vector3d( 0.02,  0.02, 0.0);
+  mEdges[3] = Vector3d( 0.02, -0.02, 0.0);
 
-  mCOM = Eigen::Vector3d(0.0,0.0,0.0);
+  mCOM = Vector3d(0.0, 0.0, 0.0);
 
   // can define the faces, and calculate the alpha and phi
   mAlphas.resize(numEdges);
   mPhis.resize(numEdges);
-
-  for (int i = 0; i < numEdges; ++i)
-    mAlphas[i] = mPhis[i] = 0.785;
-
   mRs.resize(numEdges);
-  for (int i = 0; i < numEdges; ++i)
-    mRs[i] = (mEdges[i]-mCOM).norm();
+
+  // Compute the angle between COM and pivoting edge with the previous face, and
+  // the angle between COM and pivoting edge with the next face
+  for (size_t i = 0; i < numEdges; ++i)
+    mAlphas[i] = mPhis[i] = DART_PI / 4.0;
+
+  // Compute distance between the pivoting egde and the COM
+  for (size_t i = 0; i < numEdges; ++i)
+    mRs[i] = (mEdges[i] - mCOM).norm();
 }
 
 //==============================================================================
 void MyWindow::evalInertia()
 {
-  int numEdges = mEdges.size();
+  size_t numEdges = mEdges.size();
   mIs.resize(numEdges);
 
-  //compute local inertia
-  double numerator = 0.0;
-  double denominator = 0.0;
-  for (int i = 0; i < mEdges.size()-1; ++i)
-  {
-    denominator = denominator + (mEdges[i+1].cross(mEdges[i])).norm();
-    numerator = numerator + (mEdges[i+1].cross(mEdges[i])).norm()*(mEdges[i+1].dot(mEdges[i+1])+mEdges[i+1].dot(mEdges[i])+mEdges[i].dot(mEdges[i]));
-  }
+  //---- compute local inertia
+//  double numerator   = 0.0;
+//  double denominator = 0.0;
 
-  //
-  double I = mWorld->getSkeleton(1)->getBodyNode(0)->getMass()
-             * numerator / denominator / 6.0;
+//  for (size_t i = 0; i < mEdges.size()-1; ++i)
+//  {
+//    Vector3d p = mEdges[i + 1].cross(mEdges[i]);
+
+//    double p1 = mEdges[i + 1].dot(mEdges[i + 1]);
+//    double p2 = mEdges[i + 1].dot(mEdges[i    ]);
+//    double p3 = mEdges[i    ].dot(mEdges[i    ]);
+
+//    denominator = denominator + p.norm();
+//    numerator   = numerator   + p.norm() * (p1 + p2 + p3);
+//  }
+
+//  double I = mWorld->getSkeleton(1)->getBodyNode(0)->getMass()
+//             * numerator / denominator / 6.0;
 
   // the order is determined by the order of pivoting
-  for (int i = 0; i < numEdges; ++i)
+  for (size_t i = 0; i < numEdges; ++i)
   {
     //
     double Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
@@ -271,9 +294,10 @@ void MyWindow::evalInertia()
     I(0, 2) = I(2, 0) = Ixz;
     I(1, 2) = I(2, 1) = Iyz;
 
-    mIs[i] = I - mWorld->getSkeleton(1)->getBodyNode(0)->getMass()
-                 * dart::math::makeSkewSymmetric(mCOM-mEdges[i])
-                 * dart::math::makeSkewSymmetric(mCOM-mEdges[i]);
+    const double& mass = mWorld->getSkeleton(1)->getBodyNode(0)->getMass();
+    const Eigen::Matrix3d& skew = math::makeSkewSymmetric(mCOM - mEdges[i]);
+
+    mIs[i] = I - mass * skew * skew;
   }
 }
 
@@ -283,50 +307,66 @@ void MyWindow::evalAngles()
   mAngles.resize(mN);
   mStartVels.resize(mN);
   mEndVels.resize(mN);
+
   mStartVels[0] = mInitVel.norm();
-  // rolling on plane
-  double p = 0.1;
+
+  //---- rolling on plane
+
+  // Empirical coefficient of kinetic energy dissipation due to collision
+  // We used 0.5 in the paper but use 0.1 here...
+  // JS: Is this because of inelastic collision?
+  double eps = 0.1;
+
   // rolling on hand
   //mStartVels[0] = 0.05;
   //double p = 0.5;
+
   for (int i = 0; i < mN; ++i)
   {
     // current geometry index
-    int curIndex = i%mEdges.size();
+    int curIndex = i % mEdges.size();
 
     // next geometry index
-    int nextIndex = (i+1)%mEdges.size();
+    int nextIndex = (i + 1) % mEdges.size();
 
     //
     double m = mWorld->getSkeleton(1)->getBodyNode(0)->getMass();
 
-    //
+    // Gravity of y-axis component (planar motion)
     double g = abs(mWorld->getGravity()(1));
 
-    // calculate the minimum theta to roll
-    double KEL = 0.5*m*mStartVels[i]*mStartVels[i]; // linear kinetic energy
-    double KER = 0.5*mIs[curIndex](2,2)*mStartVels[i]*mStartVels[i]/(mRs[curIndex]*mRs[curIndex]); // rotational kinetic energy
+    //---- calculate the minimum theta to roll
+
+    // linear kinetic energy
+    double linKe = 0.5 * m * mStartVels[i] * mStartVels[i];
+
+    // rotational kinetic energy
+    double rotKe = 0.5
+                 * mIs[curIndex](2, 2)
+                 * mStartVels[i]
+                 * mStartVels[i]
+                 / (mRs[curIndex] * mRs[curIndex]);
 
     // the initial angle
     if (i == 0)
     {
-      mAngles[i] = asin(1-(KEL+KER)/(m*g*mRs[curIndex]))-mAlphas[curIndex];
+      mAngles[i] = asin(1 - (linKe + rotKe) / (m * g * mRs[curIndex]))
+                   - mAlphas[curIndex];
       mAngles[i] = mAngles[i] + 0.1;
     }
 
-    if (i == mN-1)
+    if (i == mN - 1)
       break;
 
     // calculate the kinetic energy when COM is at the highest point
-    double KE = KEL+KER-m*g*mRs[curIndex]*(1-sin(mAlphas[curIndex]+mAngles[i]));
-    double C = (-p*KE-p*m*g*mRs[curIndex]+m*g*mRs[nextIndex])/(m*g);
-    double A = mRs[nextIndex]*cos(mAlphas[nextIndex])+p*mRs[curIndex]*cos(mPhis[curIndex]);
-    double B = mRs[nextIndex]*sin(mAlphas[nextIndex])-p*mRs[curIndex]*sin(mPhis[curIndex]);
-    double k = sqrt(A*A+B*B);
-    double theta = 0.0;
-    theta = acos(A/k);
+    double KE = linKe + rotKe - m * g * mRs[curIndex] * (1 - sin(mAlphas[curIndex] + mAngles[i]));
+    double C = (-eps * KE - eps * m * g * mRs[curIndex] + m * g * mRs[nextIndex]) / (m * g);
+    double A = mRs[nextIndex] * cos(mAlphas[nextIndex]) + eps * mRs[curIndex] * cos(mPhis[curIndex]);
+    double B = mRs[nextIndex] * sin(mAlphas[nextIndex]) - eps * mRs[curIndex] * sin(mPhis[curIndex]);
+    double k = sqrt(A * A + B * B);
+    double theta = acos(A / k);
 
-    if (abs(sin(theta)-(B/k))>0.001)
+    if (abs(sin(theta) - (B / k)) > 0.001)
       theta = -theta;
 
     mAngles[i+1] = asin(C/k)-theta;
@@ -344,15 +384,28 @@ void MyWindow::evalAngles()
       }
       */
 
-    // calculate the end velocity before collision
-    double PE = m*g*mRs[curIndex]*(sin(mAlphas[curIndex]+mAngles[i])-sin(mPhis[curIndex]-mAngles[i+1])); // potential energy
-    mEndVels[i] = sqrt((PE+KEL+KER)/(0.5*m+0.5*mIs[curIndex](2,2)/(mRs[curIndex]*mRs[curIndex])));
-                       mStartVels[i+1] = sqrt(p*mEndVels[i]*mEndVels[i]*(0.5*m+0.5*mIs[curIndex](2,2)/(mRs[curIndex]*mRs[curIndex]))/(0.5*m+0.5*mIs[nextIndex](2,2)/(mRs[nextIndex]*mRs[nextIndex])));
+    //---- calculate the end velocity before collision
+    // potential energy
+    double PE = m
+                * g
+                * mRs[curIndex]
+                * (sin(mAlphas[curIndex] + mAngles[i])
+                   - sin(mPhis[curIndex] - mAngles[i + 1]));
+    mEndVels[i] = sqrt((PE + linKe + rotKe) / (0.5 * m + 0.5 * mIs[curIndex](2, 2)
+                                           /(mRs[curIndex] * mRs[curIndex])));
+
+    const double& currMass = mIs[curIndex ](2, 2);
+    const double& nextMass = mIs[nextIndex](2, 2);
+    const double& currPivotLength2 = mRs[curIndex ] * mRs[curIndex];
+    const double& nextPivotLength2 = mRs[nextIndex] * mRs[nextIndex];
+    const double& currE = 0.5 * m + 0.5 * currMass / currPivotLength2;
+    const double& nextE = 0.5 * m + 0.5 * nextMass / nextPivotLength2;
+
+    mStartVels[i + 1] = sqrt(eps * mEndVels[i] * mEndVels[i] * currE / nextE);
   }
 
-  for (int i = 0; i < mN; ++i) {
+  for (int i = 0; i < mN; ++i)
     std::cout << mAngles[i] << std::endl;
-  }
 }
 
 //==============================================================================
