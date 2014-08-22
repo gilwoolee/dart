@@ -7,7 +7,7 @@ foreach(APPDIR
     atlasSimbicon
     bipedStand
     cubli
-    inertiaBot
+    #inertiaBot
     rigidLoop
     rigidCubes
     rigidChain
