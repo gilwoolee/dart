@@ -74,7 +74,7 @@ public:
   void evalAngles();
 
   ///
-  void setGroundAngle(double _angle, Eigen::Vector3d _axis);
+  void setGroundAngle(double _angle, const Eigen::Vector3d& _axis);
 
   ///
   double getAngle(int _index);
@@ -89,7 +89,8 @@ private:
   ///
   std::vector<double> mAngles;
 
-  ///
+  /// Number of desired rollings. Note add 1 to the number of desired rollings.
+  /// For example, use 3 for 2 rollings.
   int mN;
 
   ///

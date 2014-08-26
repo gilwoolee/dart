@@ -92,19 +92,25 @@ int main(int argc, char* argv[])
   window.setInitVel(Eigen::Vector3d::Zero());
   window.evalAngles();
 
-  VectorXd initPose = myWorld->getSkeleton(0)->getPositions();
-  initPose[5] = window.getAngle(0);
-  myWorld->getSkeleton(0)->setPositions(initPose);
-  myWorld->getSkeleton(0)->computeForwardKinematics(true, true, true);
+  VectorXd initPose = ground->getPositions();
+  initPose[2] = window.getAngle(0);
+  ground->setPositions(initPose);
+  ground->computeForwardKinematics(true, true, true);
+
+  VectorXd initPoseCube = cube->getPositions();
 
   initPose.setZero();
-  Vector3d localPos(-0.5,0.02+0.5*0.05,0.0);
-  Vector3d worldPos = myWorld->getSkeleton(0)->getBodyNode(0)->getTransform()
-                      * localPos;
-  initPose.head(3) = worldPos;
-  initPose[5] = window.getAngle(0);
-  myWorld->getSkeleton(1)->setPositions(initPose);
-  myWorld->getSkeleton(1)->computeForwardKinematics(true, true, true);
+  Vector3d localPos(-0.5, 0.27 + 0.5 * 0.05, 0.0);
+  Vector3d worldPos = ground->getBodyNode(0)->getTransform() * localPos;
+  initPose.tail<3>() = worldPos;
+  initPose[2] = window.getAngle(0);
+
+  Isometry3d cubeT = Isometry3d::Identity();
+  cubeT.translation() = worldPos;
+  cubeT.linear() = math::eulerXYZToMatrix(Vector3d(0.0, 0.0, window.getAngle(0)));
+
+  cube->setPositions(math::logMap(cubeT));
+  cube->computeForwardKinematics(true, true, true);
 
   cout << "space bar: simulation on/off" << endl;
   cout << "'p': playback/stop" << endl;

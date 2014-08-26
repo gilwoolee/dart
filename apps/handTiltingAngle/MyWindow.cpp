@@ -72,18 +72,20 @@ void MyWindow::timeStepping()
   if (contactEdgeIndex == mRollNum % mEdges.size())
   {
     // (Original Code) Eigen::Vector3d contactPos = mWorld->getSkeleton(1)->getBodyNode(0)->evalWorldPos(mEdges[contactEdgeIndex]); // contact edge position in world coordinate
+    BodyNode* ground = mWorld->getSkeleton(0)->getBodyNode(0);
+    BodyNode* cube = mWorld->getSkeleton(1)->getBodyNode(0);
 
-    BodyNode* bodyNode = mWorld->getSkeleton(1)->getBodyNode(0);
-    Isometry3d T = bodyNode->getTransform();
+    Isometry3d groundT = ground->getTransform();
+    Isometry3d cubeT = cube->getTransform();
 
     // contact edge position in world coordinate
-    Vector3d contactPos = T * mEdges[contactEdgeIndex];
+    Vector3d contactPos = cubeT * mEdges[contactEdgeIndex];
 
     //
-    Vector3d contactLocalPos = T.inverse() * contactPos;
+    Vector3d contactLocalPos = groundT.inverse() * contactPos;
 
     //
-    if (mWorld->getSkeleton(1)->getWorldCOM()(0)-contactPos(0) < -0.0)
+    //if (mWorld->getSkeleton(1)->getWorldCOM()(0)-contactPos(0) < -0.0)
     {
       //
       if (mRollNum < mN - 1)
@@ -92,23 +94,25 @@ void MyWindow::timeStepping()
 
         //
         index = (mRollNum + mEdges.size() - 1) % mEdges.size();
-        Eigen::Vector3d liftEdge = T * mEdges[index];
+        Eigen::Vector3d liftEdge = cubeT * mEdges[index];
 
         //
         index = (mRollNum + mEdges.size() + 1) % mEdges.size();
-        Eigen::Vector3d dropEdge = T * mEdges[index];
+        Eigen::Vector3d dropEdge = cubeT * mEdges[index];
 
         //
         index = (mRollNum) % mEdges.size();
-        Eigen::Vector3d contactEdge = T * mEdges[index];
+        Eigen::Vector3d contactEdge = cubeT * mEdges[index];
 
-        double liftAngle
-            = atan((liftEdge(1)-contactEdge(1))/(liftEdge(0)-contactEdge(0)));
+        const double& liftLenX = liftEdge[0] - contactEdge[0];
+        const double& liftLenY = liftEdge[1] - contactEdge[1];
+        double liftAngle = atan(liftLenY / liftLenX);
 
-        double dropAngle
-            = atan((dropEdge(1)-contactEdge(1))/(contactEdge(0)-dropEdge(0)));
+        const double& dropLenX = contactEdge[0] - dropEdge[0];
+        const double& dropLenY = dropEdge[1] - contactEdge[1];
+        double dropAngle = atan(dropLenY / dropLenX);
 
-        if (liftAngle > mAngles[mRollNum+1] && dropAngle > -mAngles[mRollNum+1])
+        if (liftAngle > mAngles[mRollNum + 1] && dropAngle > -mAngles[mRollNum + 1])
         {
           mRollNum++;
           setGroundAngle(mAngles[mRollNum], contactLocalPos);
@@ -308,6 +312,7 @@ void MyWindow::evalAngles()
   mStartVels.resize(mN);
   mEndVels.resize(mN);
 
+  // The beginning velocity magnitue for the first rolling cycle
   mStartVels[0] = mInitVel.norm();
 
   //---- rolling on plane
@@ -324,16 +329,16 @@ void MyWindow::evalAngles()
   for (int i = 0; i < mN; ++i)
   {
     // current geometry index
-    int curIndex = i % mEdges.size();
+    const int& curIndex = i % mEdges.size();
 
     // next geometry index
-    int nextIndex = (i + 1) % mEdges.size();
+    const int& nextIndex = (i + 1) % mEdges.size();
 
     //
     double m = mWorld->getSkeleton(1)->getBodyNode(0)->getMass();
 
     // Gravity of y-axis component (planar motion)
-    double g = abs(mWorld->getGravity()(1));
+    double g = abs(mWorld->getGravity()[1]);
 
     //---- calculate the minimum theta to roll
 
@@ -342,7 +347,7 @@ void MyWindow::evalAngles()
 
     // rotational kinetic energy
     double rotKe = 0.5
-                 * mIs[curIndex](2, 2)
+                 * mIs[curIndex](2, 2)  // Izz
                  * mStartVels[i]
                  * mStartVels[i]
                  / (mRs[curIndex] * mRs[curIndex]);
@@ -350,8 +355,10 @@ void MyWindow::evalAngles()
     // the initial angle
     if (i == 0)
     {
-      mAngles[i] = asin(1 - (linKe + rotKe) / (m * g * mRs[curIndex]))
-                   - mAlphas[curIndex];
+      // Equation (8) in the paper
+      mAngles[i] = asin(1 - (linKe + rotKe) / (m * g * mRs[curIndex])) - mAlphas[curIndex];
+
+      // TODO(JS): Why 0.1 is added?
       mAngles[i] = mAngles[i] + 0.1;
     }
 
@@ -369,13 +376,13 @@ void MyWindow::evalAngles()
     if (abs(sin(theta) - (B / k)) > 0.001)
       theta = -theta;
 
-    mAngles[i+1] = asin(C/k)-theta;
+    mAngles[i + 1] = asin(C / k) - theta;
 
     // rotate on plane
-    if (i+1 < mN-1)
-      mAngles[i+1] += 0.1;
+    if (i + 1 < mN - 1)
+      mAngles[i + 1] += 0.1;
     else
-      mAngles[i+1] -= 0.1;
+      mAngles[i + 1] -= 0.1;
 
     // rotate on palm
     /*
@@ -394,12 +401,12 @@ void MyWindow::evalAngles()
     mEndVels[i] = sqrt((PE + linKe + rotKe) / (0.5 * m + 0.5 * mIs[curIndex](2, 2)
                                            /(mRs[curIndex] * mRs[curIndex])));
 
-    const double& currMass = mIs[curIndex ](2, 2);
-    const double& nextMass = mIs[nextIndex](2, 2);
+    const double& currIzz = mIs[curIndex ](2, 2);
+    const double& nextIzz = mIs[nextIndex](2, 2);
     const double& currPivotLength2 = mRs[curIndex ] * mRs[curIndex];
     const double& nextPivotLength2 = mRs[nextIndex] * mRs[nextIndex];
-    const double& currE = 0.5 * m + 0.5 * currMass / currPivotLength2;
-    const double& nextE = 0.5 * m + 0.5 * nextMass / nextPivotLength2;
+    const double& currE = 0.5 * m + 0.5 * currIzz / currPivotLength2;
+    const double& nextE = 0.5 * m + 0.5 * nextIzz / nextPivotLength2;
 
     mStartVels[i + 1] = sqrt(eps * mEndVels[i] * mEndVels[i] * currE / nextE);
   }
@@ -409,13 +416,13 @@ void MyWindow::evalAngles()
 }
 
 //==============================================================================
-void MyWindow::setGroundAngle(double _angle, Eigen::Vector3d _axis)
+void MyWindow::setGroundAngle(double _angle, const Eigen::Vector3d& _axis)
 {
   Eigen::Isometry3d preWorldTransformation = mWorld->getSkeleton(0)->getBodyNode(0)->getTransform();
   Eigen::Matrix3d preWorldRotation = preWorldTransformation.linear();
   Eigen::Vector3d preWorldTranslation = preWorldTransformation.translation();
   VectorXd pose = mWorld->getSkeleton(0)->getPositions();
-  pose(5) = _angle;
+  pose[2] = _angle;
   mWorld->getSkeleton(0)->setPositions(pose);
   mWorld->getSkeleton(0)->computeForwardKinematics(true, true, true);
   Eigen::Isometry3d curWorldTransformation = mWorld->getSkeleton(0)->getBodyNode(0)->getTransform();
@@ -423,9 +430,13 @@ void MyWindow::setGroundAngle(double _angle, Eigen::Vector3d _axis)
   Eigen::Vector3d curWorldTranslation = preWorldRotation * _axis
                                         + preWorldTranslation
                                         - curWorldRotation * _axis;
-  pose.head(3) = curWorldTranslation;
+//  pose = mWorld->getSkeleton(0)->getPositions();
+  pose.tail<3>() = curWorldTranslation;
   mWorld->getSkeleton(0)->setPositions(pose);
   mWorld->getSkeleton(0)->computeForwardKinematics(true, true, true);
+
+  pose = mWorld->getSkeleton(0)->getPositions();
+  int a = 10;
 }
 
 //==============================================================================

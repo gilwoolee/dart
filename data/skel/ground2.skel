@@ -3,7 +3,7 @@
     <skeleton name="grount skeleton">
         <mobile>false</mobile>
         <body name="ground">
-            <transformation>-1.0 0 0 0 0 0</transformation>
+            <transformation>0.0 0 0 0 0 0</transformation>
             <visualization_shape>
                 <transformation>0 0 0 0 0 0</transformation>
                 <geometry>
