@@ -87,6 +87,12 @@ public:
   DiscreteBodyNode()
   {
     mG = Eigen::Matrix6d::Identity();
+    mG(0,0) = 0.80833333;
+    mG(1,1) = 0.68333333;
+    mG(2,2) = 0.14166667;
+    mG(3,3) = 10.0;
+    mG(4,4) = 10.0;
+    mG(5,5) = 10.0;
     mW = Eigen::Isometry3d::Identity();
     mV << 1.5e-1, 0.0, 0.0, 0.1, 0.4, 0.9;
 //    mV << 0.0, 0.0, 0.0, 0.1, 0.4, 0.9;
@@ -101,8 +107,8 @@ public:
     Eigen::Vector3d pWorldOld = mW.translation();
 
 //    mV = mG.inverse() * math::dAdT(expMap2(/*mTimeStep * */mV), mG * mV);
-    mV = mG.inverse() * math::dAdT(integrate(mV, 0.001), mG * mV);
     mW = mW * integrate(mV, 0.001);
+    mV = mG.inverse() * math::dAdT(integrate(mV, 0.001), mG * mV);
 
     Eigen::Vector3d vWorld = mW.linear() * mV.tail<3>();
 
@@ -120,6 +126,30 @@ public:
     //mV = mG.inverse() * math::dAdT(integrate(mV, 0.001), mG * mV);
 
     mV = mV + 0.001 * mG.inverse() * math::dad(mV, mG * mV);
+
+    Eigen::Vector3d vWorld = mW.linear() * mV.tail<3>();
+
+    Eigen::Vector3d pWorld = mW.translation();
+    Eigen::Vector3d pWorld2 = mW.linear().inverse() * mW.translation();
+    int a = 10;
+  }
+
+  void updateVelocity3()
+  {
+    Eigen::Vector3d pWorldOld = mW.translation();
+
+//    mW = mW * integrate(mV, 0.001);
+
+    mW.translation() = mW.translation() + 0.001 * mV.tail<3>();
+
+    Eigen::Matrix3d I = mG.topLeftCorner<3,3>();
+    Eigen::Vector3d w = mV.head<3>();
+    //mV.head<3>() = mV.head<3>() - 0.001 * I * w.cross(I * w);
+
+//    mV = mG.inverse() * math::dAdT(expMap2(/*mTimeStep * */mV), mG * mV);
+    //mV = mG.inverse() * math::dAdT(integrate(mV, 0.001), mG * mV);
+
+//    mV = mV + 0.001 * mG.inverse() * math::dad(mV, mG * mV);
 
     Eigen::Vector3d vWorld = mW.linear() * mV.tail<3>();
 
@@ -348,8 +378,8 @@ void AccuracyTest::Boxes(double _dt,
     Vector3d posErr = p - (p0 + v0 * t + 0.5*g*t*t);
     Vector3d posErr2 = p2 - (p0 + v0 * t + 0.5*g*t*t);
 //    linearPositionError.InsertData(p - (p0 + v0 * t + 0.5*g*t*t));
-    std::cout << "posErr: " << posErr.transpose() << std::endl;
-//    std::cout << "posErr2: " << posErr2.transpose() << std::endl;
+//    std::cout << "posErr: " << posErr.transpose() << std::endl;
+    std::cout << "posErr2: " << posErr2.transpose() << std::endl;
 
     // angular momentum error
 //    Vector3d H = link->GetWorldInertiaMatrix()*link->GetWorldAngularVel();
@@ -513,8 +543,8 @@ void AccuracyTest::Boxes2(double _dt,
 //==============================================================================
 TEST_F(AccuracyTest, testBoxes)
 {
-//  Boxes(0.001, 50, 1, false, false, true);
-  Boxes2(0.001, 50, 1, false, false, true);
+  Boxes(0.001, 50, 1, false, false, true);
+//  Boxes2(0.001, 50, 1, false, false, true);
 }
 
 //==============================================================================

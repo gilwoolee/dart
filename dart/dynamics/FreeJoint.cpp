@@ -87,12 +87,12 @@ void FreeJoint::setTransformFromChildBodyNode(const Eigen::Isometry3d& _T)
 //==============================================================================
 void FreeJoint::integratePositions(double _dt)
 {
-  //mQ = mQ * math::expMap(mVelocities * _dt);
+  mQ = mQ * math::expMap(mVelocities * _dt);
 
-  Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
-  T.translation() = _dt * mVelocities.tail<3>();
-  T.linear()      = math::expMapRot(_dt * mVelocities.head<3>());
-  mQ = mQ * T;
+//  Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
+//  T.translation() = _dt * mVelocities.tail<3>();
+//  T.linear()      = math::expMapRot(_dt * mVelocities.head<3>());
+//  mQ = mQ * T;
 
   mPositions = math::logMap(mQ);
 }
