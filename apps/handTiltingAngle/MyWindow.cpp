@@ -430,13 +430,11 @@ void MyWindow::setGroundAngle(double _angle, const Eigen::Vector3d& _axis)
   Eigen::Vector3d curWorldTranslation = preWorldRotation * _axis
                                         + preWorldTranslation
                                         - curWorldRotation * _axis;
-//  pose = mWorld->getSkeleton(0)->getPositions();
-  pose.tail<3>() = curWorldTranslation;
-  mWorld->getSkeleton(0)->setPositions(pose);
+  Isometry3d cubeT = Isometry3d::Identity();
+  cubeT.translation() = curWorldTranslation;
+  cubeT.linear() = math::eulerXYZToMatrix(Vector3d(0.0, 0.0, _angle));
+  mWorld->getSkeleton(0)->setPositions(math::logMap(cubeT));
   mWorld->getSkeleton(0)->computeForwardKinematics(true, true, true);
-
-  pose = mWorld->getSkeleton(0)->getPositions();
-  int a = 10;
 }
 
 //==============================================================================
@@ -455,10 +453,10 @@ int MyWindow::evalContactEdge()
   inContactEdges.resize(mEdges.size());
 
   //
-  for (int i = 0; i < mEdges.size(); ++i)
+  for (size_t i = 0; i < mEdges.size(); ++i)
     inContactEdges[i] = false;
 
-  for (int i = 0; i < mWorld->getConstraintSolver()->getCollisionDetector()->getNumContacts(); ++i)
+  for (size_t i = 0; i < mWorld->getConstraintSolver()->getCollisionDetector()->getNumContacts(); ++i)
   {
     //
     Eigen::Vector3d contactPos
@@ -470,7 +468,7 @@ int MyWindow::evalContactEdge()
           * contactPos;
 
     //
-    for (int j = 0; j < mEdges.size(); ++j)
+    for (size_t j = 0; j < mEdges.size(); ++j)
     {
       if ((contactLocalPos.head(2)-mEdges[j].head(2)).norm() < 0.001)
         inContactEdges[j] = true;
@@ -479,13 +477,13 @@ int MyWindow::evalContactEdge()
 
   //
   int contactEdgeIndex = -1;
-  for (int i = 0; i < mEdges.size(); ++i)
+  for (size_t i = 0; i < mEdges.size(); ++i)
   {
     //
     if (inContactEdges[i] == true)
     {
       //
-      for (int j = 0; j < mEdges.size(); ++j)
+      for (size_t j = 0; j < mEdges.size(); ++j)
       {
         // there are more than one contact edges
         if (j != i && inContactEdges[j])

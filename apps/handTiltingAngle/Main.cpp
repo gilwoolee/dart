@@ -97,18 +97,12 @@ int main(int argc, char* argv[])
   ground->setPositions(initPose);
   ground->computeForwardKinematics(true, true, true);
 
-  VectorXd initPoseCube = cube->getPositions();
-
   initPose.setZero();
-  Vector3d localPos(-0.5, 0.27 + 0.5 * 0.05, 0.0);
+  Vector3d localPos(-0.5, 0.02 + 0.5 * 0.05, 0.0);
   Vector3d worldPos = ground->getBodyNode(0)->getTransform() * localPos;
-  initPose.tail<3>() = worldPos;
-  initPose[2] = window.getAngle(0);
-
   Isometry3d cubeT = Isometry3d::Identity();
   cubeT.translation() = worldPos;
   cubeT.linear() = math::eulerXYZToMatrix(Vector3d(0.0, 0.0, window.getAngle(0)));
-
   cube->setPositions(math::logMap(cubeT));
   cube->computeForwardKinematics(true, true, true);
 
