@@ -58,23 +58,26 @@ using namespace simulation;
 using namespace utils;
 
 int main(int argc, char* argv[])
-{  
-  // Load skeleton files
-  Skeleton* ground
-      = SkelParser::readSkeleton(DART_DATA_PATH"skel/ground2.skel");
-  Vector3d gray(0.9, 0.9, 0.9);
-  ground->getBodyNode(0)->getVisualizationShape(0)->setColor(gray);
-
-  Skeleton* cube
-      = SkelParser::readSkeleton(DART_DATA_PATH"skel/cube1.skel");
-  Vector3d red(1.0, 0.0, 0.0);
-  cube->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
-
+{
+  // URDF loader
   DartLoader dl;
-  Skeleton* handSkeleton = dl.parseSkeleton(DART_DATA_PATH"urdf/shadow_hand.urdf");
+
+  // Load skeleton files
+  const std::string& groundPath = DART_DATA_PATH"skel/ground2.skel";
+  const std::string& cubePath   = DART_DATA_PATH"skel/cube1.skel";
+  const std::string& handPath   = DART_DATA_PATH"urdf/shadow_hand.urdf";
+  Skeleton* groundSkel = SkelParser::readSkeleton(groundPath);
+  Skeleton* cubeSkel   = SkelParser::readSkeleton(cubePath);
+  Skeleton* handSkel   = dl.parseSkeleton(handPath);
+
+  // Setting colors
+  Vector3d gray(0.9, 0.9, 0.9);
+  Vector3d red(1.0, 0.0, 0.0);
+  groundSkel->getBodyNode(0)->getVisualizationShape(0)->setColor(gray);
+  cubeSkel->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
 
   // Create window and run main loop
-  MyWindow window(ground, handSkeleton, cube, NULL);
+  MyWindow window(groundSkel, handSkel, cubeSkel, NULL);
   glutInit(&argc, argv);
   window.initWindow(640, 480, "Manipulator");
 #ifdef WIN32

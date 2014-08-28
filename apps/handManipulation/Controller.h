@@ -94,62 +94,62 @@ public:
 //  void evalOriForce(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel);
 //  void evalMaintainForce(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel);
 //  void evalTaskForce();
-//public:
-//  dart::dynamics::Skeleton *mSkel;
-//  Eigen::VectorXd mTorques;
-//  Eigen::VectorXd mGravityCompensationForce;
-//  Eigen::VectorXd mObjControlForce;
-//  Eigen::VectorXd mTrackForce;
-//  Eigen::VectorXd mDampForce;
-//  Eigen::VectorXd mOriForce;
-//  Eigen::VectorXd mMaintainForce;
-//  Eigen::VectorXd mTaskForce;
-//  Eigen::VectorXd mConstraintForce;
-//  Eigen::VectorXd mDesiredDofs;
-//  Eigen::VectorXd mFingerEndPose;
-//  Eigen::VectorXd mFingerRestPose;
-//  Eigen::VectorXd mFingerInterceptPose;
-//  Eigen::MatrixXd mKp;
-//  Eigen::MatrixXd mKd;
-//  double mTimestep;
-//  int mFrame;
-//  int mFingerNum;
+public:
+  dart::dynamics::Skeleton *mSkel;
+  Eigen::VectorXd mTorques;
+  Eigen::VectorXd mGravityCompensationForce;
+  Eigen::VectorXd mObjControlForce;
+  Eigen::VectorXd mTrackForce;
+  Eigen::VectorXd mDampForce;
+  Eigen::VectorXd mOriForce;
+  Eigen::VectorXd mMaintainForce;
+  Eigen::VectorXd mTaskForce;
+  Eigen::VectorXd mConstraintForce;
+  Eigen::VectorXd mDesiredDofs;
+  Eigen::VectorXd mFingerEndPose;
+  Eigen::VectorXd mFingerRestPose;
+  Eigen::VectorXd mFingerInterceptPose;
+  Eigen::MatrixXd mKp;
+  Eigen::MatrixXd mKd;
+  double mTimestep;
+  int mFrame;
+  int mFingerNum;
 
-//  std::vector<tasks::Task*> mTasks;
-//  std::vector<Eigen::MatrixXd> mJVec;
-//  std::vector<Eigen::MatrixXd> mInvJVec;
-//  Eigen::MatrixXd mCombinedJ;
-//  Eigen::MatrixXd mCombinedJTrans;
+  std::vector<tasks::Task*> mTasks;
+  std::vector<Eigen::MatrixXd> mJVec;
+  std::vector<Eigen::MatrixXd> mInvJVec;
+  Eigen::MatrixXd mCombinedJ;
+  Eigen::MatrixXd mCombinedJTrans;
 
-//  std::vector<int> mActiveNumFrame;
-//  std::vector<int> mActiveSimFrame;
-//  std::vector<int> mTrackNumFrame;
-//  std::vector<int> mTrackSimFrame;
-//  std::vector<int> mInContactFrame;
-//  std::vector<bool> mActiveFingers;
-//  std::vector<bool> mContactFingers;
-//  std::vector<bool> mInContactFingers;
-//  std::vector<bool> mRestFingers;
-//  std::vector<bool> mTrackFingers;
-//  std::vector<VectorXi> mFingerDofs;
-//  Eigen::VectorXi mOriDofs;
-//  //std::vector<int> mFingerTipIndices;
-//  std::vector<std::string> mFingerRootNames;
-//  std::string mPalmName;
-//  int mExtNodeNum;  // excluded node number when doing virtual force control
-//  int mExtDofNum;  // excluded dof number when doing virtual force control
+  std::vector<int> mActiveNumFrame;
+  std::vector<int> mActiveSimFrame;
+  std::vector<int> mTrackNumFrame;
+  std::vector<int> mTrackSimFrame;
+  std::vector<int> mInContactFrame;
+  std::vector<bool> mActiveFingers;
+  std::vector<bool> mContactFingers;
+  std::vector<bool> mInContactFingers;
+  std::vector<bool> mRestFingers;
+  std::vector<bool> mTrackFingers;
+  std::vector<VectorXi> mFingerDofs;
+  Eigen::VectorXi mOriDofs;
+  //std::vector<int> mFingerTipIndices;
+  std::vector<std::string> mFingerRootNames;
+  std::string mPalmName;
+  int mExtNodeNum;  // excluded node number when doing virtual force control
+  int mExtDofNum;  // excluded dof number when doing virtual force control
 
-//  // plan related
-//  bool mOriFlag;
-//  int mOriSimFrame;
-//  int mOriNumFrame;
-//  bool mMaintainFlag;
-//  bool mControlFlag;
-//  bool mTaskFlag;
-//  bool mOnPalmFlag;
+  // plan related
+  bool mOriFlag;
+  int mOriSimFrame;
+  int mOriNumFrame;
+  bool mMaintainFlag;
+  bool mControlFlag;
+  bool mTaskFlag;
+  bool mOnPalmFlag;
 
-//  Eigen::Vector3d mPreOriTarget;
-//  Eigen::Vector3d mAccumulateOriError;
+  Eigen::Vector3d mPreOriTarget;
+  Eigen::Vector3d mAccumulateOriError;
 
 };
 

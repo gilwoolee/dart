@@ -66,12 +66,15 @@
 //#include "EllipsoidVolumeConstraint.h"
 //#include "InEllipsoidConstraint.h"
 
+#define EPS_DISTANCE 0.001
+
 using namespace std;
 using namespace Eigen;
 
 using namespace dart;
 using namespace common;
 using namespace dynamics;
+using namespace collision;
 using namespace constraint;
 using namespace tasks;
 using namespace optimizer;
@@ -130,36 +133,75 @@ MyWindow::MyWindow(Skeleton* _mList, ...): Win3D()
   mBoundEllipsoidR = Eigen::Vector3d(0.0,0.0,0.0);
   mObjRadius = 0.032787;
   int numEdges = 4;
-  mEdges.resize(numEdges);
+
   // the order is determined by the order of pivoting, related to roll direction
-  mEdges[3] = Eigen::Vector3d(0.0,-0.02,-0.02);
-  mEdges[2] = Eigen::Vector3d(0.0,0.02,-0.02);
-  mEdges[1] = Eigen::Vector3d(0.0,0.02,0.02);
-  mEdges[0] = Eigen::Vector3d(0.0,-0.02,0.02);
+  //
+  //      Y
+  //      ^
+  //      |  mEdges[1] ------- mEdges[2]
+  //      |    |                 |
+  // Z <---    |                 |
+  //           |                 |
+  //         mEdges[0] ------- mEdges[3]
+  //
+  mEdges.resize(numEdges);
+  mEdges[3] = Eigen::Vector3d(0.0, -0.02, -0.02);
+  mEdges[2] = Eigen::Vector3d(0.0,  0.02, -0.02);
+  mEdges[1] = Eigen::Vector3d(0.0,  0.02,  0.02);
+  mEdges[0] = Eigen::Vector3d(0.0, -0.02,  0.02);
+
+  //      Y
+  //      ^      mCorners[1][1] ---- mCorners[2][1]
+  //      |        /|                  /|
+  //      |       / |                 / |
+  // Z <---      /  |                /  |
+  //     /   mCorners[1][0] ---- mCorners[2][0]
+  //    /       |mCorners[0][1] ----|mCorners[3][1]
+  //   X        |  /                |  /
+  //            | /                 | /
+  //            |/                  |/
+  //         mCorners[0][0] ---- mCorners[3][0]
+  //
+  //                    ___
+  //                    |   \_
+  //          ___________|    \__
+  //       __/________           /______
+  //      /__________
+  //      |/________           _______
+  //       |_/________________/|______
+  //         |________________|/
+  //
+  //
   mCorners.resize(numEdges);
   for (int i = 0; i < numEdges; ++i)
   {
     mCorners[i].resize(2);
     mCorners[i][0] = mCorners[i][1] = mEdges[i];
-    mCorners[i][0](0) = 0.02;
-    mCorners[i][1](0) = -0.02;
+    mCorners[i][0][0] =  0.02;
+    mCorners[i][1][0] = -0.02;
   }
+
+  // Number of rolling + 1
   mN = 3;
+
   mBackN = 0;
   mRollNum = 0;
   mRollBackNum = 0;
   mRollBackIndex = 0;
   mAngles.resize(mN);
 
+  // Precomputed angles
   mAngles[0] = 0.740675;
   mAngles[1] = 0.137237;
   mAngles[2] = -0.358023;
 
-  if (_mList) {
+  if (_mList)
+  {
     mSkels.push_back(_mList);
     va_list ap;
     va_start(ap, _mList);
-    while (true) {
+    while (true)
+    {
       dart::dynamics::Skeleton* skel = va_arg(ap, dart::dynamics::Skeleton*);
       if(skel)
         mSkels.push_back(skel);
@@ -176,7 +218,8 @@ MyWindow::MyWindow(Skeleton* _mList, ...): Win3D()
 
   int sumNDofs = 0;
   mIndices.push_back(sumNDofs);
-  for (unsigned int i = 0; i < mSkels.size(); i++) {
+  for (unsigned int i = 0; i < mSkels.size(); i++)
+  {
     int nDofs = mSkels[i]->getNumDofs();
     sumNDofs += nDofs;
     mIndices.push_back(sumNDofs);
@@ -337,7 +380,8 @@ void MyWindow::initDyn()
 
   // set self collidable
   // TODO(JS): Disabled self collision
-  mSkels[1]->enableSelfCollision();
+  //mSkels[1]->enableSelfCollision();
+  mSkels[1]->disableSelfCollision();
 
   // create a collision handler
   // set the number of friction basis
@@ -395,7 +439,7 @@ void MyWindow::initDyn()
   // plan related
 
   // TODO(JS): Just commented out
-//  mController->mOriFlag = true;
+  mController->mOriFlag = true;
   mTargetOri = Vector3d(0.0,0.0,1.0).normalized();
   mPalmObjAngle = 0.0;
 
@@ -441,7 +485,8 @@ void MyWindow::initDyn()
 //  BoundEllipsoidProblem prob(featurePoints);
 //  snopt::SnoptSolver solver(&prob);
 //  solver.solve();
-//  for (int i = 0; i < 3; ++i) {
+//  for (int i = 0; i < 3; ++i)
+//  {
 //    std::cout << i << " : " << prob.vars()[i]->mVal << std::endl;
 //    mBoundEllipsoidR(i) = prob.vars()[i]->mVal;
 //    mBoundEllipsoidR(i) += 0.005;
@@ -595,48 +640,73 @@ void MyWindow::step()
 //==============================================================================
 void MyWindow::setPose()
 {
+  Skeleton* cubeSkel     = mSkels[2];
+  BodyNode* cube         = cubeSkel->getBodyNode(0);
+  const Isometry3d cubeT = cube->getTransform();
+
   //dynamics::BodyNode* wrist = mSkels[1]->getBodyNode(mPalmName);
   int contactEdgeIndex = evalContactEdge();
 
-  if (contactEdgeIndex == mPreContactEdge || contactEdgeIndex == -1)
-  {
-    //setHandTrans(mPreOri,mEdges[contactEdgeIndex]);
-  }
-  else if (contactEdgeIndex != -1)
-  {
+//  if (contactEdgeIndex == mPreContactEdge || contactEdgeIndex == -1)
+//  {
+//    //setHandTrans(mPreOri,mEdges[contactEdgeIndex]);
+//  }
+//  else if (contactEdgeIndex != -1)
+//  {
+//    mPreContactEdge = contactEdgeIndex;
+//  }
+
+  // If we found contact edge, then set it as previous contact edge
+  if (contactEdgeIndex != -1)
     mPreContactEdge = contactEdgeIndex;
-  }
+
+  // TODO(JS): Is this for orientation or translation
   mPreOri = mSkels[1]->getPositions().head<3>();
 
-  if (mRollNum < mN - 1)
+  const bool isLastRoll = mRollNum == mN - 1 ? true : false;
+  assert(mRollNum <= mN - 1);
+
+  int index1 = (mRollNum                    ) % mEdges.size();
+  int index2 = (mRollNum + mEdges.size() / 2) % mEdges.size();
+
+  if (!isLastRoll)
   {
-    if (contactEdgeIndex == mRollNum%mEdges.size())
+    if (contactEdgeIndex == mRollNum % mEdges.size())
     {
       // contact edge position in world coordinate
-      Vector3d contactPos = mSkels[2]->getBodyNode(0)->getTransform()
-                                   * mEdges[contactEdgeIndex];
-      // if change the roll direction, the condition will be changed accordingly, related to roll direction
-      if ((mSkels[2]->getWorldCOM()(2) - contactPos(2) > 0.005
-           && mRollNum == 0)
-          || (mSkels[2]->getWorldCOM()(2) - contactPos(2) > 0.002
-              && mRollNum > 0))
-      {
-        Vector3d liftEdge
-            = mSkels[2]->getBodyNode(0)->getTransform()
-              * mEdges[(mRollNum + mEdges.size() - 1) % mEdges.size()];
-        Vector3d dropEdge
-            = mSkels[2]->getBodyNode(0)->getTransform()
-              * mEdges[(mRollNum + mEdges.size() + 1) % mEdges.size()];
-        Vector3d contactEdge
-            = mSkels[2]->getBodyNode(0)->getTransform()
-              * mEdges[(mRollNum)%mEdges.size()];
-        double liftAngle = atan((liftEdge(1) - contactEdge(1))
-                                / (contactEdge(2) - liftEdge(2)));
-        double dropAngle = atan((dropEdge(1) - contactEdge(1))
-                                / (dropEdge(2) - contactEdge(2)));
+      Vector3d contactPos = cube->getTransform() * mEdges[contactEdgeIndex];
 
-        if (liftAngle > mAngles[mRollNum + 1]
-            && dropAngle > -mAngles[mRollNum + 1])
+      // if change the roll direction, the condition will be changed
+      // accordingly, related to roll direction
+      const double& comZ        = cubeSkel->getWorldCOM()[2];
+      const double& contactPosZ = contactPos[2];
+
+      const bool& cond1 = comZ - contactPosZ > 0.005 ? true : false;
+      const bool& cond2 = comZ - contactPosZ > 0.002 ? true : false;
+      const bool& isFirstRoll = mRollNum == 0 ? true : false;
+
+      //
+      if ((cond1 && isFirstRoll) || (cond2 && !isFirstRoll))
+      {
+        const int index1 = (mRollNum + mEdges.size() - 1) % mEdges.size();
+        const int index2 = (mRollNum + mEdges.size() + 1) % mEdges.size();
+        const int index3 = (mRollNum                    ) % mEdges.size();
+
+        const Vector3d& liftEdge    = cubeT * mEdges[index1];
+        const Vector3d& dropEdge    = cubeT * mEdges[index2];
+        const Vector3d& contactEdge = cubeT * mEdges[index3];
+
+        const double& liftDistY = liftEdge(1) - contactEdge(1);
+        const double& liftDistZ = contactEdge(2) - liftEdge(2);
+        const double& dropDistY = dropEdge(1) - contactEdge(1);
+        const double& dropDistZ = dropEdge(2) - contactEdge(2);
+
+        const double& liftAngle = atan(liftDistY / liftDistZ);
+        const double& dropAngle = atan(dropDistY / dropDistZ);
+
+        const double& nextAngle = mAngles[mRollNum + 1];
+
+        if (liftAngle > nextAngle && dropAngle > -nextAngle)
         {
           mRollNum++;
           setHandAngle(mAngles[mRollNum]);
@@ -644,11 +714,7 @@ void MyWindow::setPose()
       }
     }
   }
-  else if (mRollNum == mN - 1
-           && (evalEdgeInContact((mRollNum) % mEdges.size())
-               || evalUpFace() == (mRollNum + mEdges.size() / 2) % mEdges.size()
-              )
-          )
+  else if (isLastRoll && (isEdgeInContact(index1) || evalUpFace() == index2))
   {
     setHandAngle(0.0);
   }
@@ -676,6 +742,7 @@ void MyWindow::setPose()
   }
 }
 
+//==============================================================================
 void MyWindow::resize(int w, int h)
 {
 #ifdef WIN32
@@ -714,13 +781,13 @@ void MyWindow::displayTimer(int _val)
   {
     // 		tHandIK.startTimer();
     // TODO(JS): Just commented out
-    //updateHandPose();
+    // updateHandPose();
     // 		tHandIK.stopTimer();
     for (int i = 0; i < numIter; i++)
     {
       // TODO(JS): Just commented out
       // 			tIter.startTimer();
-      //setPose();
+      setPose();
       // 			updateHandPose();
       //updateContact();
       // 			tInternal.startTimer();
@@ -2051,118 +2118,188 @@ void MyWindow::setHandAngle(double _angle)
   angleZ = palmOri(2);
 }
 
-void MyWindow::setHandTrans(Vector3d _preOri, Vector3d _axis)
+void MyWindow::setHandTrans(const Vector3d& _preOri, const Vector3d& _axis)
 {
-  // TODO(JS): Just commented out
-//  VectorXd pose = mSkels[1]->getPose();
+  // TODO(JS): This function is not used anywhere
+
+  Skeleton* handSkel = mSkels[1];
+
+  VectorXd pose = handSkel->getPositions();
 //  Vector3d curOri = pose.head(3);
-//  VectorXd prePose = pose;
-//  prePose.head(3) = _preOri;
-//  mSkels[1]->setPose(prePose);
-//  dynamics::BodyNode *wrist = mSkels[1]->getBodyNode(mPalmName.c_str());
-//  Matrix4d preWorldTransformation = wrist->getWorldTransform();
-//  Matrix3d preWorldRotation = preWorldTransformation.topLeftCorner(3,3);
-//  Vector3d preWorldTranslation = preWorldTransformation.block(0,3,3,1);
-//  mSkels[1]->setPose(pose);
-//  Matrix4d curWorldTransformation = wrist->getWorldTransform();
-//  Matrix3d curWorldRotation = curWorldTransformation.topLeftCorner(3,3);
-//  Vector3d curWorldTranslation = preWorldRotation*_axis+preWorldTranslation-curWorldRotation*_axis;
-//  mSkels[1]->getJoint(0)->getTransform(0)->getDof(0)->setValue(mSkels[1]->getJoint(0)->getTransform(0)->getDof(0)->getValue()+(curWorldTranslation(0) - preWorldTranslation(0)));
-//  mSkels[1]->getJoint(0)->getTransform(0)->getDof(1)->setValue(mSkels[1]->getJoint(0)->getTransform(0)->getDof(1)->getValue()+(curWorldTranslation(1) - preWorldTranslation(1)));
-//  mSkels[1]->getJoint(0)->getTransform(0)->getDof(2)->setValue(mSkels[1]->getJoint(0)->getTransform(0)->getDof(2)->getValue()+(curWorldTranslation(2) - preWorldTranslation(2)));
-//  mSkels[1]->getJoint(0)->updateStaticTransform();
-//  mSkels[1]->setPose(pose);
+  VectorXd prePose = pose;
+  prePose.head(3) = _preOri;
+  mSkels[1]->setPositions(prePose);
+  dynamics::BodyNode* wrist = handSkel->getBodyNode(mPalmName.c_str());
+  Isometry3d preWorldTransformation = wrist->getTransform();
+  Matrix3d preWorldRotation = preWorldTransformation.linear();
+  Vector3d preWorldTranslation = preWorldTransformation.translation();
+  mSkels[1]->setPositions(pose);
+
+  Isometry3d curWorldTransformation = wrist->getTransform();
+  Matrix3d curWorldRotation    = curWorldTransformation.linear();
+  Vector3d curWorldTranslation = preWorldRotation * _axis
+                                 + preWorldTranslation
+                                 - curWorldRotation * _axis;
+
+  Joint* rootJoint = handSkel->getJoint(0);
+  VectorXd rootJointConfig = rootJoint->getPositions();
+
+  Isometry3d rootT = Isometry3d::Identity();
+  curWorldTranslation - preWorldTranslation;
+
+//  handSkel->getJoint(0)->getTransform(0)->getDof(0)->setValue(
+//        mSkels[1]->getJoint(0)->getTransform(0)->getDof(0)->getValue()
+//        + curWorldTranslation(0)
+//        - preWorldTranslation(0));
+//  handSkel->getJoint(0)->getTransform(0)->getDof(1)->setValue(
+//        mSkels[1]->getJoint(0)->getTransform(0)->getDof(1)->getValue()
+//        + curWorldTranslation(1)
+//        - preWorldTranslation(1));
+//  handSkel->getJoint(0)->getTransform(0)->getDof(2)->setValue(
+//        mSkels[1]->getJoint(0)->getTransform(0)->getDof(2)->getValue()
+//        + curWorldTranslation(2)
+//        - preWorldTranslation(2));
+//  handSkel->getJoint(0)->updateStaticTransform();
+
+  handSkel->setPositions(pose);
 }
 
 int MyWindow::evalContactEdge()
 {
-  // TODO(JS): Just commented out
-//  std::vector<bool> inContactEdges;
-//  inContactEdges.resize(mEdges.size());
-//  for (int i = 0; i < mEdges.size(); ++i) {
-//    inContactEdges[i] = false;
-//  }
+  CollisionDetector* cd       = mConstraintSolver->getCollisionDetector();
+  Skeleton*          cubeSkel = mSkels[2];
+  BodyNode*          cube     = cubeSkel->getBodyNode(0);
 
-//  for (int i = 0; i < mConstraintSolver->getCollisionDetector()->getNumContacts(); ++i) {
-//    Vector3d contactPos = mConstraintSolver->getCollisionDetector()->getContact(i).point;
-//    Vector3d contactLocalPos = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), contactPos);
-//    for (int j = 0; j < mEdges.size(); ++j) {
-//      if ((contactLocalPos.tail(2)-mEdges[j].tail(2)).norm() < 0.001) {
-//        inContactEdges[j] = true;
-//      }
-//    }
-//  }
+  // Find closest edges with the contact points in YZ-plane
+  std::vector<bool> inContactEdges(mEdges.size(), false);
+  for (size_t i = 0; i < cd->getNumContacts(); ++i)
+  {
+    const Vector3d&   contactPos      = cd->getContact(i).point;
+    const Isometry3d& cubeInvT        = cube->getTransform().inverse();
+    const Vector3d&   contactLocalPos = cubeInvT * contactPos;
 
-//  int contactEdgeIndex = -1;
-//  for (int i = 0; i < mEdges.size(); ++i) {
-//    if (inContactEdges[i] == true) {
-//      for (int j = 0; j < mEdges.size(); ++j) {
-//        if (j != i && inContactEdges[j]) { // there are more than one contact edges
-//          return -1;
-//        }
-//      }
-//      contactEdgeIndex = i;
-//    }
-//  }
-//
-//  return contactEdgeIndex;
-  return 0;
+    for (size_t j = 0; j < mEdges.size(); ++j)
+    {
+      // Distance between contact point and edges in YZ-plane
+      double distance = (contactLocalPos.tail(2) - mEdges[j].tail(2)).norm();
+
+      // If the distance is less than 0.001, mark inContactEdges[i] as true
+      if (distance < 0.001)
+        inContactEdges[j] = true;
+    }
+  }
+
+  // Return the index of contact edges
+  for (size_t i = 0; i < mEdges.size(); ++i)
+  {
+    if (inContactEdges[i] == true)
+    {
+      // If the contact edge is not single, then return -1
+      for (size_t j = i + 1; j < mEdges.size(); ++j)
+      {
+        if (inContactEdges[j] == true)
+          return -1;
+      }
+
+      // return the contact edge
+      return i;
+    }
+  }
+
+  // If we couldn't find any contact edge, then return -1
+  return -1;
 }
 
-bool MyWindow::evalEdgeInContact(int _edgeIndex)
+//==============================================================================
+bool MyWindow::isEdgeInContact(int _edgeIndex)
 {
-  // TODO(JS): Just commented out
-//  for (int i = 0; i < mConstraintSolver->getCollisionDetector()->getNumContacts(); ++i) {
-//    Vector3d contactPos = mConstraintSolver->getCollisionDetector()->getContact(i).point;
-//    Vector3d contactLocalPos = dart_math::xformHom(mSkels[2]->getBodyNode(0)->getWorldInvTransform(), contactPos);
-//    if ((contactLocalPos.tail(2)-mEdges[_edgeIndex].tail(2)).norm() < 0.001) {
-//      return true;
-//    }
-//  }
+  Skeleton* objectSkel = mSkels[2];
+  BodyNode* object = objectSkel->getBodyNode(0);
+  CollisionDetector* cd = mConstraintSolver->getCollisionDetector();
+
+  for (size_t i = 0; i < cd->getNumContacts(); ++i)
+  {
+    Vector3d contactPos      = cd->getContact(i).point;
+    Vector3d contactLocalPos = object->getTransform().inverse() * contactPos;
+
+    const Vector2d& contactLocalPosYZ = contactLocalPos.tail<2>();
+    const Vector2d& edgeYZ            = mEdges[_edgeIndex].tail<2>();
+    const double& distance            = (contactLocalPosYZ - edgeYZ).norm();
+
+    if (distance < EPS_DISTANCE)
+      return true;
+  }
+
   return false;
 }
 
+//==============================================================================
 Matrix3d MyWindow::evalObjOri()
 {
-  // TODO(JS): Just commented out
-//  Vector3d oriAxisX = (mCorners[2][1]-mCorners[2][0]).normalized();
-//  Vector3d oriAxisY = (mCorners[3][1]-mCorners[2][1]).normalized();
-//  Vector3d oriAxisZ = oriAxisX.cross(oriAxisY);
-//  Vector3d axisX = (mSkels[2]->getBodyNode(0)->getTransform() * mCorners[2][1])-mSkels[2]->getBodyNode(0)->getTransform() * mCorners[2][0])).normalized();
-//  Vector3d axisY = (mSkels[2]->getBodyNode(0)->getTransform() * mCorners[3][1])-mSkels[2]->getBodyNode(0)->getTransform() * mCorners[2][1])).normalized();
-//  Vector3d axisZ = axisX.cross(axisY);
-//  Matrix3d oriRotMat;
-//  oriRotMat.col(0) = oriAxisX;
-//  oriRotMat.col(1) = oriAxisY;
-//  oriRotMat.col(2) = oriAxisZ;
-//  Matrix3d rotMat;
-//  rotMat.col(0) = axisX;
-//  rotMat.col(1) = axisY;
-//  rotMat.col(2) = axisZ;
-//  return rotMat*oriRotMat.inverse();
+  const Skeleton*   objectSkel = mSkels[1];
+  const BodyNode*   object     = objectSkel->getBodyNode(0);
+  const Isometry3d& objectT    = object->getTransform();
+
+  Vector3d oriAxisX = (mCorners[2][1] - mCorners[2][0]).normalized();
+  Vector3d oriAxisY = (mCorners[3][1] - mCorners[2][1]).normalized();
+  Vector3d oriAxisZ = oriAxisX.cross(oriAxisY);
+
+  Vector3d axisX = (objectT * mCorners[2][1] - objectT * mCorners[2][0]).normalized();
+  Vector3d axisY = (objectT * mCorners[3][1] - objectT * mCorners[2][1]).normalized();
+  Vector3d axisZ = axisX.cross(axisY);
+
+  Matrix3d oriRotMat;
+  oriRotMat.col(0) = oriAxisX;
+  oriRotMat.col(1) = oriAxisY;
+  oriRotMat.col(2) = oriAxisZ;
+
+  Matrix3d rotMat;
+  rotMat.col(0) = axisX;
+  rotMat.col(1) = axisY;
+  rotMat.col(2) = axisZ;
+
+  return rotMat * oriRotMat.inverse();
 }
 
+//==============================================================================
 int MyWindow::evalUpFace() 
 {
-  // TODO(JS): Just commented out
-//  int highVerIndex = -1;
+  const Skeleton*   handSkel = mSkels[1];
+  const BodyNode*   palm     = handSkel->getBodyNode(4);
+  const Isometry3d& invT     = palm->getTransform().inverse();
 
-//  double height = 10.0;
-//  Matrix3d rotMat = evalObjOri();
-//  Vector3d transVec(mDofs[2](0),mDofs[2](1),mDofs[2](2));
-//  for (int i = 0; i < mCorners.size(); ++i) {
-//    if (dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[i][0]+transVec)(1) < height) {
-//      height = dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[i][0]+transVec)(1);
-//      highVerIndex = i;
-//    }
-//  }
+  int    highVerIndex = -1;
+  double height       = 10.0;
 
-//  if (dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[(highVerIndex+1)%mCorners.size()][0]+transVec)(1) < dart_math::xformHom(mSkels[1]->getBodyNode(4)->getWorldInvTransform(), rotMat*mCorners[(highVerIndex-1)%mCorners.size()][0]+transVec)(1)) {
-//    return ((highVerIndex+1)%mCorners.size());
-//  }
-//  else return highVerIndex;
+  const Matrix3d& rotMat = evalObjOri();
+  Vector3d transVec(mDofs[2][0], mDofs[2][1], mDofs[2][2]);
+
+  for (size_t i = 0; i < mCorners.size(); ++i)
+  {
+    const Vector3d& cornerPinky       = mCorners[i][0];
+    const Vector3d& cornerPinkyInPalm = invT * rotMat * cornerPinky + transVec;
+    const double& cornerPinkyInPalmY = cornerPinkyInPalm[1];
+
+    if (cornerPinkyInPalmY < height)
+    {
+      height = cornerPinkyInPalmY;
+      highVerIndex = i;
+    }
+  }
+
+  const size_t& index1 = (highVerIndex + 1) % mCorners.size();
+  const size_t& index2 = (highVerIndex - 1) % mCorners.size();
+
+  const double& val1 = (invT * rotMat * mCorners[index1][0] + transVec)[1];
+  const double& val2 = (invT * rotMat * mCorners[index2][0] + transVec)[1];
+
+  if (val1 < val2)
+    return ((highVerIndex + 1) % mCorners.size());
+  else
+    return highVerIndex;
 }
 
+//==============================================================================
 // can be implemented as get every corners global coordinate, translate to local coordinate, and sort based on the coordinates in other dimensions
 void MyWindow::evalHighCorners()
 {

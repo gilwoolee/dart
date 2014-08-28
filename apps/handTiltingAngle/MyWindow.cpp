@@ -419,17 +419,17 @@ void MyWindow::evalAngles()
 void MyWindow::setGroundAngle(double _angle, const Eigen::Vector3d& _axis)
 {
   Eigen::Isometry3d preWorldTransformation = mWorld->getSkeleton(0)->getBodyNode(0)->getTransform();
-  Eigen::Matrix3d preWorldRotation = preWorldTransformation.linear();
+  Eigen::Matrix3d preWorldOrientation = preWorldTransformation.linear();
   Eigen::Vector3d preWorldTranslation = preWorldTransformation.translation();
   VectorXd pose = mWorld->getSkeleton(0)->getPositions();
   pose[2] = _angle;
   mWorld->getSkeleton(0)->setPositions(pose);
   mWorld->getSkeleton(0)->computeForwardKinematics(true, true, true);
   Eigen::Isometry3d curWorldTransformation = mWorld->getSkeleton(0)->getBodyNode(0)->getTransform();
-  Eigen::Matrix3d curWorldRotation = curWorldTransformation.linear();
-  Eigen::Vector3d curWorldTranslation = preWorldRotation * _axis
+  Eigen::Matrix3d curWorldOrientation = curWorldTransformation.linear();
+  Eigen::Vector3d curWorldTranslation = preWorldOrientation * _axis
                                         + preWorldTranslation
-                                        - curWorldRotation * _axis;
+                                        - curWorldOrientation * _axis;
   Isometry3d cubeT = Isometry3d::Identity();
   cubeT.translation() = curWorldTranslation;
   cubeT.linear() = math::eulerXYZToMatrix(Vector3d(0.0, 0.0, _angle));

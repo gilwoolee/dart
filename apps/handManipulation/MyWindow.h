@@ -170,27 +170,66 @@ protected:
 
   // test, control with target
   Eigen::Vector3d mFirstInitDir;
+
+  ///
   Eigen::Vector3d mFirstInitPoint;
+
+  ///
   Eigen::Vector3d mSecondInitDir;
+
+  ///
   Eigen::Vector3d mSecondInitPoint;
+
+  ///
   Eigen::Vector3d mInitPosition;
 
+  ///
   Eigen::Vector3d mTargetOri;
+
+  ///
   Eigen::Vector3d mObjOri;
 
+  ///
   double mPalmObjAngle;
 
-  double mObjRadius; // the approximation of the object radius, if it is a sphere, then it is the radius of the sphere
-  std::vector<Eigen::Vector3d> mEdges; // the edges of the polygon (pivoting edges) in the local coordinate, use the represent point in the 2D plane
-  std::vector<std::vector<Eigen::Vector3d> > mCorners; // the corners of the polygon in the local coodinate, the first dimension is corresponding to edges, the second dimension is two corners for an edge, the first one has positive coordinate (close to little finger), the second one has negative coordinate
+  /// the approximation of the object radius, if it is a sphere, then it is the
+  /// radius of the sphere
+  double mObjRadius;
+
+  /// the edges of the polygon (pivoting edges) in the local coordinate, use the
+  /// represent point in the 2D plane
+  std::vector<Eigen::Vector3d> mEdges;
+
+  /// the corners of the polygon in the local coodinate, the first dimension is
+  /// corresponding to edges, the second dimension is two corners for an edge,
+  /// the first one has positive coordinate (close to little finger), the second
+  /// one has negative coordinate
+  std::vector<std::vector<Eigen::Vector3d> > mCorners;
+
+  /// Current rolling number
   int mRollNum;
+
   int mRollBackNum;
+
+  /// Total number of rollings to control
   int mN;
+
+  ///
   int mBackN;
+
+  ///
   int mRollBackIndex;
+
+  ///
   std::vector<double> mAngles;
+
+  ///
   int mPreContactEdge;
+
+  ///
   Eigen::Vector3d mPreOri;
+
+  ///
   int mUpFace;
   std::vector<Eigen::Vector3d> mPreHighCorners;
   std::vector<Eigen::Vector3d> mCurHighCorners;
@@ -205,7 +244,7 @@ protected:
   std::string mBakeFileName;
 
   void doUI();
-  //void solveBoundEllipsoid();
+//  void solveBoundEllipsoid();
   Eigen::Vector3d ballToCartesian(Eigen::VectorXd _ball);
   Eigen::Vector3d ballToCartesian(Eigen::VectorXd _ball, double _radius);
   Eigen::Vector2d cartesianToBall(Eigen::Vector3d _cartesian);
@@ -235,11 +274,22 @@ protected:
   Eigen::Vector3d evalVelOnObj(Eigen::Vector3d& _l);
   bool forceAchievable(int _index, Eigen::Vector3d _point, Eigen::Vector3d _force);
   void setHandAngle(double _angle);
-  void setHandTrans(Eigen::Vector3d _preOri, Eigen::Vector3d _axis);
+
+  ///
+  void setHandTrans(const Eigen::Vector3d& _preOri,
+                    const Eigen::Vector3d& _axis);
+
   int evalContactEdge();
-  bool evalEdgeInContact(int _edgeIndex);
+
+  /// Return true if _edgeIndex is in contact
+  bool isEdgeInContact(int _edgeIndex);
+
+  /// Return the orientation of the object
   Eigen::Matrix3d evalObjOri();
+
+  ///
   int evalUpFace();
+
   void evalHighCorners();
   bool evalCornerChange();
   void evalRollDir();
