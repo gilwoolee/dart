@@ -430,6 +430,21 @@ SkelParser::SkelBodyNode SkelParser::readBodyNode(
       newBodyNode->setLocalCOM(offset);
     }
   }
+  else
+  {
+    // mass
+    double mass = 1.0;
+    newBodyNode->setMass(mass);
+
+    if (newBodyNode->getVisualizationShape(0) != 0)
+    {
+          Eigen::Matrix3d Ic =
+              newBodyNode->getVisualizationShape(0)->computeInertia(mass);
+
+          newBodyNode->setMomentOfInertia(Ic(0, 0), Ic(1, 1), Ic(2, 2),
+                                          Ic(0, 1), Ic(0, 2), Ic(1, 2));
+    }
+  }
 
   //--------------------------------------------------------------------------
   // marker

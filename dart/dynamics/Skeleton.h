@@ -556,6 +556,15 @@ public:
   /// Compute recursion part B of hybrid dynamics
 //  void computeHybridDynamicsRecursionB();
 
+public:
+  /// Return total inertia of all the rigid bodies. Note that soft bodies are
+  /// not taken into account.
+  Eigen::Matrix6d getTotalSpatialInertiaTensorWorld() const;
+
+  Eigen::Matrix6d getTotalSpatialInertiaTensorRoot() const;
+
+  bool mShowTotalInertia;
+
 protected:
   /// Update mass matrix of the skeleton.
   void updateMassMatrix();

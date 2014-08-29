@@ -50,6 +50,7 @@
 #include "dart/dynamics/PointMass.h"
 #include "dart/dynamics/Joint.h"
 #include "dart/dynamics/Marker.h"
+#include "dart/renderer/RenderInterface.h"
 
 namespace dart {
 namespace dynamics {
@@ -76,7 +77,8 @@ Skeleton::Skeleton(const std::string& _name)
     mIsDampingForcesDirty(true),
     mIsImpulseApplied(false),
     mUnionRootSkeleton(this),
-    mUnionSize(1)
+    mUnionSize(1),
+    mShowTotalInertia(false)
 {
 }
 
@@ -1123,6 +1125,59 @@ void Skeleton::draw(renderer::RenderInterface* _ri,
                     bool _useDefaultColor) const
 {
   getRootBodyNode()->draw(_ri, _color, _useDefaultColor);
+
+  if (!mShowTotalInertia)
+    return;
+
+  //============================================================================
+  //============================================================================
+  // TODO(JS): Temp code
+
+  const double& density = 1.0;
+
+  const BodyNode* root = getRootBodyNode();
+  const Eigen::Isometry3d&  T = root->getTransform();
+
+  const Eigen::Matrix6d& G = this->getTotalSpatialInertiaTensorRoot();
+  const Eigen::Matrix3d& I = G.topLeftCorner<3, 3>();
+
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigenSolver(I);
+
+  std::cout << "Ixx, Iyy, Izz: "
+            << I(0,0) << " "
+            << I(1,1) << " "
+            << I(2,2) << " " << std::endl;
+
+  if (eigenSolver.info() != Eigen::Success)
+  {
+    dterr << "Failed to get eigen values." << std::endl;
+    exit(0);
+  }
+
+  Eigen::Vector3d ev = eigenSolver.eigenvalues();
+
+  Eigen::Vector3d dim;
+
+  double a = std::pow(ev[0] * ev[1] * ev[2], 2.0/5.0);
+  double b = std::pow(8.0 * DART_PI * density / 15.0, 1.0/5.0);
+  double c = a/b;
+
+  for (int i = 0; i < 3; ++i)
+    dim[i] = c / ev[i];
+
+  std::cout << "dim: " << dim.transpose() << std::endl;
+
+  if (_ri == NULL)
+    return;
+
+  _ri->setPenColor(Eigen::Vector4d(1.0, 0.0, 0.0, 0.5));
+  _ri->pushMatrix();
+  _ri->transform(T);
+  _ri->drawEllipsoid(dim);
+  _ri->popMatrix();
+
+  //============================================================================
+  //============================================================================
 }
 
 //==============================================================================
@@ -1663,6 +1718,35 @@ void Skeleton::computeInverseDynamicsRecursionB(bool _withExternalForces,
     (*it)->updateBodyWrench(mGravity, _withExternalForces);
     (*it)->updateGeneralizedForce(_withDampingForces);
   }
+}
+
+//==============================================================================
+Eigen::Matrix6d Skeleton::getTotalSpatialInertiaTensorWorld() const
+{
+  Eigen::Matrix6d I = Eigen::Matrix6d::Zero();
+
+  for (std::vector<BodyNode*>::const_iterator it = mBodyNodes.begin();
+       it != mBodyNodes.end(); ++it)
+  {
+    const Eigen::Matrix6d&   Ii   = (*it)->getSpatialInertia();
+    const Eigen::Isometry3d& invT = (*it)->getTransform().inverse();
+
+    I += math::transformInertia(invT, Ii);
+  }
+
+  return I;
+}
+
+//==============================================================================
+Eigen::Matrix6d Skeleton::getTotalSpatialInertiaTensorRoot() const
+{
+  Eigen::Matrix6d I = getTotalSpatialInertiaTensorWorld();
+
+  const Eigen::Isometry3d& T = getRootBodyNode()->getTransform();
+
+  I = math::transformInertia(T, I);
+
+  return I;
 }
 
 //==============================================================================

@@ -8,6 +8,7 @@ foreach(APPDIR
     bipedStand
     cubli
     #inertiaBot
+    inertiaDisp
     rigidLoop
     rigidCubes
     rigidChain
