@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
   Eigen::Vector3d gravity(0.0, -9.81, 0.0);
   Eigen::Vector3d zero = Eigen::Vector3d::Zero();
 
-  myWorld->setGravity(zero);
+  myWorld->setGravity(gravity );
 
   // create controller
 //  Controller* myController = new Controller(myWorld->getSkeleton("cubli"),
