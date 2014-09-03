@@ -87,7 +87,8 @@ const char * const MyWindow::mFileName = "roll_cube";
 nv::GlutUIContext ui;
 #endif
 float initPose[] = {-0.8000000119, 0, 0, 0, 0, 0, 0, -0.7428935766, 0, 0, 0, 0, 1.072659612, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.8000000119, 0, 0.200000003};
-float initObjPose[] = {0.0, 0.0, 0.0, 0.08, 0.15, 0.43};
+//float initObjPose[] = {0.0, 0.0, 0.0, 0.08, 0.15, 0.43};
+float initObjPose[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 static dart::common::Timer tIter("timeIter");
 static dart::common::Timer tInternal("timeInternal");
@@ -250,15 +251,21 @@ void MyWindow::initDyn()
   mDofs[0][4] = -0.3;
 
   // initial pose for hand
-  for (int i = 0; i < mSkels[1]->getNumDofs(); i++)
+  for (size_t i = 0; i < mSkels[1]->getNumDofs(); i++)
     mDofs[1][i] = initPose[i];
 
   // modify hand pose based on rolling, related to roll direction
   //mDofs[1][2] = -mAngles[0];
 
+  Isometry3d T = Isometry3d::Identity();
+  T.translation()[0] = initObjPose[3];
+  T.translation()[1] = initObjPose[4];
+  T.translation()[2] = initObjPose[5];
+  Vector6d initObjPoseScrewParam = math::logMap(T);
+
   // initial position of the box
-  for (int i = 0; i < mSkels[2]->getNumDofs(); i++)
-    mDofs[2][i] = initObjPose[i];
+  for (size_t i = 0; i < mSkels[2]->getNumDofs(); i++)
+    mDofs[2][i] = initObjPoseScrewParam[i];
 
   for (unsigned int i = 0; i < mSkels.size(); i++)
   {
@@ -270,9 +277,13 @@ void MyWindow::initDyn()
   }
 
   // modify box pose based on rolling, related to roll direction
-  Vector3d localPos(-0.01,-(0.02+0.011),0.06);
+  Vector3d localPos(-0.01, -(0.02 + 0.011 + 0.0005), 0.06);
   Vector3d worldPos = mSkels[1]->getBodyNode(4)->getTransform() * localPos;
-  mDofs[2].head(3) = worldPos;
+
+  T.translation() = worldPos;
+
+  //mDofs[2].tail<3>() = worldPos;
+  mDofs[2] = math::logMap(T);
 
   for (unsigned int i = 0; i < mSkels.size(); i++)
   {
@@ -725,20 +736,24 @@ void MyWindow::setPose()
 
   for (unsigned int i = 0; i < mSkels.size(); i++)
   {
-    if (mSkels[i]->isMobile())
-    {
-      // need to update first derivatives for collision
-      mSkels[i]->setGravity(mGravity);
-      mSkels[i]->setPositions(mDofs[i]);
-      mSkels[i]->setVelocities(mDofVels[i]);
-      mSkels[i]->computeForwardKinematics(true, true, false);
-    }
-    else
-    {
-      // need to update node transformation for collision
-      mSkels[i]->setPositions(mDofs[i]);
-      mSkels[i]->computeForwardKinematics(true, false, false);
-    }
+    mSkels[i]->setPositions(mDofs[i]);
+    mSkels[i]->setVelocities(mDofVels[i]);
+//    mSkels[i]->computeForwardKinematics(true, true, true);
+
+//    if (mSkels[i]->isMobile())
+//    {
+//      // need to update first derivatives for collision
+//      mSkels[i]->setGravity(mGravity);
+//      mSkels[i]->setPositions(mDofs[i]);
+//      mSkels[i]->setVelocities(mDofVels[i]);
+//      mSkels[i]->computeForwardKinematics(true, true, false);
+//    }
+//    else
+//    {
+//      // need to update node transformation for collision
+//      mSkels[i]->setPositions(mDofs[i]);
+//      mSkels[i]->computeForwardKinematics(true, false, false);
+//    }
   }
 }
 
@@ -789,16 +804,16 @@ void MyWindow::displayTimer(int _val)
       // 			tIter.startTimer();
       setPose();
       // 			updateHandPose();
-      //updateContact();
+      updateContact();
       // 			tInternal.startTimer();
       // evaluate all the other hand control force before evaluating object control force, and updateIntForce is inside updateConact, then comment
-      //updateIntForce(); // evaluate the hand control force including object control force, the force evaluation is not inside updateContact
+      updateIntForce(); // evaluate the hand control force including object control force, the force evaluation is not inside updateContact
       // 			tInternal.stopTimer();
       // 			tExternal.startTimer();
-      //updateExtForce();
+      updateExtForce();
       // 			tExternal.stopTimer();
       // 			tSimulation.startTimer();
-      //mIntegrator.integrate(this, mTimeStep);
+//      mIntegrator.integrate(this, mTimeStep);
       step();
       // 			tSimulation.stopTimer();
       //bake();
@@ -1548,7 +1563,7 @@ void MyWindow::updateContact()
 
   // calculate the contact number for each finger
   collision::CollisionDetector* cd = mConstraintSolver->getCollisionDetector();
-  for (int i = 0; i < cd->getNumContacts(); ++i)
+  for (size_t i = 0; i < cd->getNumContacts(); ++i)
   {
     for (int j = 0; j < mFingerNum; ++j)
     {
