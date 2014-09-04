@@ -165,7 +165,7 @@ void JOINTS::kinematicsTest(Joint* _joint)
       numericJ.col(i) = Ji;
     }
 
-    if (dynamic_cast<BallJoint*>(_joint) || dynamic_cast<FreeJoint*>(_joint))
+    if (dynamic_cast<BallJoint*>(_joint)/* || dynamic_cast<FreeJoint*>(_joint)*/)
     {
       // Skip this test for BallJoint and FreeJoint since Jacobian of BallJoint
       // and FreeJoint is not obtained by the above method.
@@ -175,6 +175,10 @@ void JOINTS::kinematicsTest(Joint* _joint)
       for (int i = 0; i < dof; ++i)
         for (int j = 0; j < 6; ++j)
           EXPECT_NEAR(J.col(i)(j), numericJ.col(i)(j), JOINT_TOL);
+
+      std::cout << "J: " << std::endl << J << std::endl;
+      std::cout << std::endl;
+      std::cout << "numericJ: " << std::endl << numericJ << std::endl;
     }
 
     //--------------------------------------------------------------------------
@@ -205,7 +209,7 @@ void JOINTS::kinematicsTest(Joint* _joint)
     }
 
 
-    if (dynamic_cast<BallJoint*>(_joint) || dynamic_cast<FreeJoint*>(_joint))
+    if (dynamic_cast<BallJoint*>(_joint) /*|| dynamic_cast<FreeJoint*>(_joint)*/)
     {
       // Skip this test for BallJoint and FreeJoint since time derivative of
       // Jacobian of BallJoint and FreeJoint is not obtained by the above
@@ -216,6 +220,10 @@ void JOINTS::kinematicsTest(Joint* _joint)
       for (int i = 0; i < dof; ++i)
         for (int j = 0; j < 6; ++j)
           EXPECT_NEAR(dJ.col(i)(j), numeric_dJ.col(i)(j), JOINT_TOL);
+
+      std::cout << "dJ: " << std::endl << dJ << std::endl;
+      std::cout << std::endl;
+      std::cout << "numeric_dJ: " << std::endl << numeric_dJ << std::endl;
     }
   }
 

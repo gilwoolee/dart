@@ -78,6 +78,43 @@ protected:
   // Documentation inherited
   virtual void updateLocalJacobianTimeDeriv();
 
+public:
+  // To get byte-aligned Eigen vectors
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+/// class FreeJoint
+class FreeJoint2 : public MultiDofJoint<6>
+{
+public:
+  /// Constructor
+  explicit FreeJoint2(const std::string& _name = "FreeJoint");
+
+  /// Destructor
+  virtual ~FreeJoint2();
+
+  // Documentation inherited
+  virtual void setTransformFromChildBodyNode(const Eigen::Isometry3d& _T);
+
+  // Documentation inherited
+  virtual Eigen::Vector6d getBodyConstraintWrench() const
+  {
+    return mWrench - mJacobian * mForces;
+  }
+
+protected:
+  // Documentation inherited
+  virtual void integratePositions(double _dt);
+
+  // Documentation inherited
+  virtual void updateLocalTransform();
+
+  // Documentation inherited
+  virtual void updateLocalJacobian();
+
+  // Documentation inherited
+  virtual void updateLocalJacobianTimeDeriv();
+
 protected:
   /// Transformation matrix dependant on generalized coordinates
   Eigen::Isometry3d mQ;

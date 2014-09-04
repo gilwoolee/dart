@@ -378,8 +378,8 @@ void AccuracyTest::Boxes(double _dt,
     Vector3d posErr = p - (p0 + v0 * t + 0.5*g*t*t);
     Vector3d posErr2 = p2 - (p0 + v0 * t + 0.5*g*t*t);
 //    linearPositionError.InsertData(p - (p0 + v0 * t + 0.5*g*t*t));
-//    std::cout << "posErr: " << posErr.transpose() << std::endl;
-    std::cout << "posErr2: " << posErr2.transpose() << std::endl;
+    std::cout << "posErr: " << posErr.transpose() << std::endl;
+//    std::cout << "posErr2: " << posErr2.transpose() << std::endl;
 
     // angular momentum error
 //    Vector3d H = link->GetWorldInertiaMatrix()*link->GetWorldAngularVel();
