@@ -78,7 +78,7 @@ Skeleton::Skeleton(const std::string& _name)
     mIsImpulseApplied(false),
     mUnionRootSkeleton(this),
     mUnionSize(1),
-    mShowTotalInertia(false)
+    mShowTotalInertia(true)
 {
 }
 
@@ -1154,16 +1154,24 @@ void Skeleton::draw(renderer::RenderInterface* _ri,
     exit(0);
   }
 
-  Eigen::Vector3d ev = eigenSolver.eigenvalues();
+  Eigen::Vector3d eVal = eigenSolver.eigenvalues();
+  Eigen::Matrix3d eVec = eigenSolver.eigenvectors();
+  Eigen::Matrix3d R = eVec;
+  Eigen::Isometry3d T2 = Eigen::Isometry3d::Identity();
+  T2.linear() = R;
+
+  std::cout << "lenX:" << R.col(0).norm() << std::endl;
+  std::cout << "lenY:" << R.col(1).norm() << std::endl;
+  std::cout << "lenZ:" << R.col(2).norm() << std::endl;
 
   Eigen::Vector3d dim;
 
-  double a = std::pow(ev[0] * ev[1] * ev[2], 2.0/5.0);
+  double a = std::pow(eVal[0] * eVal[1] * eVal[2], 2.0/5.0);
   double b = std::pow(8.0 * DART_PI * density / 15.0, 1.0/5.0);
   double c = a/b;
 
   for (int i = 0; i < 3; ++i)
-    dim[i] = c / ev[i];
+    dim[i] = c / eVal[i];
 
   std::cout << "dim: " << dim.transpose() << std::endl;
 
@@ -1172,7 +1180,7 @@ void Skeleton::draw(renderer::RenderInterface* _ri,
 
   _ri->setPenColor(Eigen::Vector4d(1.0, 0.0, 0.0, 0.5));
   _ri->pushMatrix();
-  _ri->transform(T);
+  _ri->transform(T * T2);
   _ri->drawEllipsoid(dim);
   _ri->popMatrix();
 

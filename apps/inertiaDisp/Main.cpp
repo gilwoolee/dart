@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   // load a skeleton file
   // create and initialize the world
   dart::simulation::World* myWorld
-      = dart::utils::SkelParser::readWorld(DART_DATA_PATH"skel/fullbody1.skel");
+      = dart::utils::SkelParser::readWorld(DART_DATA_PATH"skel/inertia_ellipoids.skel");
   assert(myWorld != NULL);
 
   Eigen::Vector3d gravity(0.0, -9.81, 0.0);
