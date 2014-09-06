@@ -44,7 +44,9 @@
 #include "dart/common/Console.h"
 #include "dart/math/Geometry.h"
 #include "dart/math/Helpers.h"
+#include "dart/dynamics/EllipsoidShape.h"
 #include "dart/dynamics/BodyNode.h"
+#include "dart/dynamics/RevoluteJoint.h"
 #include "dart/dynamics/Skeleton.h"
 #include "dart/simulation/World.h"
 #include "dart/utils/SkelParser.h"
@@ -221,7 +223,7 @@ void setPosition(Skeleton* _skel, const Vector3d& _pos)
 class AccuracyTest : public ::testing::Test
 {
 public:
-  // Spawn a single box and record accuracy for momentum and energy conservation
+  /// Spawn a single box and record accuracy for momentum and energy conservation
   void Boxes(double _dt,
              int _iterations,
              int _boxCount,
@@ -229,13 +231,21 @@ public:
              bool _collision,
              bool _linear);
 
-  // Spawn a single box and record accuracy for momentum and energy conservation
+  /// Spawn a single box and record accuracy for momentum and energy conservation
   void Boxes2(double _dt,
-             int _iterations,
-             int _boxCount,
-             bool _gravity,
-             bool _collision,
-             bool _linear);
+              int _iterations,
+              int _boxCount,
+              bool _gravity,
+              bool _collision,
+              bool _linear);
+
+  ///
+  void RevoluteJointTest(double _dt,
+                         int _iterations,
+                         int _boxCount,
+                         bool _gravity,
+                         bool _collision,
+                         bool _linear);
 };
 
 //==============================================================================
@@ -541,10 +551,150 @@ void AccuracyTest::Boxes2(double _dt,
 }
 
 //==============================================================================
-TEST_F(AccuracyTest, testBoxes)
+void AccuracyTest::RevoluteJointTest(double _dt,
+                                     int _iterations,
+                                     int _boxCount,
+                                     bool _gravity,
+                                     bool _collision,
+                                     bool _linear)
 {
-  Boxes(0.001, 50, 1, false, false, true);
-//  Boxes2(0.001, 50, 1, false, false, true);
+  //----------------------------------------------------------------------------
+  // TODO(JS): Add energy test
+  //----------------------------------------------------------------------------
+
+  // Create the world
+  World* world = new World();
+
+  // get gravity value
+  if (_gravity)
+    world->setGravity(Vector3d(0.0, 0.0, -9.81));
+  else
+    world->setGravity(Vector3d::Zero());
+
+  Eigen::Vector3d g = world->getGravity();
+
+  // Sphere radius
+  const double&   radius     = 0.1;
+  const double&   radius2    = radius * 2.0;
+  const Vector3d& sphereSize = Vector3d(radius2, radius2, radius2);
+
+  // Create box with inertia based on box of uniform density
+  Skeleton*       skel     = new Skeleton();
+  BodyNode*       bodyNode = new BodyNode();
+  EllipsoidShape* vizShape = new EllipsoidShape(sphereSize);
+  EllipsoidShape* colShape = new EllipsoidShape(sphereSize);
+  RevoluteJoint*  joint    = new RevoluteJoint(Vector3d::UnitZ());
+
+  // inertia matrix, recompute if the above change
+  const double&   mass = 10.0;
+  const Matrix3d& I    = vizShape->computeInertia(mass);
+
+  // Build skeleton and add it to the world
+  bodyNode->addVisualizationShape(vizShape);
+  bodyNode->addCollisionShape(colShape);
+  bodyNode->setParentJoint(joint);
+  bodyNode->setMomentOfInertia(I(0, 0), I(1, 1), I(2, 2));
+  bodyNode->setMass(mass);
+  Isometry3d T = Isometry3d::Identity();
+  T.translation() = -Vector3d::UnitX();
+  joint->setTransformFromChildBodyNode(T);
+  joint->setTransformFromParentBodyNode(Isometry3d::Identity());
+  skel->addBodyNode(bodyNode);
+  world->addSkeleton(skel);
+
+  // initial joint velocity
+  const double& w = 0.1;  // radian
+
+  // initial velocity of the body node
+  Vector3d v0 = Vector3d(0.0, w * radius, 0.0);
+  Vector3d w0 = Vector3d(0.0,        0.0,   w);
+
+  // initial energy value
+  // double E0 = 0.0;
+
+  // initial velocity of the body node
+
+  //----------------------------------------------------------------------------
+  // Test 1 - Initial conditions
+  //----------------------------------------------------------------------------
+
+  // Set initial conditions
+  joint->setPosition(0, 0.0);
+  joint->setVelocity(0, w);
+  skel->computeForwardKinematics(true, true, false);
+
+  EXPECT_EQ(joint->getPosition(0), 0.0);
+  EXPECT_EQ(joint->getVelocity(0), w);
+
+  Vector3d linVel = bodyNode->getWorldLinearVelocity();
+  Vector3d angVel = bodyNode->getWorldAngularVelocity();
+
+  double E = 0.0;
+
+  EXPECT_EQ(linVel, v0);
+  EXPECT_EQ(angVel, w0);
+  // EXPECT_EQ(E, E0);
+
+  //----------------------------------------------------------------------------
+
+  const double& simDuration = 10.0;
+  const double& t0          = 0.0;
+  const int&    steps       = ceil(simDuration / _dt);
+
+  // initial linear position in global frame
+  Vector3d p0 = bodyNode->getTransform().translation();
+
+  for (int i = 0; i < steps; ++i)
+  {
+    world->step();
+
+    // current time
+    double t = world->getTime() - t0;
+
+    // linear velocity error
+    Vector3d v = bodyNode->getWorldLinearVelocity();
+    Vector3d wBody = bodyNode->getBodyAngularVelocity();
+    Vector3d wWorld = bodyNode->getWorldAngularVelocity();
+    Vector3d linVelErr = v - (v0 + g*t);
+//    linearVelocityError.InsertData(v - (v0 + g*t));
+//    std::cout << "linVelErr: " << linVelErr.transpose() << std::endl;
+
+    // joint position error
+    double q      = joint->getPosition(0);
+    double exactQ = w*t;
+    double qErr   = q - exactQ;
+
+    // body position error
+    Vector3d p      = bodyNode->getTransform().translation();
+    Vector3d exactP = Vector3d(radius*cos(w*t), radius*sin(w*t), 0.0);
+    Vector3d posErr = p - exactP;
+
+    // linearPositionError.InsertData(p - (p0 + v0 * t + 0.5*g*t*t));
+    std::cout << "qErr: " << qErr << std::endl;
+    std::cout << "posErr: " << posErr.transpose() << std::endl;
+
+    // angular momentum error
+    // Vector3d H = link->GetWorldInertiaMatrix()*link->GetWorldAngularVel();
+    // angularMomentumError.InsertData((H - H0) / H0mag);
+
+    // energy error
+    // energyError.InsertData((link->GetWorldEnergy() - E0) / E0);
+  }
+
+  delete world;
+}
+
+//==============================================================================
+//TEST_F(AccuracyTest, testBoxes)
+//{
+//  Boxes(0.001, 50, 1, false, false, true);
+////  Boxes2(0.001, 50, 1, false, false, true);
+//}
+
+//==============================================================================
+TEST_F(AccuracyTest, testRevoluteJoint)
+{
+  RevoluteJointTest(0.001, 50, 1, false, false, true);
 }
 
 //==============================================================================
