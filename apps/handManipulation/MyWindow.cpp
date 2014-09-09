@@ -419,32 +419,26 @@ void MyWindow::initDyn()
   mFingerContactPoints.resize(mFingerNum);
   mFingerTargetContactForces.resize(mFingerNum);
 
-  mFingerNames.resize(mFingerNum);
+  mFingerTipNames.resize(mFingerNum);
   mFingerRootNames.resize(mFingerNum);
 
   mPalmName = "palm";
-  mFingerNames[0] = "thdistal";
-  mFingerNames[1] = "ffdistal";
-  mFingerNames[2] = "mfdistal";
-  mFingerNames[3] = "rfdistal";
-  mFingerNames[4] = "lfdistal";
+
+  mFingerTipNames[0] = "thdistal";
+  mFingerTipNames[1] = "ffdistal";
+  mFingerTipNames[2] = "mfdistal";
+  mFingerTipNames[3] = "rfdistal";
+  mFingerTipNames[4] = "lfdistal";
 
   mFingerRootNames[0] = "thbase";
   mFingerRootNames[1] = "ffknuckle";
   mFingerRootNames[2] = "mfknuckle";
   mFingerRootNames[3] = "rfknuckle";
   mFingerRootNames[4] = "lfknuckle";
-//  mFingerTipIndices.resize(mFingerNum);
-//  for (int i = 0; i < mFingerNum; ++i)
-//  {
-//    mFingerTipIndices[i]
-//        = mSkels[1]->getBodyNode(mFingerNames[i])->getSkeletonIndex();
-//  }
 
   // create controller
-
   mController = new Controller(mSkels[1], mTimeStep, mTasks, mFingerNum,
-                               mFingerRootNames, mPalmName);
+                               mFingerRootNames, mFingerTipNames, mPalmName);
 
 
   // plan related
@@ -658,14 +652,14 @@ void MyWindow::setPose()
   //dynamics::BodyNode* wrist = mSkels[1]->getBodyNode(mPalmName);
   int contactEdgeIndex = evalContactEdge();
 
-//  if (contactEdgeIndex == mPreContactEdge || contactEdgeIndex == -1)
-//  {
-//    //setHandTrans(mPreOri,mEdges[contactEdgeIndex]);
-//  }
-//  else if (contactEdgeIndex != -1)
-//  {
-//    mPreContactEdge = contactEdgeIndex;
-//  }
+  if (contactEdgeIndex == mPreContactEdge || contactEdgeIndex == -1)
+  {
+    //setHandTrans(mPreOri,mEdges[contactEdgeIndex]);
+  }
+  else if (contactEdgeIndex != -1)
+  {
+    mPreContactEdge = contactEdgeIndex;
+  }
 
   // If we found contact edge, then set it as previous contact edge
   if (contactEdgeIndex != -1)
@@ -734,11 +728,11 @@ void MyWindow::setPose()
   if (evalUpFace() != mUpFace)
     mUpFace = evalUpFace();
 
-  for (unsigned int i = 0; i < mSkels.size(); i++)
-  {
-    mSkels[i]->setPositions(mDofs[i]);
-    mSkels[i]->setVelocities(mDofVels[i]);
-//    mSkels[i]->computeForwardKinematics(true, true, true);
+//  for (unsigned int i = 0; i < mSkels.size(); i++)
+//  {
+//    mSkels[i]->setPositions(mDofs[i]);
+//    mSkels[i]->setVelocities(mDofVels[i]);
+//    mSkels[i]->computeForwardKinematics(true, false, false);
 
 //    if (mSkels[i]->isMobile())
 //    {
@@ -754,7 +748,7 @@ void MyWindow::setPose()
 //      mSkels[i]->setPositions(mDofs[i]);
 //      mSkels[i]->computeForwardKinematics(true, false, false);
 //    }
-  }
+//  }
 }
 
 //==============================================================================
@@ -781,6 +775,7 @@ void MyWindow::resize(int w, int h)
   glutPostRedisplay();
 }
 
+//==============================================================================
 void MyWindow::displayTimer(int _val)
 {	
   int numIter = 10;
@@ -801,60 +796,84 @@ void MyWindow::displayTimer(int _val)
     for (int i = 0; i < numIter; i++)
     {
       // TODO(JS): Just commented out
-      // 			tIter.startTimer();
-      setPose();
-      // 			updateHandPose();
-      updateContact();
-      // 			tInternal.startTimer();
-      // evaluate all the other hand control force before evaluating object control force, and updateIntForce is inside updateConact, then comment
-      updateIntForce(); // evaluate the hand control force including object control force, the force evaluation is not inside updateContact
-      // 			tInternal.stopTimer();
-      // 			tExternal.startTimer();
-      updateExtForce();
-      // 			tExternal.stopTimer();
-      // 			tSimulation.startTimer();
-//      mIntegrator.integrate(this, mTimeStep);
-      step();
-      // 			tSimulation.stopTimer();
-      //bake();
-      mSimFrame++;
-      // 			tIter.stopTimer();
+      // tIter.startTimer();
+      {
+        //
+        setPose();
+
+        //
+        // updateHandPose();
+
+        updateContact();
+
+        // tInternal.startTimer();
+        {
+          // Evaluate all the other hand control force before evaluating object
+          // control force, and updateIntForce is inside updateConact, then
+          // comment evaluate the hand control force including object control
+          // force, the force evaluation is not inside updateContact
+          updateIntForce();
+        }
+        // tInternal.stopTimer();
+
+        // tExternal.startTimer();
+        {
+          //
+          updateExtForce();
+        }
+        // tExternal.stopTimer();
+
+        // tSimulation.startTimer();
+        {
+          // mIntegrator.integrate(this, mTimeStep);
+
+          // Step forward dynamics
+          step();
+        }
+        // tSimulation.stopTimer();
+
+        //bake();
+
+        mSimFrame++;
+      }
+      // tIter.stopTimer();
     }
     mForce.setZero();
 
     glutPostRedisplay();
+
     glutTimerFunc(mDisplayTimeout, refreshTimer, _val);
 
-    // 		tIter.print();
-    // 		tInternal.print();
-    // 		tExternal.print();
-    // 		tSimulation.print();
-    // 		tHandIK.print();
-    // 		tSetPose.print();
-    // 		tContact.print();
-    // 		tJointLimit.print();
+    // tIter.print();
+    // tInternal.print();
+    // tExternal.print();
+    // tSimulation.print();
+    // tHandIK.print();
+    // tSetPose.print();
+    // tContact.print();
+    // tJointLimit.print();
   }
 }
 
-Vector3d MyWindow::ballToCartesian(VectorXd _ball)
+Vector3d MyWindow::ballToCartesian(const VectorXd& _ball)
 {
   Vector3d cartesian;
-  cartesian(0) = mBoundEllipsoidR(0)*cos(_ball(0))*cos(_ball(1));
-  cartesian(1) = mBoundEllipsoidR(1)*cos(_ball(0))*sin(_ball(1));
-  cartesian(2) = mBoundEllipsoidR(2)*sin(_ball(0));
+  cartesian[0] = mBoundEllipsoidR(0)*cos(_ball(0))*cos(_ball(1));
+  cartesian[1] = mBoundEllipsoidR(1)*cos(_ball(0))*sin(_ball(1));
+  cartesian[2] = mBoundEllipsoidR(2)*sin(_ball(0));
   return cartesian;
 }
 
-Vector3d MyWindow::ballToCartesian(VectorXd _ball, double _radius)
+Vector3d MyWindow::ballToCartesian(const VectorXd& _ball, double _radius)
 {
   Vector3d cartesian;
-  cartesian(0) = _radius*cos(_ball(0))*cos(_ball(1));
-  cartesian(1) = _radius*cos(_ball(0))*sin(_ball(1));
-  cartesian(2) = _radius*sin(_ball(0));
+  cartesian[0] = _radius*cos(_ball(0))*cos(_ball(1));
+  cartesian[1] = _radius*cos(_ball(0))*sin(_ball(1));
+  cartesian[2] = _radius*sin(_ball(0));
   return cartesian;
 }
 
-Vector2d MyWindow::cartesianToBall(Vector3d _cartesian)
+Vector2d MyWindow::cartesianToBall(const Vector3d& _cartesian)
 {
   Vector2d ball = Vector2d::Zero();
   ball(0) = asin(_cartesian(2)/mBoundEllipsoidR(2));
@@ -1515,7 +1534,7 @@ void MyWindow::updateHandPose()
 
 }
 
-// this function should assign the contact points and contact forces, based on
+// This function should assign the contact points and contact forces, based on
 // the contact point from collision detection, and do contact planning
 void MyWindow::updateContact()
 {
@@ -1569,7 +1588,7 @@ void MyWindow::updateContact()
     {
       string bodyNodeName1 = cd->getContact(i).bodyNode1->getName();
 
-      if (bodyNodeName1 == mFingerNames[j])
+      if (bodyNodeName1 == mFingerTipNames[j])
       {
         numContact[j]++;
         break;
@@ -1596,34 +1615,41 @@ void MyWindow::updateContact()
 //    }
 //  }
 
-  for (int i = 0; i < mFingerNum; ++i) {
+  for (int i = 0; i < mFingerNum; ++i)
     numContact[i] = 0;
-  }
+
   // 	std::cout << "#contact:  " << mConstraintHandle->getNumContacts() << std::endl;
 
-  // the original contact information
-  for (int i = 0; i < mConstraintSolver->getCollisionDetector()->getNumContacts(); ++i)
+  // The original contact information
+  for (int i = 0; i < cd->getNumContacts(); ++i)
   {
+    Contact contact = cd->getContact(i);
+
     for (int j = 0; j < mFingerNum; ++j)
     {
-      if (cd->getContact(i).bodyNode1->getName() == mFingerNames[j])
+      if (contact.bodyNode1->getName() == mFingerTipNames[j])
       {
         numContact[j]++;
-        contactPointsOnHand[j].push_back(mConstraintSolver->getCollisionDetector()->getContact(i).point);
-        contactNormalsOnHand[j].push_back(mConstraintSolver->getCollisionDetector()->getContact(i).normal);
+        contactPointsOnHand[j].push_back(contact.point);
+        contactNormalsOnHand[j].push_back(contact.normal);
         contactIndicesOnHand[j].push_back(i);
-        avePenetration[j] += mConstraintSolver->getCollisionDetector()->getContact(i).penetrationDepth;
+        avePenetration[j] += contact.penetrationDepth;
         break;
       }
     }
   }
 
-  // average the contact point and penetration
-  for (int i = 0; i < mFingerNum; ++i) {
-    for (int j = 0; j < numContact[i]; ++j) {
-      mFingerContactPoints[i] = mFingerContactPoints[i] + contactPointsOnHand[i][j];
+  // Average the contact point and penetration
+  for (int i = 0; i < mFingerNum; ++i)
+  {
+    for (int j = 0; j < numContact[i]; ++j)
+    {
+      mFingerContactPoints[i] = mFingerContactPoints[i]
+                                + contactPointsOnHand[i][j];
     }
-    if (numContact[i] > 0) {
+
+    if (numContact[i] > 0)
+    {
       mFingerContactPoints[i] = mFingerContactPoints[i]/numContact[i];
       avePenetration[i] = avePenetration[i]/numContact[i];
     }
@@ -1854,6 +1880,7 @@ void MyWindow::updateTaskTarget()
 //  }
 }
 
+//==============================================================================
 void MyWindow::updateIntForce()
 {
   // TODO(JS): Just commented out
@@ -1863,9 +1890,10 @@ void MyWindow::updateIntForce()
 //  mSkels[1]->setForces(mController->getTorques());
 }
 
+//==============================================================================
 void MyWindow::updateExtForce()
 {
-  // compute all the constraint force, including contact force and joint limit
+  // Compute all the constraint force, including contact force and joint limit
   // force
   bool ODEFlag = true;
 
@@ -1880,46 +1908,42 @@ void MyWindow::updateExtForce()
     numContact[i] = 0;
   }
 
-  // tangent relative velocity to be baked
-  VectorXd bakeTanRelVel = VectorXd::Zero(mConstraintSolver->getCollisionDetector()->getNumContacts()*3);
-
   collision::CollisionDetector* cd = mConstraintSolver->getCollisionDetector();
 
-  for (int i = 0; i < cd->getNumContacts(); ++i)
+  // tangent relative velocity to be baked
+  VectorXd bakeTanRelVel = VectorXd::Zero(cd->getNumContacts()*3);
+
+  for (size_t i = 0; i < cd->getNumContacts(); ++i)
   {
+    Contact contact = cd->getContact(i);
+
     for (int j = 0; j < mFingerNum; ++j)
     {
-      if (cd->getContact(i).bodyNode1->getName() == mFingerNames[j])
+      if (contact.bodyNode1->getName() == mFingerTipNames[j])
       {
         numContact[j]++;
-        mContactForces[j] = mContactForces[j] - cd->getContact(i).force;
+        mContactForces[j] = mContactForces[j] - contact.force;
         break;
       }
     }
 
-    Vector3d normalForce
-        = mConstraintSolver->getCollisionDetector()->getContact(i).force.dot(
-            mConstraintSolver->getCollisionDetector()->getContact(i).normal.normalized())
-          * mConstraintSolver->getCollisionDetector()->getContact(i).normal.normalized();
-    Vector3d tangentForce
-        = mConstraintSolver->getCollisionDetector()->getContact(i).force
-          - normalForce;
+    Vector3d normal       = contact.normal.normalized();
+    Vector3d normalForce  = contact.force.dot(normal) * normal;
+    Vector3d tangentForce = contact.force - normalForce;
 
     // TODO(JS): Just commented out
-//    MatrixXd B
-//        = mConstraintSolver->getTangentBasisMatrix(
-//            mConstraintSolver->getCollisionDetector()->getContact(i).point,
-//            mConstraintSolver->getCollisionDetector()->getContact(i).normal);
-//    bakeTanRelVel.segment(i * 3, 3)
-//        = mConstraintSolver->mB.col(i * mFrictionBasis).dot(
-//            mConstraintSolver->mQDot)*B.col(0);
+    MatrixXd B
+        = mConstraintSolver->getTangentBasisMatrix(contact.point, contact.normal);
+    bakeTanRelVel.segment(i * 3, 3)
+        = mConstraintSolver->mB.col(i * mFrictionBasis).dot(
+            mConstraintSolver->mQDot)*B.col(0);
 
-//    for (int j = 1; j < mFrictionBasis/2; ++j)
-//    {
-//      bakeTanRelVel.segment(i * 3, 3)
-//          += mConstraintSolver->mB.col(i * mFrictionBasis + j * 2).dot(
-//               mConstraintSolver->mQDot) * B.col(j * 2);
-//    }
+    for (int j = 1; j < mFrictionBasis/2; ++j)
+    {
+      bakeTanRelVel.segment(i * 3, 3)
+          += mConstraintSolver->mB.col(i * mFrictionBasis + j * 2).dot(
+               mConstraintSolver->mQDot) * B.col(j * 2);
+    }
 
     // bake the tangent relative velocity
     mBakedTanRelVels.push_back(bakeTanRelVel);
@@ -1929,6 +1953,7 @@ void MyWindow::updateExtForce()
   //mController->mConstraintForce = mConstraintSolver->getTotalConstraintForce(1);
 }
 
+//==============================================================================
 VectorXd MyWindow::updateForceTorqueConstraint()
 {
   // example of setting force torque constraint
@@ -2121,11 +2146,11 @@ bool MyWindow::forceAchievable(int _index, Vector3d _point, Vector3d _force)
 void MyWindow::setHandAngle(double _angle)
 {
   // change the rotation axis to change the roll direction
-  Vector3d palmRotateAxis(1.0,0.0,0.0);
+  Vector3d palmRotateAxis(1.0, 0.0, 0.0);
   Quaternion<double> q;
   q = (Quaternion<double>)AngleAxis<double>(_angle, palmRotateAxis);
 
-  Vector3d palmInitOri = Vector3d(0.0,1.0,0.0).normalized();
+  Vector3d palmInitOri = Vector3d(0.0, 1.0, 0.0).normalized();
   Vector3d palmOri = q*palmInitOri;
 
   angleX = palmOri(0);

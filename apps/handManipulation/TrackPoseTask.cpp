@@ -11,7 +11,10 @@ using namespace Eigen;
 
 namespace tasks {
 
-TrackPoseTask::TrackPoseTask(dart::dynamics::Skeleton* _model, const std::vector<int>& _dofIndices, char *_name)
+//==============================================================================
+TrackPoseTask::TrackPoseTask(dart::dynamics::Skeleton* _model,
+                             const std::vector<int>& _dofIndices,
+                             char* _name)
   : Task(_model)
 {
   // TODO(JS): Just commented out
@@ -67,6 +70,12 @@ TrackPoseTask::TrackPoseTask(dart::dynamics::Skeleton* _model, const std::vector
 //    mPGains.at(i) = -15.0;
 //    mVGains.at(i) = 2.0;
 //  }
+}
+
+//==============================================================================
+TrackPoseTask::~TrackPoseTask()
+{
+
 }
 
 void TrackPoseTask::evalTorque() {

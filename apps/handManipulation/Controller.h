@@ -43,57 +43,91 @@ class TrackEETask;
 class Controller
 {
 public:
+  /// Constructor
   Controller(dart::dynamics::Skeleton* _skel,
              double _t,
              std::vector<tasks::Task*>& _tasks,
              int _fingerNum,
-             std::vector<std::string>& _fingerRootNames,
+             std::vector<std::string>& _fingerRootNames, std::vector<std::string>& _fingerTipNames,
              //std::vector<int>& _fingerTipIndices,
-             std::string _palmName)
-  // TODO(JS): Just commented out
-//    : mSkel(_skel),
-//      mTimestep(_t),
-//      mTasks(_tasks),
-//      mFingerNum(_fingerNum),
-//      mFingerRootNames(_fingerRootNames),
-//      //mFingerTipIndices(_fingerTipIndices),
-//      mPalmName(_palmName)
-  {
-    // TODO(JS): Just commented out
-    //initController();
-  }
+             std::string _palmName);
 
-  // TODO(JS): Just commented out
-//  virtual ~Controller() {}\
+  /// Destructor
+  virtual ~Controller();
 
-//  void initController();
 //  void resetController(std::vector<tasks::Task*>& _tasks);
-//  Eigen::VectorXd getTorques() { return mTorques; }
+
+  ///
+  Eigen::VectorXd getTorques();
+
 //  double getTorque(int _index) { return mTorques[_index]; }
-//  void setDesiredDof(int _index, double _val) { mDesiredDofs[_index] = _val; }
-//  void computeTorques(const Eigen::VectorXd& _dof,
-//                      const Eigen::VectorXd& _dofVel,
-//                      const Eigen::VectorXd& _dofAcc,
-//                      const Eigen::VectorXd& _objDof,
-//                      const Eigen::VectorXd& _objVel,
-//                      std::vector<Eigen::Vector3d>& _contactPoints,
-//                      std::vector<Eigen::Vector3d>& _contactForces,
-//                      std::vector<std::string>& _contactBodyNames,
-//                      const Eigen::Vector3d& _targetOri,
-//                      const Eigen::Vector3d& _objOri);
+
+  ///
+  void setDesiredDof(int _index, double _val);
+
+  /// Compute torques
+  /// \param[in] _dof
+  /// \param[in] _dofVel
+  /// \param[in] _dofAcc
+  /// \param[in] _objDof
+  /// \param[in] _objVel
+  /// \param[in] _contactPoints
+  /// \param[in] _contactForces
+  /// \param[in] _contactBodyNames
+  /// \param[in] _targetOri
+  /// \param[in] _objOri
+  void computeTorques(const Eigen::VectorXd& _dof,
+                      const Eigen::VectorXd& _dofVel,
+                      const Eigen::VectorXd& _dofAcc,
+                      const Eigen::VectorXd& _objDof,
+                      const Eigen::VectorXd& _objVel,
+                      std::vector<Eigen::Vector3d>& _contactPoints,
+                      std::vector<Eigen::Vector3d>& _contactForces,
+                      std::vector<std::string>& _contactBodyNames,
+                      const Eigen::Vector3d& _targetOri,
+                      const Eigen::Vector3d& _objOri);
+
 //  dart::dynamics::Skeleton*  getSkel() { return mSkel; }
 //  Eigen::VectorXd getDesiredDofs() { return mDesiredDofs; }
 //  Eigen::MatrixXd getKp() {return mKp; }
 //  void evalTargetOri(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel, const Eigen::VectorXd& _objDof, const Eigen::VectorXd& _objVel, const Eigen::Vector3d& _offset, const Eigen::Vector3d& _targetOri, const Eigen::Vector3d& _objOri);
-//  void evalTargetPose(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel, const Eigen::VectorXd& _objDof, const Eigen::VectorXd& _objVel, const Eigen::Vector3d& _offset, const Eigen::Vector3d& _targetOri, const Eigen::Vector3d& _objOri);
+
+  ///
+  void evalTargetPose(const Eigen::VectorXd& _dof,
+                      const Eigen::VectorXd& _dofVel,
+                      const Eigen::VectorXd& _objDof,
+                      const Eigen::VectorXd& _objVel,
+                      const Eigen::Vector3d& _offset,
+                      const Eigen::Vector3d& _targetOri,
+                      const Eigen::Vector3d& _objOri);
+
 //  Eigen::MatrixXd evalTaskNullSpace();
-//  void evalGravityCompensationForce();
-//  void evalObjControlForce(const std::vector<Eigen::Vector3d>& _contactPoints, const std::vector<Eigen::Vector3d>& _contactForces, const std::vector<int>& _contactIndices);
-//  void evalTrackForce(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel);
-//  void evalDampForce(const Eigen::VectorXd& _dof);
-//  void evalOriForce(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel);
+
+  /// Compute gravity compensation force and store it to
+  /// mGravityCompensationForce
+  void evalGravityCompensationForce();
+
+  /// ... and store it to mObjControlForce
+  // void evalObjControlForce(const std::vector<Eigen::Vector3d>& _contactPoints,
+  //                          const std::vector<Eigen::Vector3d>& _contactForces,
+  //                          const std::vector<std::string>& _contactBodyNames);
+
+  ///
+  void evalTrackForce(const Eigen::VectorXd& _dof,
+                      const Eigen::VectorXd& _dofVel);
+
+  /// Compute damping force
+  void evalDampForce(const Eigen::VectorXd& _dof);
+
+  /// Compute ...
+  void evalOriForce(const Eigen::VectorXd& _dof,
+                    const Eigen::VectorXd& _dofVel);
+
 //  void evalMaintainForce(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel);
-//  void evalTaskForce();
+
+  ///
+  // void evalTaskForce();
+
 public:
   dart::dynamics::Skeleton *mSkel;
   Eigen::VectorXd mTorques;
@@ -133,19 +167,29 @@ public:
   std::vector<bool> mTrackFingers;
   std::vector<VectorXi> mFingerDofs;
   Eigen::VectorXi mOriDofs;
-  //std::vector<int> mFingerTipIndices;
   std::vector<std::string> mFingerRootNames;
+  std::vector<std::string> mFingerTipNames;
   std::string mPalmName;
-  int mExtNodeNum;  // excluded node number when doing virtual force control
-  int mExtDofNum;  // excluded dof number when doing virtual force control
 
-  // plan related
+  // Excluded node number when doing virtual force control
+  int mExtNodeNum;
+
+  // Excluded dof number when doing virtual force control
+  int mExtDofNum;
+
+  // Plan related
   bool mOriFlag;
   int mOriSimFrame;
   int mOriNumFrame;
   bool mMaintainFlag;
+
+  ///
   bool mControlFlag;
+
+  ///
   bool mTaskFlag;
+
+  ///
   bool mOnPalmFlag;
 
   Eigen::Vector3d mPreOriTarget;
