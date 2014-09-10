@@ -148,11 +148,11 @@ dynamics::Skeleton* SoftSdfParser::readSkeleton(
   // version attribute
   std::string version = getAttribute(sdfElement, "version");
   // We support 1.4 only for now.
-  if (version != "1.4")
+  if (version != "1.4" && version != "1.5")
   {
     dterr << "The file format of ["
           << _filename
-          << "] is not sdf 1.4. Please try with sdf 1.4." << std::endl;
+          << "] is not sdf 1.4. Please try with sdf 1.4 (or greater)." << std::endl;
     return NULL;
   }
 

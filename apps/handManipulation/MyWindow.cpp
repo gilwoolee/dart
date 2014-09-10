@@ -103,6 +103,8 @@ double extTorque = 0.0;
 
 MyWindow::MyWindow(Skeleton* _mList, ...): Win3D()
 {
+  printModelInfo();
+
   mBackground[0] = 1.0;
   mBackground[1] = 1.0;
   mBackground[2] = 1.0;
@@ -230,6 +232,7 @@ MyWindow::MyWindow(Skeleton* _mList, ...): Win3D()
   initDyn();
 }
 
+//==============================================================================
 void MyWindow::initDyn()
 {
   mDofs.resize(mSkels.size());
@@ -294,6 +297,21 @@ void MyWindow::initDyn()
     mSkels[i]->computeForwardKinematics(true, true, false);
     //mSkels[i]->computeDynamics(mGravity, mDofVels[i], false);
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  // TODO(JS): Test code
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+
+  size_t dof = mSkels[1]->getNumDofs();
+  mSkels[1]->setPositions(Eigen::VectorXd::Zero(dof));
+  mSkels[1]->setVelocities(Eigen::VectorXd::Zero(dof));
+//  mSkels[1]->getJoint("arm_to_world_fixed")->setPosition(0, +0.7428935766);
+  mSkels[1]->computeForwardKinematics(true, true, false);
+
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
 
   // the the initial target angle of the palm, related to roll direction
   setHandAngle(mAngles[0]);
@@ -440,7 +458,6 @@ void MyWindow::initDyn()
   mController = new Controller(mSkels[1], mTimeStep, mTasks, mFingerNum,
                                mFingerRootNames, mFingerTipNames, mPalmName);
 
-
   // plan related
 
   // TODO(JS): Just commented out
@@ -472,7 +489,7 @@ void MyWindow::initDyn()
 
   // 	mSkels[1]->setPose(mController->mFingerEndPose, true, true);
 
-  mConstraintSolver->solve();
+  //mConstraintSolver->solve();
 
   // solve bounding ellipsoid
   // 	solveBoundEllipsoid();
@@ -799,12 +816,12 @@ void MyWindow::displayTimer(int _val)
       // tIter.startTimer();
       {
         //
-        setPose();
+        // setPose();
 
         //
         // updateHandPose();
 
-        updateContact();
+        // updateContact();
 
         // tInternal.startTimer();
         {
@@ -812,14 +829,14 @@ void MyWindow::displayTimer(int _val)
           // control force, and updateIntForce is inside updateConact, then
           // comment evaluate the hand control force including object control
           // force, the force evaluation is not inside updateContact
-          updateIntForce();
+          // updateIntForce();
         }
         // tInternal.stopTimer();
 
         // tExternal.startTimer();
         {
           //
-          updateExtForce();
+          // updateExtForce();
         }
         // tExternal.stopTimer();
 
@@ -1932,18 +1949,18 @@ void MyWindow::updateExtForce()
     Vector3d tangentForce = contact.force - normalForce;
 
     // TODO(JS): Just commented out
-    MatrixXd B
-        = mConstraintSolver->getTangentBasisMatrix(contact.point, contact.normal);
-    bakeTanRelVel.segment(i * 3, 3)
-        = mConstraintSolver->mB.col(i * mFrictionBasis).dot(
-            mConstraintSolver->mQDot)*B.col(0);
+//    MatrixXd B
+//        = mConstraintSolver->getTangentBasisMatrix(contact.point, contact.normal);
+//    bakeTanRelVel.segment(i * 3, 3)
+//        = mConstraintSolver->mB.col(i * mFrictionBasis).dot(
+//            mConstraintSolver->mQDot)*B.col(0);
 
-    for (int j = 1; j < mFrictionBasis/2; ++j)
-    {
-      bakeTanRelVel.segment(i * 3, 3)
-          += mConstraintSolver->mB.col(i * mFrictionBasis + j * 2).dot(
-               mConstraintSolver->mQDot) * B.col(j * 2);
-    }
+//    for (int j = 1; j < mFrictionBasis/2; ++j)
+//    {
+//      bakeTanRelVel.segment(i * 3, 3)
+//          += mConstraintSolver->mB.col(i * mFrictionBasis + j * 2).dot(
+//               mConstraintSolver->mQDot) * B.col(j * 2);
+//    }
 
     // bake the tangent relative velocity
     mBakedTanRelVels.push_back(bakeTanRelVel);
@@ -2369,5 +2386,20 @@ void MyWindow::evalRollDir()
   }
   else {
     mRollDir = 0;
+  }
+}
+
+//==============================================================================
+void MyWindow::printModelInfo()
+{
+  for(size_t i = 0; i < mSkels.size(); ++i)
+  {
+    Skeleton* skel = mSkels[i];
+    cout << "SKELETON: "    << i << endl
+         << " NUM NODES : " << skel->getNumBodyNodes() << endl
+         << " NUM DOF   : " << skel->getNumDofs()      << endl
+            // The number of body nodes and joints are same because every
+            // single body node has its parent joint.
+         << " NUM JOINTS: " << skel->getNumBodyNodes() << endl;
   }
 }

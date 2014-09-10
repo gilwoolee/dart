@@ -255,6 +255,9 @@ public:
   ///
   void evalRollDir();
 
+  /// Print model information to the console window
+  void printModelInfo();
+
 protected:
   /// the name for all the output file
   static const char* const mFileName;

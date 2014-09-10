@@ -46,6 +46,8 @@
 #include "dart/utils/Paths.h"
 #include "dart/utils/SkelParser.h"
 #include "dart/utils/urdf/DartLoader.h"
+#include "dart/utils/sdf/SdfParser.h"
+#include "dart/utils/sdf/SoftSdfParser.h"
 
 #include "MyWindow.h"
 
@@ -63,12 +65,16 @@ int main(int argc, char* argv[])
   DartLoader dl;
 
   // Load skeleton files
-  const std::string& groundPath = DART_DATA_PATH"skel/ground2.skel";
-  const std::string& cubePath   = DART_DATA_PATH"skel/cube1.skel";
-  const std::string& handPath   = DART_DATA_PATH"urdf/shadow_hand.urdf";
-  Skeleton* groundSkel = SkelParser::readSkeleton(groundPath);
-  Skeleton* cubeSkel   = SkelParser::readSkeleton(cubePath);
-  Skeleton* handSkel   = dl.parseSkeleton(handPath);
+  std::string groundPath = DART_DATA_PATH"skel/ground3.skel";
+  std::string cubePath   = DART_DATA_PATH"skel/cube1.skel";
+  std::string handPathYunfei   = DART_DATA_PATH"urdf/shadow_hand_yunfei/shadow_hand.urdf";
+  std::string handPathJohn     = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand.sdf";
+  std::string handPathJohnSoft = DART_DATA_PATH"urdf/shadow_hand_john/model_hand_only_soft.sdf";
+  Skeleton* groundSkel   = SkelParser::readSkeleton(groundPath);
+  Skeleton* cubeSkel     = SkelParser::readSkeleton(cubePath);
+  Skeleton* handSkel     = dl.parseSkeleton(handPathYunfei);
+  Skeleton* handSkel2    = SoftSdfParser::readSkeleton(handPathJohn);
+  Skeleton* softHandSkel = SoftSdfParser::readSkeleton(handPathJohnSoft);
 
   // Setting colors
   Vector3d gray(0.9, 0.9, 0.9);
@@ -77,7 +83,7 @@ int main(int argc, char* argv[])
   cubeSkel->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
 
   // Create window and run main loop
-  MyWindow window(groundSkel, handSkel, cubeSkel, NULL);
+  MyWindow window(groundSkel, handSkel2, cubeSkel, NULL);
   glutInit(&argc, argv);
   window.initWindow(640, 480, "Manipulator");
 #ifdef WIN32
