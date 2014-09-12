@@ -9,6 +9,7 @@ foreach(APPDIR
     cubli
     #inertiaBot
     inertiaDisp
+    inertiaEllipsoidTest
     rigidLoop
     rigidCubes
     rigidChain

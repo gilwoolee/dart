@@ -40,52 +40,49 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
+#ifndef APPS_CUBLI_MYWINDOW_H_
+#define APPS_CUBLI_MYWINDOW_H_
 
-#include "dart/utils/Paths.h"
-#include "dart/utils/SkelParser.h"
-#include "dart/simulation/World.h"
+#include "dart/math/MathTypes.h"
+#include "dart/gui/Win3D.h"
+#include "dart/gui/SoftSimWindow.h"
 
-#include "apps/inertiaDisp/MyWindow.h"
-#include "apps/inertiaDisp/Controller.h"
+#include "apps/inertiaEllipsoidTest/Controller.h"
 
-int main(int argc, char* argv[])
+/// \brief
+class MyWindow : public dart::gui::SoftSimWindow
 {
-  // load a skeleton file
-  // create and initialize the world
-  dart::simulation::World* myWorld
-      = dart::utils::SkelParser::readWorld(DART_DATA_PATH"skel/inertia_ellipoids.skel");
+public:
+  /// \brief
+  MyWindow();
 
-  dart::dynamics::Skeleton* fullbody
-      = dart::utils::SkelParser::readSkeleton(
-          DART_DATA_PATH"skel/fullbody1_no_ground.skel");
-  assert(myWorld != NULL);
+  /// \brief
+  virtual ~MyWindow();
 
-  Eigen::Vector3d gravity(0.0, -9.81, 0.0);
-  Eigen::Vector3d zero = Eigen::Vector3d::Zero();
+  /// \brief
+  virtual void timeStepping();
 
-  myWorld->setGravity(gravity);
-  myWorld->addSkeleton(fullbody);
+  /// \brief
+  virtual void keyboard(unsigned char key, int x, int y);
 
-  // create controller
-//  Controller* myController = new Controller(myWorld->getSkeleton("cubli"),
-//                                            myWorld->getConstraintSolver(),
-//                                            myWorld->getTimeStep());
+  /// \brief
+  virtual void drawSkels();
 
-  // create a window and link it to the world
-  MyWindow window;
-  window.setWorld(myWorld);
-//  window.setController(myController);
+//  ///
+//  void setController(Controller* _controller);
 
-  std::cout << "space bar: simulation on/off" << std::endl;
-  std::cout << "'p': playback/stop" << std::endl;
-  std::cout << "'[' and ']': play one frame backward and forward" << std::endl;
-  std::cout << "'v': visualization on/off" << std::endl;
-  std::cout << "'1'--'6': programmed interaction" << std::endl;
+private:
+  /// \brief
+  Eigen::Vector3d mForceOnRigidBody;
 
-  glutInit(&argc, argv);
-  window.initWindow(640, 480, "Soft Bodies");
-  glutMainLoop();
+  /// \brief Number of frames for applying external force
+  int mImpulseDuration;
 
-  return 0;
-}
+  /// \brief
+  Eigen::Vector3d mForceOnVertex;
+
+//  ///
+//  Controller* mController;
+};
+
+#endif  // APPS_CUBLI_MYWINDOW_H_

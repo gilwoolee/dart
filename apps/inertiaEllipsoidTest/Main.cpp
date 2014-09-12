@@ -44,28 +44,68 @@
 
 #include "dart/utils/Paths.h"
 #include "dart/utils/SkelParser.h"
+#include "dart/dynamics/Skeleton.h"
+#include "dart/dynamics/BodyNode.h"
+#include "dart/dynamics/FreeJoint.h"
+#include "dart/dynamics/EllipsoidShape.h"
 #include "dart/simulation/World.h"
 
-#include "apps/inertiaDisp/MyWindow.h"
-#include "apps/inertiaDisp/Controller.h"
+#include "apps/inertiaEllipsoidTest/MyWindow.h"
+#include "apps/inertiaEllipsoidTest/Controller.h"
+
+using namespace dart;
+using namespace dynamics;
 
 int main(int argc, char* argv[])
 {
   // load a skeleton file
   // create and initialize the world
   dart::simulation::World* myWorld
-      = dart::utils::SkelParser::readWorld(DART_DATA_PATH"skel/inertia_ellipoids.skel");
+      = new dart::simulation::World();
 
   dart::dynamics::Skeleton* fullbody
       = dart::utils::SkelParser::readSkeleton(
-          DART_DATA_PATH"skel/fullbody1_no_ground.skel");
+          DART_DATA_PATH"skel/fullbody1_no_ground_fixed.skel");
   assert(myWorld != NULL);
+  myWorld->addSkeleton(fullbody);
 
   Eigen::Vector3d gravity(0.0, -9.81, 0.0);
   Eigen::Vector3d zero = Eigen::Vector3d::Zero();
+  myWorld->setGravity(zero);
 
-  myWorld->setGravity(gravity);
-  myWorld->addSkeleton(fullbody);
+  size_t dof = fullbody->getNumDofs();
+  Eigen::VectorXd q = Eigen::VectorXd::Zero(dof);
+  Eigen::VectorXd dq = Eigen::VectorXd::Zero(dof);
+  q.head<6>() = Eigen::Vector6d::Zero();
+  q.segment(3, 3) = Eigen::Vector3d(1.0, 0.0, 0.0);
+  dq.head<3>() = Eigen::Vector3d::UnitX();
+  fullbody->setPositions(q);
+  fullbody->setVelocities(dq);
+  fullbody->computeForwardKinematics(true, true, true);
+
+  //----------------------------------------------------------------------------
+
+  double mass = fullbody->getMass();
+  Eigen::Vector3d dim = fullbody->getDimOfEquimomentalEllipsoid();
+
+  Skeleton* ellipsoidSkel = new Skeleton();
+  BodyNode* ellipsoidBody = new BodyNode();
+  EllipsoidShape* ellipsoidShape = new EllipsoidShape(dim);
+  Eigen::Matrix3d I = ellipsoidShape->computeInertia(ellipsoidShape->getVolume() * 1.0);
+  FreeJoint* ellipsoidJoint = new FreeJoint();
+  ellipsoidBody->addVisualizationShape(ellipsoidShape);
+  ellipsoidBody->addCollisionShape(ellipsoidShape);
+  ellipsoidBody->setMass(mass);
+  ellipsoidBody->setParentJoint(ellipsoidJoint);
+  ellipsoidBody->setMomentOfInertia(I(0, 0), I(1, 1), I(2, 2));
+  ellipsoidSkel->addBodyNode(ellipsoidBody);
+
+  ellipsoidSkel->setVelocities(dq);
+  ellipsoidSkel->computeForwardKinematics(true, true, true);
+
+  myWorld->addSkeleton(ellipsoidSkel);
+
+  //----------------------------------------------------------------------------
 
   // create controller
 //  Controller* myController = new Controller(myWorld->getSkeleton("cubli"),

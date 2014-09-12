@@ -1120,25 +1120,16 @@ const Eigen::VectorXd& Skeleton::getConstraintForceVector()
 }
 
 //==============================================================================
-void Skeleton::draw(renderer::RenderInterface* _ri,
-                    const Eigen::Vector4d& _color,
-                    bool _useDefaultColor) const
+Eigen::Vector3d Skeleton::getDimOfEquimomentalEllipsoid() const
 {
-  getRootBodyNode()->draw(_ri, _color, _useDefaultColor);
-
-  if (!mShowTotalInertia)
-    return;
-
-  //============================================================================
-  //============================================================================
-  // TODO(JS): Temp code
+  Eigen::Vector3d result;
 
   const double& density = 1.0;
 
   const BodyNode* root = getRootBodyNode();
   const Eigen::Isometry3d&  T = root->getTransform();
 
-  const Eigen::Matrix6d& G = this->getTotalSpatialInertiaTensorRoot();
+  const Eigen::Matrix6d& G = this->getTotalSpatialInertiaTensorCom();
   const Eigen::Matrix3d& I = G.topLeftCorner<3, 3>();
 
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigenSolver(I);
@@ -1171,7 +1162,64 @@ void Skeleton::draw(renderer::RenderInterface* _ri,
   double c = a/b;
 
   for (int i = 0; i < 3; ++i)
-    dim[i] = c / eVal[i];
+    dim[i] = c / eVal[i] * 2.0;
+
+  return dim;
+}
+
+//==============================================================================
+void Skeleton::draw(renderer::RenderInterface* _ri,
+                    const Eigen::Vector4d& _color,
+                    bool _useDefaultColor) const
+{
+  getRootBodyNode()->draw(_ri, _color, _useDefaultColor);
+
+  if (!mShowTotalInertia)
+    return;
+
+  //============================================================================
+  //============================================================================
+  // TODO(JS): Temp code
+
+  const double& density = 1.0;
+
+  const BodyNode* root = getRootBodyNode();
+  const Eigen::Isometry3d&  T = root->getTransform();
+
+  const Eigen::Matrix6d& G = this->getTotalSpatialInertiaTensorCom();
+  const Eigen::Matrix3d& I = G.topLeftCorner<3, 3>();
+
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigenSolver(I);
+
+  std::cout << "Ixx, Iyy, Izz: "
+            << I(0,0) << " "
+            << I(1,1) << " "
+            << I(2,2) << " " << std::endl;
+
+  if (eigenSolver.info() != Eigen::Success)
+  {
+    dterr << "Failed to get eigen values." << std::endl;
+    exit(0);
+  }
+
+  Eigen::Vector3d eVal = eigenSolver.eigenvalues();
+  Eigen::Matrix3d eVec = eigenSolver.eigenvectors();
+  Eigen::Matrix3d R = eVec;
+  Eigen::Isometry3d T2 = Eigen::Isometry3d::Identity();
+  T2.linear() = R;
+
+  std::cout << "lenX:" << R.col(0).norm() << std::endl;
+  std::cout << "lenY:" << R.col(1).norm() << std::endl;
+  std::cout << "lenZ:" << R.col(2).norm() << std::endl;
+
+  Eigen::Vector3d dim;
+
+  double a = std::pow(eVal[0] * eVal[1] * eVal[2], 2.0/5.0);
+  double b = std::pow(8.0 * DART_PI * density / 15.0, 1.0/5.0);
+  double c = a/b;
+
+  for (int i = 0; i < 3; ++i)
+    dim[i] = c / eVal[i] * 2.0;
 
   std::cout << "dim: " << dim.transpose() << std::endl;
 
@@ -1758,6 +1806,20 @@ Eigen::Matrix6d Skeleton::getTotalSpatialInertiaTensorRoot() const
 }
 
 //==============================================================================
+Eigen::Matrix6d Skeleton::getTotalSpatialInertiaTensorCom() const
+{
+  Eigen::Matrix6d I = getTotalSpatialInertiaTensorWorld();
+
+  Eigen::Isometry3d comT = Eigen::Isometry3d::Identity();
+  comT.linear()      = getRootBodyNode()->getTransform().linear();
+  comT.translation() = getWorldCOM();
+
+  I = math::transformInertia(comT, I);
+
+  return I;
+}
+
+//==============================================================================
 //void Skeleton::computeHybridDynamics()
 //{
 //  dterr << "Not implemented yet.\n";
@@ -2015,7 +2077,7 @@ void Skeleton::setConstraintForceVector(const Eigen::VectorXd& _Fc)
 }
 
 //==============================================================================
-Eigen::Vector3d Skeleton::getWorldCOM()
+Eigen::Vector3d Skeleton::getWorldCOM() const
 {
   // COM
   Eigen::Vector3d com(0.0, 0.0, 0.0);

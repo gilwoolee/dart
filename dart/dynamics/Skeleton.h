@@ -502,7 +502,7 @@ public:
   //----------------------------------------------------------------------------
 
   /// Get skeleton's COM w.r.t. world frame.
-  Eigen::Vector3d getWorldCOM();
+  Eigen::Vector3d getWorldCOM() const;
 
   /// Get skeleton's COM velocity w.r.t. world frame.
   Eigen::Vector3d getWorldCOMVelocity();
@@ -525,6 +525,8 @@ public:
   //----------------------------------------------------------------------------
   // Rendering
   //----------------------------------------------------------------------------
+
+  Eigen::Vector3d getDimOfEquimomentalEllipsoid() const;
 
   /// Draw this skeleton
   void draw(renderer::RenderInterface* _ri = NULL,
@@ -562,6 +564,8 @@ public:
   Eigen::Matrix6d getTotalSpatialInertiaTensorWorld() const;
 
   Eigen::Matrix6d getTotalSpatialInertiaTensorRoot() const;
+
+  Eigen::Matrix6d getTotalSpatialInertiaTensorCom() const;
 
   bool mShowTotalInertia;
 
