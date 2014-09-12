@@ -1124,7 +1124,7 @@ Eigen::Vector3d Skeleton::getDimOfEquimomentalEllipsoid() const
 {
   Eigen::Vector3d result;
 
-  const double& density = 1.0;
+  const double& mass = getMass();
 
   const BodyNode* root = getRootBodyNode();
   const Eigen::Isometry3d&  T = root->getTransform();
@@ -1157,12 +1157,9 @@ Eigen::Vector3d Skeleton::getDimOfEquimomentalEllipsoid() const
 
   Eigen::Vector3d dim;
 
-  double a = std::pow(eVal[0] * eVal[1] * eVal[2], 2.0/5.0);
-  double b = std::pow(8.0 * DART_PI * density / 15.0, 1.0/5.0);
-  double c = a/b;
-
-  for (int i = 0; i < 3; ++i)
-    dim[i] = c / eVal[i] * 2.0;
+  dim[0] = std::sqrt(10.0*(-eVal[0] + eVal[1] + eVal[2])/4.0/mass) * 2.0;
+  dim[1] = std::sqrt(10.0*( eVal[0] - eVal[1] + eVal[2])/4.0/mass) * 2.0;
+  dim[2] = std::sqrt(10.0*( eVal[0] + eVal[1] - eVal[2])/4.0/mass) * 2.0;
 
   return dim;
 }
@@ -1181,7 +1178,7 @@ void Skeleton::draw(renderer::RenderInterface* _ri,
   //============================================================================
   // TODO(JS): Temp code
 
-  const double& density = 1.0;
+  const double& mass = getMass();
 
   const BodyNode* root = getRootBodyNode();
   const Eigen::Isometry3d&  T = root->getTransform();
@@ -1214,12 +1211,9 @@ void Skeleton::draw(renderer::RenderInterface* _ri,
 
   Eigen::Vector3d dim;
 
-  double a = std::pow(eVal[0] * eVal[1] * eVal[2], 2.0/5.0);
-  double b = std::pow(8.0 * DART_PI * density / 15.0, 1.0/5.0);
-  double c = a/b;
-
-  for (int i = 0; i < 3; ++i)
-    dim[i] = c / eVal[i] * 2.0;
+  dim[0] = std::sqrt(10.0*(-eVal[0] + eVal[1] + eVal[2])/4.0/mass) * 2.0;
+  dim[1] = std::sqrt(10.0*( eVal[0] - eVal[1] + eVal[2])/4.0/mass) * 2.0;
+  dim[2] = std::sqrt(10.0*( eVal[0] + eVal[1] - eVal[2])/4.0/mass) * 2.0;
 
   std::cout << "dim: " << dim.transpose() << std::endl;
 
