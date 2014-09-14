@@ -1122,9 +1122,7 @@ const Eigen::VectorXd& Skeleton::getConstraintForceVector()
 //==============================================================================
 Eigen::Vector3d Skeleton::getDimOfEquimomentalEllipsoid() const
 {
-  Eigen::Vector3d result;
-
-  const double& mass = getMass();
+  const double& density = 1.0;
 
   const BodyNode* root = getRootBodyNode();
   const Eigen::Isometry3d&  T = root->getTransform();
@@ -1155,11 +1153,17 @@ Eigen::Vector3d Skeleton::getDimOfEquimomentalEllipsoid() const
   std::cout << "lenY:" << R.col(1).norm() << std::endl;
   std::cout << "lenZ:" << R.col(2).norm() << std::endl;
 
+  double X = -I(0, 0) + I(1, 1) + I(2, 2);
+  double Y =  I(0, 0) - I(1, 1) + I(2, 2);
+  double Z =  I(0, 0) + I(1, 1) - I(2, 2);
+
+  double a = std::pow(15.0/(8*DART_PI*density), 2.0/5.0)*X*Y*Z;
+
   Eigen::Vector3d dim;
 
-  dim[0] = std::sqrt(10.0*(-eVal[0] + eVal[1] + eVal[2])/4.0/mass) * 2.0;
-  dim[1] = std::sqrt(10.0*( eVal[0] - eVal[1] + eVal[2])/4.0/mass) * 2.0;
-  dim[2] = std::sqrt(10.0*( eVal[0] + eVal[1] - eVal[2])/4.0/mass) * 2.0;
+  dim[0] = std::sqrt(a/(Y*Z)) * 2.0;
+  dim[1] = std::sqrt(a/(Z*X)) * 2.0;
+  dim[2] = std::sqrt(a/(X*Y)) * 2.0;
 
   return dim;
 }
@@ -1178,7 +1182,7 @@ void Skeleton::draw(renderer::RenderInterface* _ri,
   //============================================================================
   // TODO(JS): Temp code
 
-  const double& mass = getMass();
+  const double& density = 1.0;
 
   const BodyNode* root = getRootBodyNode();
   const Eigen::Isometry3d&  T = root->getTransform();
@@ -1209,11 +1213,17 @@ void Skeleton::draw(renderer::RenderInterface* _ri,
   std::cout << "lenY:" << R.col(1).norm() << std::endl;
   std::cout << "lenZ:" << R.col(2).norm() << std::endl;
 
+  double X = -I(0, 0) + I(1, 1) + I(2, 2);
+  double Y =  I(0, 0) - I(1, 1) + I(2, 2);
+  double Z =  I(0, 0) + I(1, 1) - I(2, 2);
+
+  double a = std::pow(15.0/(8*DART_PI*density), 2.0/5.0)*std::pow(X*Y*Z, 4.0/5.0);
+
   Eigen::Vector3d dim;
 
-  dim[0] = std::sqrt(10.0*(-eVal[0] + eVal[1] + eVal[2])/4.0/mass) * 2.0;
-  dim[1] = std::sqrt(10.0*( eVal[0] - eVal[1] + eVal[2])/4.0/mass) * 2.0;
-  dim[2] = std::sqrt(10.0*( eVal[0] + eVal[1] - eVal[2])/4.0/mass) * 2.0;
+  dim[0] = std::sqrt(a/(Y*Z)) * 2.0;
+  dim[1] = std::sqrt(a/(Z*X)) * 2.0;
+  dim[2] = std::sqrt(a/(X*Y)) * 2.0;
 
   std::cout << "dim: " << dim.transpose() << std::endl;
 
@@ -1222,7 +1232,7 @@ void Skeleton::draw(renderer::RenderInterface* _ri,
 
   _ri->setPenColor(Eigen::Vector4d(1.0, 0.0, 0.0, 0.5));
   _ri->pushMatrix();
-  _ri->transform(T * T2);
+  _ri->transform(T /** T2*/);
   _ri->drawEllipsoid(dim);
   _ri->popMatrix();
 
