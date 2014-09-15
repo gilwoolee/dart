@@ -2344,15 +2344,12 @@
         </surface>
       </collision>
       <visual name='thmiddle_visual'>
-        <pose>0 0 0.016 0 -0 0</pose>
+        <pose>0 0 0 0 -0 0</pose>
         <geometry>
-          <box>
-            <size>0.008 0.008 0.015</size>
-          </box>
-          <!--mesh>
+          <mesh>
             <scale>0.001 0.001 0.001</scale>
             <uri>sr_description/hand/model/TH2_z.dae</uri>
-          </mesh-->
+          </mesh>
         </geometry>
         <material>
           <script>
@@ -2443,7 +2440,7 @@
           </friction>
         </surface>
       </collision>
-      <!--visual name='thdistal_visual'>
+      <visual name='thdistal_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -2457,7 +2454,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual-->
+      </visual>
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
