@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
   std::string groundPath = DART_DATA_PATH"skel/ground3.skel";
   std::string cubePath   = DART_DATA_PATH"skel/cube1.skel";
   std::string handPathYunfei   = DART_DATA_PATH"urdf/shadow_hand_yunfei/shadow_hand.urdf";
-  std::string handPathJohn     = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand.sdf";
+  std::string handPathJohn     = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_modified_for_test.sdf";
   std::string handPathJohnSoft = DART_DATA_PATH"urdf/shadow_hand_john/model_hand_only_soft.sdf";
   Skeleton* groundSkel   = SkelParser::readSkeleton(groundPath);
   Skeleton* cubeSkel     = SkelParser::readSkeleton(cubePath);

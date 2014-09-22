@@ -88,7 +88,7 @@ nv::GlutUIContext ui;
 #endif
 float initPose[] = {-0.8000000119, 0, 0, 0, 0, 0, 0, -0.7428935766, 0, 0, 0, 0, 1.072659612, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.8000000119, 0, 0.200000003};
 //float initObjPose[] = {0.0, 0.0, 0.0, 0.08, 0.15, 0.43};
-float initObjPose[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+float initObjPose[] = {0.0, 0.0, 1.0, 0.05, -0.10, 0.33};
 
 static dart::common::Timer tIter("timeIter");
 static dart::common::Timer tInternal("timeInternal");
@@ -264,6 +264,7 @@ void MyWindow::initDyn()
   T.translation()[0] = initObjPose[3];
   T.translation()[1] = initObjPose[4];
   T.translation()[2] = initObjPose[5];
+  T.linear() = math::expMapRot(Vector3d::Random());
   Vector6d initObjPoseScrewParam = math::logMap(T);
 
   // initial position of the box
@@ -286,7 +287,7 @@ void MyWindow::initDyn()
   T.translation() = worldPos;
 
   //mDofs[2].tail<3>() = worldPos;
-  mDofs[2] = math::logMap(T);
+  //mDofs[2] = math::logMap(T);
 
   for (unsigned int i = 0; i < mSkels.size(); i++)
   {
@@ -307,7 +308,7 @@ void MyWindow::initDyn()
   size_t dof = mSkels[1]->getNumDofs();
   mSkels[1]->setPositions(Eigen::VectorXd::Zero(dof));
   mSkels[1]->setVelocities(Eigen::VectorXd::Zero(dof));
-//  mSkels[1]->getJoint("arm_to_world_fixed")->setPosition(0, +0.7428935766);
+//  mSkels[1]->getJoint("palm")->setPosition(2, +0.7428935766);
   mSkels[1]->computeForwardKinematics(true, true, false);
 
   //////////////////////////////////////////////////////////////////////////////
