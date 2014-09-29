@@ -251,7 +251,7 @@ void MyWindow::initDyn()
   }
 
   // initial position of the ground
-  mDofs[0][4] = -0.3;
+  mDofs[0][4] = -0.5;
 
   // initial pose for hand
   for (size_t i = 0; i < mSkels[1]->getNumDofs(); i++)
