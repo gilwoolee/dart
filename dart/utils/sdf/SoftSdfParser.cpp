@@ -429,7 +429,6 @@ SdfParser::SDFBodyNode SoftSdfParser::readSoftBodyNode(
     // mass
     double totalMass = getValueDouble(softShapeEle, "total_mass");
 
-
     // pose
     Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
     if (hasElement(softShapeEle, "pose"))
@@ -441,10 +440,9 @@ SdfParser::SDFBodyNode SoftSdfParser::readSoftBodyNode(
     {
       tinyxml2::XMLElement* boxEle = getElement(geometryEle, "box");
       Eigen::Vector3d size  = getValueVector3d(boxEle, "size");
-      //      Eigen::Vector3i frags = getValueVector3i(boxEle, "frags");
-      dynamics::SoftBodyNodeHelper::setBox(newSoftBodyNode, size, T, totalMass);
-      //      dynamics::SoftBodyNodeHelper::setBox(newSoftBodyNode, size, frags,
-      //                                           totalMass);
+      Eigen::Vector3i frags = getValueVector3i(boxEle, "frags");
+      dynamics::SoftBodyNodeHelper::setBox(
+            newSoftBodyNode, size, T, frags, totalMass);
 
       // Visualization shape
       newSoftBodyNode->addVisualizationShape(
