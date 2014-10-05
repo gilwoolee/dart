@@ -258,7 +258,7 @@ dynamics::Skeleton* SoftSdfParser::readSkeleton(
   ElementEnumerator joints(_skeletonElement, "joint");
   while (joints.next())
   {
-    readSoftJoint(joints.get(), sdfBodyNodes);
+    readSoftJoint(joints.get(), sdfBodyNodes, skeletonFrame);
   }
 
   //--------------------------------------------------------------------------
@@ -531,7 +531,8 @@ SdfParser::SDFBodyNode SoftSdfParser::readSoftBodyNode(
 }
 
 dynamics::Joint* SoftSdfParser::readSoftJoint(tinyxml2::XMLElement* _jointElement,
-                                              const std::vector<SDFBodyNode, Eigen::aligned_allocator<SDFBodyNode> >& _sdfBodyNodes)
+                                              const std::vector<SDFBodyNode, Eigen::aligned_allocator<SDFBodyNode> >& _sdfBodyNodes,
+                                              const Eigen::Isometry3d& _skeletonFrame)
 {
   assert(_jointElement != NULL);
 
@@ -541,22 +542,10 @@ dynamics::Joint* SoftSdfParser::readSoftJoint(tinyxml2::XMLElement* _jointElemen
   // Type attribute
   std::string type = getAttribute(_jointElement, "type");
   assert(!type.empty());
-  if (type == std::string("prismatic"))
-    newJoint = readPrismaticJoint(_jointElement);
-  if (type == std::string("revolute"))
-    newJoint = readRevoluteJoint(_jointElement);
-  if (type == std::string("screw"))
-    newJoint = readScrewJoint(_jointElement);
-  if (type == std::string("revolute2"))
-    newJoint = readUniversalJoint(_jointElement);
-  if (type == std::string("ball"))
-    newJoint = readBallJoint(_jointElement);
-  assert(newJoint != NULL);
 
   //--------------------------------------------------------------------------
   // Name attribute
   std::string name = getAttribute(_jointElement, "name");
-  newJoint->setName(name);
 
   //--------------------------------------------------------------------------
   // parent
@@ -583,7 +572,7 @@ dynamics::Joint* SoftSdfParser::readSoftJoint(tinyxml2::XMLElement* _jointElemen
         dterr << "Can't find the parent body ["
               << strParent
               << "] of the joint ["
-              << newJoint->getName()
+              << name
               << "]. " << std::endl;
         assert(0);
       }
@@ -591,7 +580,7 @@ dynamics::Joint* SoftSdfParser::readSoftJoint(tinyxml2::XMLElement* _jointElemen
   }
   else
   {
-    dterr << "Set parent body node for " << newJoint->getName() << "."
+    dterr << "Set parent body node for " << name << "."
           << std::endl;
     assert(0);
   }
@@ -621,19 +610,17 @@ dynamics::Joint* SoftSdfParser::readSoftJoint(tinyxml2::XMLElement* _jointElemen
       dterr << "Can't find the child body ["
             << strChild
             << "] of the joint ["
-            << newJoint->getName()
+            << name
             << "]. " << std::endl;
       assert(0);
     }
   }
   else
   {
-    dterr << "Set child body node for " << newJoint->getName() << "."
+    dterr << "Set child body node for " << name << "."
           << std::endl;
     assert(0);
   }
-
-  sdfChildBodyNode.bodyNode->setParentJoint(newJoint);
 
   if (sdfParentBodyNode.bodyNode)
     sdfParentBodyNode.bodyNode->addChildBodyNode(sdfChildBodyNode.bodyNode);
@@ -648,6 +635,24 @@ dynamics::Joint* SoftSdfParser::readSoftJoint(tinyxml2::XMLElement* _jointElemen
   if (hasElement(_jointElement, "pose"))
     childToJoint = getValueIsometry3d(_jointElement, "pose");
   Eigen::Isometry3d parentToJoint = parentWorld.inverse()*childWorld*childToJoint;
+
+  // TODO: Workaround!!
+  Eigen::Isometry3d jointFrame = childWorld * childToJoint;
+
+  if (type == std::string("prismatic"))
+    newJoint = readPrismaticJoint(_jointElement, _skeletonFrame, jointFrame);
+  if (type == std::string("revolute"))
+    newJoint = readRevoluteJoint(_jointElement, _skeletonFrame, jointFrame);
+  if (type == std::string("screw"))
+    newJoint = readScrewJoint(_jointElement, _skeletonFrame, jointFrame);
+  if (type == std::string("revolute2"))
+    newJoint = readUniversalJoint(_jointElement, _skeletonFrame, jointFrame);
+  if (type == std::string("ball"))
+    newJoint = readBallJoint(_jointElement, _skeletonFrame, jointFrame);
+  assert(newJoint != NULL);
+
+  newJoint->setName(name);
+  sdfChildBodyNode.bodyNode->setParentJoint(newJoint);
   newJoint->setTransformFromChildBodyNode(childToJoint);
   newJoint->setTransformFromParentBodyNode(parentToJoint);
 

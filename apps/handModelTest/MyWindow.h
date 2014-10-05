@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2014, Georgia Tech Research Corporation
+ * Copyright (c) 2011-2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>
+ * Author(s): Karen Liu <karenliu@cc.gatech.edu>,
+ *            Jeongseok Lee <jslee02@gmail.com>
  *
  * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -34,71 +35,45 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_UTILS_SDF_SOFTSDFPARSER_H_
-#define DART_UTILS_SDF_SOFTSDFPARSER_H_
+#ifndef APPS_HANDMODELTEST_MYWINDOW_H_
+#define APPS_HANDMODELTEST_MYWINDOW_H_
 
-#include <map>
-#include <string>
-#include <Eigen/Dense>
-#include <Eigen/StdVector>
-// TinyXML-2 Library
-// http://www.grinninglizard.com/tinyxml2/index.html
-#include <tinyxml2.h>
+#include "dart/dynamics/Skeleton.h"
+#include "dart/gui/SimWindow.h"
 
-#include "dart/utils/sdf/SdfParser.h"
+class dart::dynamics::Skeleton;
 
-namespace dart {
-namespace dynamics {
-class Joint;
-class SoftBodyNode;
-class Skeleton;
-}  // namespace dynamics
-namespace simulation {
-class World;
-}  // namespace simulation
-}  // namespace dart
-
-namespace dart {
-namespace utils {
-
-class SoftSdfParser : public SdfParser
-{
+/// \brief
+class MyWindow : public dart::gui::SimWindow {
 public:
   /// \brief
-  static simulation::World* readSoftSdfFile(const std::string& _filename);
+  MyWindow();
 
   /// \brief
-  static dynamics::Skeleton* readSkeleton(
-      const std::string& _fileName);
+  virtual ~MyWindow();
 
-protected:
-  /// \brief
-  static simulation::World* readWorld(
-      tinyxml2::XMLElement* _worldElement,
-      const std::string& _skelPath);
+  virtual void setWorld(dart::simulation::World* _world);
 
   /// \brief
-  static dynamics::Skeleton* readSkeleton(
-      tinyxml2::XMLElement* _skeletonElement,
-      const std::string& _skelPath);
+  virtual void timeStepping();
 
   /// \brief
-  static SDFBodyNode readSoftBodyNode(
-      tinyxml2::XMLElement* _softBodyNodeElement,
-      dynamics::Skeleton* _Skeleton,
-      const Eigen::Isometry3d& _skeletonFrame,
-      const std::string& _skelPath);
+  virtual void drawSkels();
 
   /// \brief
-  static dynamics::Joint* readSoftJoint(
-      tinyxml2::XMLElement* _jointElement,
-      const std::vector<SDFBodyNode,
-      Eigen::aligned_allocator<SDFBodyNode> >& _bodies,
-      const Eigen::Isometry3d& _skeletonFrame);
+  virtual void keyboard(unsigned char _key, int _x, int _y);
 
+private:
+  /// \brief
+  Eigen::Vector3d mForce;
+
+  /// \brief Number of frames for applying external force
+  int mImpulseDuration;
+
+  int mCurrentJointId;
+
+  dart::dynamics::Skeleton* mHand;
+  int mDof;
 };
 
-} // namespace utils
-} // namespace dart
-
-#endif // #ifndef DART_UTILS_SDF_SOFTSDFPARSER_H_
+#endif  // APPS_HANDMODELTEST_MYWINDOW_H_

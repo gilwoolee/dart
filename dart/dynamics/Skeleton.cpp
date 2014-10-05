@@ -306,21 +306,21 @@ void Skeleton::init(double _timeStep, const Eigen::Vector3d& _gravity)
   }
 
   // Rearrange the list of body nodes with BFS (Breadth First Search)
-  std::queue<BodyNode*> queue;
-  mBodyNodes.clear();
-  for (size_t i = 0; i < rootBodyNodes.size(); ++i)
-  {
-    queue.push(rootBodyNodes[i]);
+//  std::queue<BodyNode*> queue;
+//  mBodyNodes.clear();
+//  for (size_t i = 0; i < rootBodyNodes.size(); ++i)
+//  {
+//    queue.push(rootBodyNodes[i]);
 
-    while (!queue.empty())
-    {
-      BodyNode* itBodyNode = queue.front();
-      queue.pop();
-      mBodyNodes.push_back(itBodyNode);
-      for (size_t j = 0; j < itBodyNode->getNumChildBodyNodes(); ++j)
-        queue.push(itBodyNode->getChildBodyNode(j));
-    }
-  }
+//    while (!queue.empty())
+//    {
+//      BodyNode* itBodyNode = queue.front();
+//      queue.pop();
+//      mBodyNodes.push_back(itBodyNode);
+//      for (size_t j = 0; j < itBodyNode->getNumChildBodyNodes(); ++j)
+//        queue.push(itBodyNode->getChildBodyNode(j));
+//    }
+//  }
 
   // Initialize body nodes and generalized coordinates
   mGenCoordInfos.clear();

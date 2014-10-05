@@ -11,6 +11,7 @@ foreach(APPDIR
     rigidChain
     handTiltingAngle
     handManipulation
+    handModelTest
     hardcodedDesign
     jointConstraints
     mixedChain
