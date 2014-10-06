@@ -66,15 +66,22 @@ int main(int argc, char* argv[])
 
   // Load skeleton files
   std::string groundPath = DART_DATA_PATH"skel/ground3.skel";
-  std::string cubePath   = DART_DATA_PATH"skel/cube1.skel";
-  std::string handPathYunfei   = DART_DATA_PATH"urdf/shadow_hand_yunfei/shadow_hand.urdf";
-  std::string handPathJohn     = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_modified_for_test.sdf";
-  std::string handPathJohnSoft = DART_DATA_PATH"urdf/shadow_hand_john/model_hand_only_soft.sdf";
-  Skeleton* groundSkel   = SkelParser::readSkeleton(groundPath);
-  Skeleton* cubeSkel     = SkelParser::readSkeleton(cubePath);
-  Skeleton* handSkel     = dl.parseSkeleton(handPathYunfei);
-  Skeleton* handSkel2    = SoftSdfParser::readSkeleton(handPathJohn);
-  Skeleton* softHandSkel = SoftSdfParser::readSkeleton(handPathJohnSoft);
+  Skeleton*   groundSkel = SkelParser::readSkeleton(groundPath);
+
+  std::string cubePath = DART_DATA_PATH"skel/cube1.skel";
+  Skeleton*   cubeSkel = SkelParser::readSkeleton(cubePath);
+
+  std::string pathArmAndHandSdf = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.sdf";
+  Skeleton*   armAndHandSdf     = SoftSdfParser::readSkeleton(pathArmAndHandSdf);
+
+  std::string pathArmAndHandUrdf = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.urdf";
+  Skeleton*   armAndHandUrdf     = dl.parseSkeleton(pathArmAndHandUrdf);
+
+  std::string pathForearmAndHandSdf = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_JS.sdf";
+  Skeleton*   forearmAndHandSdf     = SoftSdfParser::readSkeleton(pathForearmAndHandSdf);
+
+  std::string pathForearmAndHandUrdf = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_JS.urdf";
+  Skeleton*   forearmAndHandUrdf     = dl.parseSkeleton(pathForearmAndHandUrdf);
 
   // Setting colors
   Vector3d gray(0.9, 0.9, 0.9);
@@ -83,7 +90,7 @@ int main(int argc, char* argv[])
   cubeSkel->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
 
   // Create window and run main loop
-  MyWindow window(groundSkel, handSkel2, cubeSkel, NULL);
+  MyWindow window(groundSkel, forearmAndHandSdf, cubeSkel, NULL);
   glutInit(&argc, argv);
   window.initWindow(640, 480, "Manipulator");
 #ifdef WIN32

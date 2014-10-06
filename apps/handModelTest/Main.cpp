@@ -67,16 +67,19 @@ int main(int argc, char* argv[])
   DartLoader dl;
 
   // Load skeleton files
-  std::string handPathJohn     = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.sdf";
-  std::string handPathJohn2    = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_modified_for_test.sdf";
-  std::string handPathJohnSoft = DART_DATA_PATH"urdf/shadow_hand_john/model_hand_only_soft.sdf";
-  Skeleton* handSkel     = SoftSdfParser::readSkeleton(handPathJohn);
-//  Skeleton* handSkel2    = SoftSdfParser::readSkeleton(handPathJohn2);
-//  Skeleton* handSkelSoft = SoftSdfParser::readSkeleton(handPathJohnSoft);
+  std::string pathArmAndHandSdf  = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.sdf";
+  std::string pathArmAndHandUrdf = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.urdf";
 
-  std::cout << handSkel << std::endl;
+  std::string pathForearmAndHandSdf  = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_JS.sdf";
+  std::string pathForearmAndHandUrdf = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_JS.urdf";
 
-  world->addSkeleton(handSkel);
+  Skeleton* armAndHandSdf     = SoftSdfParser::readSkeleton(pathArmAndHandSdf);
+  Skeleton* armAndHandUrdf    = dl.parseSkeleton(pathArmAndHandUrdf);
+
+  Skeleton* forearmAndHandSdf     = SoftSdfParser::readSkeleton(pathForearmAndHandSdf);
+  Skeleton* forearmAndHandUrdf    = dl.parseSkeleton(pathForearmAndHandUrdf);
+
+  world->addSkeleton(forearmAndHandSdf);
 
 //  std::cout << "Num of skeletons: " << world->getNumSkeletons();
 
