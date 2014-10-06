@@ -219,7 +219,7 @@ dynamics::Skeleton* SdfParser::readSkeleton(
     // transformation
     if (hasElement(_skeletonElement, "pose"))
     {
-        Eigen::Isometry3d W = getValueIsometry3d(_skeletonElement, "pose");
+        Eigen::Isometry3d W = getValueIsometry3dWithExtrinsicRotation(_skeletonElement, "pose");
         skeletonFrame = W;
     }
 
@@ -306,7 +306,7 @@ SdfParser::SDFBodyNode SdfParser::readBodyNode(
     // transformation
     if (hasElement(_bodyNodeElement, "pose"))
     {
-        Eigen::Isometry3d W = getValueIsometry3d(_bodyNodeElement, "pose");
+        Eigen::Isometry3d W = getValueIsometry3dWithExtrinsicRotation(_bodyNodeElement, "pose");
         initTransform = _skeletonFrame * W;
     }
     else
@@ -353,7 +353,7 @@ SdfParser::SDFBodyNode SdfParser::readBodyNode(
         // offset
         if (hasElement(inertiaElement, "pose"))
         {
-            Eigen::Isometry3d T = getValueIsometry3d(inertiaElement, "pose");
+            Eigen::Isometry3d T = getValueIsometry3dWithExtrinsicRotation(inertiaElement, "pose");
             newBodyNode->setLocalCOM(T.translation());
         }
 
@@ -460,7 +460,7 @@ dynamics::Shape* SdfParser::readShape(tinyxml2::XMLElement* _shapelement,
     // pose
     if (hasElement(_shapelement, "pose"))
     {
-        Eigen::Isometry3d W = getValueIsometry3d(_shapelement, "pose");
+        Eigen::Isometry3d W = getValueIsometry3dWithExtrinsicRotation(_shapelement, "pose");
         newShape->setLocalTransform(W);
     }
 
@@ -571,7 +571,7 @@ dynamics::Joint* SdfParser::readJoint(tinyxml2::XMLElement* _jointElement,
     if (sdfParentBodyNode.bodyNode)
          parentWorld = sdfParentBodyNode.initTransform;
     if (hasElement(_jointElement, "pose"))
-        childToJoint = getValueIsometry3d(_jointElement, "pose");
+        childToJoint = getValueIsometry3dWithExtrinsicRotation(_jointElement, "pose");
     Eigen::Isometry3d parentToJoint = parentWorld.inverse()*childWorld*childToJoint;
 
     // TODO: Workaround!!
