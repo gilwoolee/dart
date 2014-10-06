@@ -306,10 +306,10 @@ void MyWindow::initDyn()
   //////////////////////////////////////////////////////////////////////////////
 
   size_t dof = mSkels[1]->getNumDofs();
-  mSkels[1]->setPositions(Eigen::VectorXd::Zero(dof));
-  mSkels[1]->setVelocities(Eigen::VectorXd::Zero(dof));
+//  mSkels[1]->setPositions(Eigen::VectorXd::Zero(dof));
+//  mSkels[1]->setVelocities(Eigen::VectorXd::Zero(dof));
 //  mSkels[1]->getJoint("palm")->setPosition(2, +0.7428935766);
-  mSkels[1]->computeForwardKinematics(true, true, false);
+//  mSkels[1]->computeForwardKinematics(true, true, false);
 
   //////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
@@ -1902,10 +1902,10 @@ void MyWindow::updateTaskTarget()
 void MyWindow::updateIntForce()
 {
   // TODO(JS): Just commented out
-//  mController->computeTorques(mDofs[1], mDofVels[1], mDofAccs[1], mDofs[2],
-//                              mDofVels[2], mContactPoints, mTargetContactForces,
-//                              mContactBodyNames, mTargetOri, mObjOri);
-//  mSkels[1]->setForces(mController->getTorques());
+  mController->computeTorques(mDofs[1], mDofVels[1], mDofAccs[1], mDofs[2],
+                              mDofVels[2], mContactPoints, mTargetContactForces,
+                              mContactBodyNames, mTargetOri, mObjOri);
+  mSkels[1]->setForces(mController->getTorques());
 }
 
 //==============================================================================

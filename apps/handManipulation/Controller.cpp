@@ -382,7 +382,12 @@ void Controller::computeTorques(const VectorXd& _dof,
   else
     mOriForce = Eigen::VectorXd::Zero(mSkel->getNumDofs());
 
-  mTorques = mGravityCompensationForce + mObjControlForce + mDampForce + mTrackForce + mTaskForce + mOriForce;
+  mTorques = mGravityCompensationForce
+             + mObjControlForce
+             + mDampForce
+             + mTrackForce
+             + mTaskForce
+             + mOriForce;
 
   mFrame++;
 

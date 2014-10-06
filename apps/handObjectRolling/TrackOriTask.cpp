@@ -48,14 +48,16 @@ using namespace Eigen;
 namespace tasks {
 
 //==============================================================================
-TrackOriTask::TrackOriTask(dart::dynamics::Skeleton* _model,
-                           const std::string& _eeName,
-                           char *_name)
+TrackOriTask::TrackOriTask(const std::string& _name,
+                           dart::dynamics::Skeleton* _model,
+                           dart::dynamics::BodyNode* _targetBodyNode)
   : Task(_model),
-    mEndEffectorName(_eeName)
+    mBodyNode(_targetBodyNode)
 {
+  assert(_targetBodyNode);
+
   mDependTask = NULL;
-  strcpy(mName, _name);
+  mName = _name;
   mTaskType = tasks::ORI;
   mPriority = 2;
   mFinish = false;
@@ -67,7 +69,7 @@ TrackOriTask::TrackOriTask(dart::dynamics::Skeleton* _model,
   mOmega.resize(3,numDofs);
   mJ.resize(3,numDofs);
   mJDot.resize(3,numDofs);
-  mPGain = 100.0;
+  mPGain = 200.0;
   mVGain = 5.0/*0.0*/;
   mIGain = 10.0/*0.0*/;
   mOtherForce = VectorXd::Zero(mModel->getNumDofs());
@@ -79,175 +81,188 @@ TrackOriTask::~TrackOriTask()
 {
 }
 
+//==============================================================================
 void TrackOriTask::evalTorque()
 {
-  // TODO(JS): Just commented out
-//  mTorque = VectorXd::Zero(mModel->getNumDofs());
+  mTorque = VectorXd::Zero(mModel->getNumDofs());
 
-//  // use one DoF at the wrist to control rolling motion
+  // use one DoF at the wrist to control rolling motion
 
-//  int nodeJacobianIndex = 0; // index of column in Jacobian matrix of a node
-//  int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
-//  for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
-//  {
-//    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
-//    {
-//      mJ.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
-//      nodeJacobianIndex++;
-//    }
-//    else
-//    {
-//      mJ.col(modelJacobianIndex) = VectorXd::Zero(3);
-//    }
-//  }
-//  Eigen::Matrix4d transformMatrix = mModel->getBodyNode(mEEIndex)->getWorldTransform();
-//  Eigen::Matrix3d rotationMatrix = transformMatrix.topLeftCorner(3,3);
-//  Eigen::Vector3d orientationVector = rotationMatrix*Vector3d(0.0,-1.0,0.0);
-//  double angle = acos(orientationVector.dot(mTarget)/(orientationVector.norm()*mTarget.norm()));
-//  Vector3d omega = mJ*mDofVels; // angular velocity
-//  VectorXd commandF;
-//  if (dart_math::isZero((orientationVector.cross(mTarget)).norm())) {
-//    commandF = Vector3d::Zero();
-//  }
-//  else commandF = mPGain*angle*((orientationVector.cross(mTarget)).normalized())-mVGain*omega;
+  int nodeJacobianIndex = 0; // index of column in Jacobian matrix of a node
+  int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
+  for ( ; modelJacobianIndex < (int)mModel->getNumDofs(); ++modelJacobianIndex)
+  {
+    if (mBodyNode->dependsOn(modelJacobianIndex))
+    {
+      mJ.col(modelJacobianIndex)
+          = mBodyNode->getWorldAngularJacobian().col(nodeJacobianIndex);
+      nodeJacobianIndex++;
+    }
+    else
+    {
+      mJ.col(modelJacobianIndex) = VectorXd::Zero(3);
+    }
+  }
 
-//  // use integrate term
-//  commandF = commandF + mIGain*mAccumulateError;
+  Eigen::Isometry3d transformMatrix   = mBodyNode->getTransform();
+  Eigen::Matrix3d   rotationMatrix    = transformMatrix.linear();
+  Eigen::Vector3d   orientationVector = rotationMatrix*Vector3d(0.0,-1.0,0.0);
+  double angle = acos(orientationVector.dot(mTarget)/(orientationVector.norm()*mTarget.norm()));
+  Vector3d omega = mJ*mDofVels; // angular velocity
+  VectorXd commandF;
+  Vector3d tmp = orientationVector.cross(mTarget);
+  if (dart::math::isZero(tmp.norm()))
+    commandF = Vector3d::Zero();
+  else
+    commandF = mPGain * angle * tmp.normalized() - mVGain * omega;
 
-//  // the dof index related to the rotation of the wrist is 2, we care about the rotation about x axis whose index is 0, the minus is because local coordinate and world coordinate is opposite
-//  mTorque(2) = -commandF(0);
+  // use integrate term
+  commandF = commandF + mIGain*mAccumulateError;
+
+  // the dof index related to the rotation of the wrist is 2 (JS: 3), we care about the rotation about x axis whose index is 0, the minus is because local coordinate and world coordinate is opposite
+  mTorque(3) = -commandF(0);
 
 
-//  // use three DoF at the wrist to control rolling motion
-//  /*
-//    int nodeJacobianIndex = 0; // index of column in Jacobian matrix of a node
-//    int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
-//    for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
-//    {
-//      if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
-//      {
-//        mJ.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
-//        nodeJacobianIndex++;
-//      }
-//      else
-//      {
-//        mJ.col(modelJacobianIndex) = VectorXd::Zero(3);
-//      }
-//    }
+  // use three DoF at the wrist to control rolling motion
+  /*
+    int nodeJacobianIndex = 0; // index of column in Jacobian matrix of a node
+    int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
+    for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
+    {
+      if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
+      {
+        mJ.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
+        nodeJacobianIndex++;
+      }
+      else
+      {
+        mJ.col(modelJacobianIndex) = VectorXd::Zero(3);
+      }
+    }
 
-//    mOmega = mJ * (mModel->getMassMatrix().inverse());
-//    FullPivLU<MatrixXd> lu_decomp(mOmega);
-//    mNullSpace = lu_decomp.kernel();
-//    dynamics::BodyNodeDynamics *nodel = static_cast<dynamics::BodyNodeDynamics*>(mModel->getBodyNode(mEEIndex));
-//    Eigen::Matrix4d transformMatrix = mModel->getBodyNode(mEEIndex)->getWorldTransform();
-//    Eigen::Matrix3d rotationMatrix = transformMatrix.topLeftCorner(3,3);
-//    Eigen::Vector3d orientationVector = rotationMatrix*Vector3d(0.0,-1.0,0.0);
-//    double angle = acos(orientationVector.dot(mTarget)/(orientationVector.norm()*mTarget.norm()));
+    mOmega = mJ * (mModel->getMassMatrix().inverse());
+    FullPivLU<MatrixXd> lu_decomp(mOmega);
+    mNullSpace = lu_decomp.kernel();
+    dynamics::BodyNodeDynamics *nodel = static_cast<dynamics::BodyNodeDynamics*>(mModel->getBodyNode(mEEIndex));
+    Eigen::Matrix4d transformMatrix = mModel->getBodyNode(mEEIndex)->getWorldTransform();
+    Eigen::Matrix3d rotationMatrix = transformMatrix.topLeftCorner(3,3);
+    Eigen::Vector3d orientationVector = rotationMatrix*Vector3d(0.0,-1.0,0.0);
+    double angle = acos(orientationVector.dot(mTarget)/(orientationVector.norm()*mTarget.norm()));
 
-//    Vector3d omega = mJ*mDofVels; // angular velocity
-//    Matrix3d omegaStar = dart_math::makeSkewSymmetric(omega);
-//    Vector3d orientationVectorVel = omegaStar*orientationVector;
+    Vector3d omega = mJ*mDofVels; // angular velocity
+    Matrix3d omegaStar = dart_math::makeSkewSymmetric(omega);
+    Vector3d orientationVectorVel = omegaStar*orientationVector;
 
-//    VectorXd commandF;
-//    if (dart_math::isZero((orientationVector.cross(mTarget)).norm())) {
-//      commandF = Vector3d::Zero();
-//    }
-//    else commandF = mPGain*angle*((orientationVector.cross(mTarget)).normalized())-mVGain*omega;
-//    nodeJacobianIndex = 0;
-//    modelJacobianIndex = 0;
-//    for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
-//    {
-//      if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
-//      {
-//        mJDot.col(modelJacobianIndex) = nodel->mJwDot.col(nodeJacobianIndex);
-//        nodeJacobianIndex++;
-//      }
-//      else
-//      {
-//        mJDot.col(modelJacobianIndex) = VectorXd::Zero(3);
-//      }
-//    }
+    VectorXd commandF;
+    if (dart_math::isZero((orientationVector.cross(mTarget)).norm())) {
+      commandF = Vector3d::Zero();
+    }
+    else commandF = mPGain*angle*((orientationVector.cross(mTarget)).normalized())-mVGain*omega;
+    nodeJacobianIndex = 0;
+    modelJacobianIndex = 0;
+    for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
+    {
+      if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
+      {
+        mJDot.col(modelJacobianIndex) = nodel->mJwDot.col(nodeJacobianIndex);
+        nodeJacobianIndex++;
+      }
+      else
+      {
+        mJDot.col(modelJacobianIndex) = VectorXd::Zero(3);
+      }
+    }
 
-//    if (dart_math::isEqual((mOmega*mOmega.transpose()).determinant(),0.0)) {
-//      cout << "not invertible" << endl;
-//    }
-//    mTorque = mOmega.transpose()*(mOmega*mOmega.transpose()).inverse()*(commandF+mOmega*(mModel->getCombinedVector() - mOtherForce)-mJDot*mDofVels);
+    if (dart_math::isEqual((mOmega*mOmega.transpose()).determinant(),0.0)) {
+      cout << "not invertible" << endl;
+    }
+    mTorque = mOmega.transpose()*(mOmega*mOmega.transpose()).inverse()*(commandF+mOmega*(mModel->getCombinedVector() - mOtherForce)-mJDot*mDofVels);
 
-//    for (int i = 3; i < mModel->getNumDofs(); ++i) {
-//      mTorque(i) = 0.0;
-//    }
-//    */
+    for (int i = 3; i < mModel->getNumDofs(); ++i) {
+      mTorque(i) = 0.0;
+    }
+    */
 }
 
+//==============================================================================
 void TrackOriTask::evalTaskFinish()
 {
-  // TODO(JS): Just commented out
-//  Eigen::Matrix4d transformMatrix = mModel->getBodyNode(mEEIndex)->getWorldTransform();
-//  Eigen::Matrix3d rotationMatrix = transformMatrix.topLeftCorner(3,3);
-//  Eigen::Vector3d orientationVector = rotationMatrix*Vector3d(0.0,-1.0,0.0);
-//  double angle = acos(orientationVector.dot(mTarget)/(orientationVector.norm()*mTarget.norm()));
+  Eigen::Isometry3d transformMatrix   = mBodyNode->getTransform();
+  Eigen::Matrix3d   rotationMatrix    = transformMatrix.linear();
+  Eigen::Vector3d   orientationVector = rotationMatrix
+                                        * Vector3d(0.0,-1.0,0.0);
+  double angle = acos(orientationVector.dot(mTarget)
+                      / (orientationVector.norm() * mTarget.norm())
+                     );
 
-//  if (angle < ORIENTATION_CLOSE_THRESHOLD)
-//    mFinish = true;
+  if (angle < ORIENTATION_CLOSE_THRESHOLD)
+    mFinish = true;
 }
 
-void TrackOriTask::updateTask(Eigen::VectorXd _state, Eigen::Vector3d _target, Eigen::VectorXd _otherForce) {
-  mDofVels = _state.tail(mDofVels.size());
-  mDofs = _state.head(mDofs.size());
-  mTarget = _target;
+//==============================================================================
+void TrackOriTask::updateTask(Eigen::VectorXd _state,
+                              Eigen::Vector3d _target,
+                              Eigen::VectorXd _otherForce)
+{
+  mDofVels    = _state.tail(mDofVels.size());
+  mDofs       = _state.head(mDofs.size());
+  mTarget     = _target;
   mOtherForce = _otherForce;
 }
 
+//==============================================================================
 Eigen::MatrixXd TrackOriTask::getNullSpace() const
 {
   // TODO(JS): Just commented out
-//  int numDofs = mModel->getNumDofs();
-//  MatrixXd omega = MatrixXd::Zero(3,numDofs);
-//  MatrixXd jw = MatrixXd::Zero(3,numDofs);
-//  int nodeJacobianIndex = 0; // index of column in Jacobian matrix of a node
-//  int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
-//  for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
-//  {
-//    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
-//    {
-//      jw.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
-//      nodeJacobianIndex++;
-//    }
-//    else
-//    {
-//      jw.col(modelJacobianIndex) = VectorXd::Zero(3);
-//    }
-//  }
+  int numDofs = mModel->getNumDofs();
+  MatrixXd omega = MatrixXd::Zero(3,numDofs);
+  MatrixXd jw    = MatrixXd::Zero(3,numDofs);
+  int nodeJacobianIndex  = 0;  // index of column in Jacobian matrix of a node
+  int modelJacobianIndex = 0;  // index of column in Jacobian matrix of a model
+  for ( ; modelJacobianIndex < (int)mModel->getNumDofs(); ++modelJacobianIndex)
+  {
+    if (mBodyNode->dependsOn(modelJacobianIndex))
+    {
+      VectorXd JacCol
+          = mBodyNode->getWorldAngularJacobian().col(nodeJacobianIndex);
+      jw.col(modelJacobianIndex) = JacCol;
+    }
+    else
+    {
+      jw.col(modelJacobianIndex) = VectorXd::Zero(3);
+    }
+  }
 
-//  omega = jw * (mModel->getMassMatrix().inverse());
-//  FullPivLU<MatrixXd> lu_decomp(omega);
-//  MatrixXd nullSpace = lu_decomp.kernel();
-//  return nullSpace;
+  omega = jw * (mModel->getMassMatrix().inverse());
+  FullPivLU<MatrixXd> lu_decomp(omega);
+  MatrixXd nullSpace = lu_decomp.kernel();
+  return nullSpace;
 }
 
+//==============================================================================
 Eigen::MatrixXd TrackOriTask::getTaskSpace() const
 {
-  // TODO(JS): Just commented out
-//  int numDofs = mModel->getNumDofs();
-//  MatrixXd omega = MatrixXd::Zero(3,numDofs);
-//  MatrixXd jw = MatrixXd::Zero(3,numDofs);
-//  int nodeJacobianIndex = 0; // index of column in Jacobian matrix of a node
-//  int modelJacobianIndex = 0; // index of column in Jacobian matrix of a model
-//  for (modelJacobianIndex = 0; modelJacobianIndex < mModel->getNumDofs(); ++modelJacobianIndex)
-//  {
-//    if (mModel->getBodyNode(mEEIndex)->dependsOn(modelJacobianIndex))
-//    {
-//      jw.col(modelJacobianIndex) = mModel->getBodyNode(mEEIndex)->getJacobianAngular().col(nodeJacobianIndex);
-//      nodeJacobianIndex++;
-//    }
-//    else
-//    {
-//      jw.col(modelJacobianIndex) = VectorXd::Zero(3);
-//    }
-//  }
+  int numDofs = mModel->getNumDofs();
+  MatrixXd omega = MatrixXd::Zero(3,numDofs);
+  MatrixXd jw    = MatrixXd::Zero(3,numDofs);
+  int nodeJacobianIndex  = 0;  // index of column in Jacobian matrix of a node
+  int modelJacobianIndex = 0;  // index of column in Jacobian matrix of a model
+  for ( ; modelJacobianIndex < (int)mModel->getNumDofs(); ++modelJacobianIndex)
+  {
+    if (mBodyNode->dependsOn(modelJacobianIndex))
+    {
+      VectorXd JacCol = mBodyNode->getWorldAngularJacobian().col(nodeJacobianIndex);
+      jw.col(modelJacobianIndex) = JacCol;
+      nodeJacobianIndex++;
+    }
+    else
+    {
+      jw.col(modelJacobianIndex) = VectorXd::Zero(3);
+    }
+  }
 
-//  omega = jw * (mModel->getMassMatrix().inverse());
-//  return omega;
+  omega = jw * (mModel->getMassMatrix().inverse());
+  return omega;
 }
 
 //==============================================================================
@@ -271,12 +286,14 @@ void TrackOriTask::setTarget(Vector3d _target)
 //==============================================================================
 Eigen::Vector3d TrackOriTask::evalTaskError()
 {
-  // TODO(JS): Just commented out
-//  Eigen::Matrix4d transformMatrix = mModel->getBodyNode(mEEIndex)->getWorldTransform();
-//  Eigen::Matrix3d rotationMatrix = transformMatrix.topLeftCorner(3,3);
-//  Eigen::Vector3d orientationVector = rotationMatrix*Vector3d(0.0,-1.0,0.0);
-//  double angle = acos(orientationVector.dot(mTarget)/(orientationVector.norm()*mTarget.norm()));
-//  return angle*((orientationVector.cross(mTarget)).normalized());
+  Isometry3d transformMatrix = mBodyNode->getTransform();
+  Matrix3d rotationMatrix    = transformMatrix.linear();
+  Vector3d orientationVector = rotationMatrix * Vector3d(0.0, -1.0, 0.0);
+
+  double angle = acos(orientationVector.dot(mTarget)
+                      / (orientationVector.norm() * mTarget.norm()));
+
+  return angle * ((orientationVector.cross(mTarget)).normalized());
 }
 
 //==============================================================================

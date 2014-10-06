@@ -1,202 +1,340 @@
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
+/*
+ * Copyright (c) 2014, Georgia Tech Research Corporation
+ * All rights reserved.
+ *
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
+ *
+ * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ *
+ * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
+ * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
+ *
+ * This file is provided under the following "BSD-style" License:
+ *   Redistribution and use in source and binary forms, with or
+ *   without modification, are permitted provided that the following
+ *   conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ *   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ *   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ *   AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *   POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef APPS_HANDOBJECTROLLING_CONTROLLER_H_
+#define APPS_HANDOBJECTROLLING_CONTROLLER_H_
+
+#include <vector>
 
 #include <Eigen/Dense>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <cstring>
-#include "Task.h"
-#include "MaintainTask.h"
-#include "TrackOriTask.h"
-#include "TrackPoseTask.h"
-#include "TrackEETask.h"
 
-extern double angleX;
-extern double angleY;
-extern double angleZ;
-extern double handPosX;
-extern double handPosY;
-extern double handPosZ;
-extern double objPosX;
-extern double objPosY;
-extern double objPosZ;
+extern double gAngleX;
+extern double gAngleY;
+extern double gAngleZ;
+extern double gHandPosX;
+extern double gHandPosY;
+extern double gHandPosZ;
+extern double gObjPosX;
+extern double gObjPosY;
+extern double gObjPosZ;
 
 namespace dart {
 namespace dynamics {
-class SkeletonDynamics;
+class BodyNode;
+class Skeleton;
 }  // namespace dynamics
-namespace optimizer {
-class ObjectiveBox;
-class Var;
-}  // namespace optimizer
+namespace constraint {
+class ConstraintSolver;
+class WeldJointConstraint;
+}  // namespace constraint
+namespace collision {
+class CollisionDetector;
+}
+namespace simulation {
+class World;
+}
 }  // namespace dart
 
-namespace tasks {
-class Task;
-class MaintainTask;
-class TrackOriTask;
-class TrackPoseTask;
-class TrackEETask;
-}  // namespace tasks
+class StateMachine;
 
+/// In-hand manipulation controller
 class Controller
 {
 public:
   /// Constructor
-  Controller(dart::dynamics::Skeleton* _skel,
-             double _t,
-             std::vector<tasks::Task*>& _tasks,
-             int _fingerNum,
-             std::vector<std::string>& _fingerRootNames, std::vector<std::string>& _fingerTipNames,
-             //std::vector<int>& _fingerTipIndices,
-             std::string _palmName);
+  Controller(
+      dart::simulation::World*  _world,
+      dart::dynamics::Skeleton* _ground,
+      dart::dynamics::Skeleton* _shadowHand,
+      dart::dynamics::Skeleton* _object);
 
   /// Destructor
   virtual ~Controller();
 
-//  void resetController(std::vector<tasks::Task*>& _tasks);
+  ///
+  void setInitialTransformation();
 
   ///
-  Eigen::VectorXd getTorques();
-
-//  double getTorque(int _index) { return mTorques[_index]; }
+  void backupInitialStates();
 
   ///
-  void setDesiredDof(int _index, double _val);
+  void restoreInitialStates();
 
-  /// Compute torques
-  /// \param[in] _dof
-  /// \param[in] _dofVel
-  /// \param[in] _dofAcc
-  /// \param[in] _objDof
-  /// \param[in] _objVel
-  /// \param[in] _contactPoints
-  /// \param[in] _contactForces
-  /// \param[in] _contactBodyNames
-  /// \param[in] _targetOri
-  /// \param[in] _objOri
-  void computeTorques(const Eigen::VectorXd& _dof,
-                      const Eigen::VectorXd& _dofVel,
-                      const Eigen::VectorXd& _dofAcc,
-                      const Eigen::VectorXd& _objDof,
-                      const Eigen::VectorXd& _objVel,
-                      std::vector<Eigen::Vector3d>& _contactPoints,
-                      std::vector<Eigen::Vector3d>& _contactForces,
-                      std::vector<std::string>& _contactBodyNames,
-                      const Eigen::Vector3d& _targetOri,
-                      const Eigen::Vector3d& _objOri);
+  /// Called before every simulation time step in MyWindow class.
+  /// Compute control force and apply it to Atlas robot
+  virtual void update(double _currentTime);
 
-//  dart::dynamics::Skeleton*  getSkel() { return mSkel; }
-//  Eigen::VectorXd getDesiredDofs() { return mDesiredDofs; }
-//  Eigen::MatrixXd getKp() {return mKp; }
-//  void evalTargetOri(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel, const Eigen::VectorXd& _objDof, const Eigen::VectorXd& _objVel, const Eigen::Vector3d& _offset, const Eigen::Vector3d& _targetOri, const Eigen::Vector3d& _objOri);
+  //----------------------------------------------------------------------------
+  // Task information
+  //----------------------------------------------------------------------------
+
+  /// \biref
+  void setPose();
+
+  /// Compute gAngleX, gAngleY, gAngleZ
+  void setHandAngle(double _angle);
 
   ///
-  void evalTargetPose(const Eigen::VectorXd& _dof,
-                      const Eigen::VectorXd& _dofVel,
-                      const Eigen::VectorXd& _objDof,
-                      const Eigen::VectorXd& _objVel,
-                      const Eigen::Vector3d& _offset,
-                      const Eigen::Vector3d& _targetOri,
-                      const Eigen::Vector3d& _objOri);
+  int evalContactEdge();
 
-//  Eigen::MatrixXd evalTaskNullSpace();
+  /// Return true if _edgeIndex is in contact
+  bool isEdgeInContact(int _edgeIndex);
 
-  /// Compute gravity compensation force and store it to
-  /// mGravityCompensationForce
-  void evalGravityCompensationForce();
-
-  /// ... and store it to mObjControlForce
-  // void evalObjControlForce(const std::vector<Eigen::Vector3d>& _contactPoints,
-  //                          const std::vector<Eigen::Vector3d>& _contactForces,
-  //                          const std::vector<std::string>& _contactBodyNames);
+  /// Return the orientation of the object
+  Eigen::Matrix3d evalObjOri();
 
   ///
-  void evalTrackForce(const Eigen::VectorXd& _dof,
-                      const Eigen::VectorXd& _dofVel);
+  int evalUpFace();
 
-  /// Compute damping force
-  void evalDampForce(const Eigen::VectorXd& _dof);
+  //----------------------------------------------------------------------------
+  // Compute control forces
+  //----------------------------------------------------------------------------
 
-  /// Compute ...
-  void evalOriForce(const Eigen::VectorXd& _dof,
-                    const Eigen::VectorXd& _dofVel);
-
-//  void evalMaintainForce(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel);
+  /// Update control force for the hand
+  void computeHandTotalControlForce();
 
   ///
-  // void evalTaskForce();
+  void computeHandConstraintForce();
 
-public:
-  dart::dynamics::Skeleton *mSkel;
-  Eigen::VectorXd mTorques;
-  Eigen::VectorXd mGravityCompensationForce;
-  Eigen::VectorXd mObjControlForce;
-  Eigen::VectorXd mTrackForce;
-  Eigen::VectorXd mDampForce;
-  Eigen::VectorXd mOriForce;
-  Eigen::VectorXd mMaintainForce;
-  Eigen::VectorXd mTaskForce;
-  Eigen::VectorXd mConstraintForce;
-  Eigen::VectorXd mDesiredDofs;
-  Eigen::VectorXd mFingerEndPose;
-  Eigen::VectorXd mFingerRestPose;
-  Eigen::VectorXd mFingerInterceptPose;
-  Eigen::MatrixXd mKp;
-  Eigen::MatrixXd mKd;
+  ///
+  void computeHandObjControlForce();
+
+  ///
+  void computeTrackForce();
+
+  ///
+  void computeTaskForce();
+
+  ///
+  void computeHandTaskForce();
+
+  /// Update control force for the hand
+  void computeHandGravityCompensationForce();
+
+  ///
+  void computeHandDampForce();
+
+  ///
+  void computeHandOriForce();
+
+  ///
+  void computeHandMaintainForce();
+
+  //----------------------------------------------------------------------------
+  // Utility function
+  //----------------------------------------------------------------------------
+
+
+
+  ///
+  Eigen::VectorXd computeOtherForces();
+
+
+
+  /// Keyboard control
+  void keyboard(unsigned char _key, int _x, int _y, double _currentTime);
+
+  /// Print debug information
+  void printDebugInfo() const;
+
+  /// Reset
+  void reset();
+
+private:
+  /// World
+  dart::simulation::World* mWorld;
+
+  /// Ground
+  dart::dynamics::Skeleton* mGround;
+
+  /// Shadow hand
+  dart::dynamics::Skeleton* mHand;
+
+  /// Palm of the shadow hand
+  dart::dynamics::BodyNode* mPalm;
+
+  /// Object skeleton to be manipulated
+  dart::dynamics::Skeleton* mObjectSkel;
+
+  /// Object body node to be manipulated
+  dart::dynamics::BodyNode* mObject;
+
+  /// Conllision detector
+  dart::constraint::ConstraintSolver* mConstratinSolver;
+
+  /// Conllision detector
+  dart::collision::CollisionDetector* mCollisionDetector;
+
+  ///
   double mTimestep;
-  int mFrame;
+
+  ///
+  int mHandDof;
+
+
+  ///
   int mFingerNum;
 
-  std::vector<tasks::Task*> mTasks;
-  std::vector<Eigen::MatrixXd> mJVec;
-  std::vector<Eigen::MatrixXd> mInvJVec;
-  Eigen::MatrixXd mCombinedJ;
-  Eigen::MatrixXd mCombinedJTrans;
+  ///
+  std::vector<std::string> mFingerNames;
 
-  std::vector<int> mActiveNumFrame;
-  std::vector<int> mActiveSimFrame;
-  std::vector<int> mTrackNumFrame;
-  std::vector<int> mTrackSimFrame;
-  std::vector<int> mInContactFrame;
-  std::vector<bool> mActiveFingers;
-  std::vector<bool> mContactFingers;
-  std::vector<bool> mInContactFingers;
-  std::vector<bool> mRestFingers;
-  std::vector<bool> mTrackFingers;
-  std::vector<VectorXi> mFingerDofs;
-  Eigen::VectorXi mOriDofs;
+  ///
   std::vector<std::string> mFingerRootNames;
-  std::vector<std::string> mFingerTipNames;
-  std::string mPalmName;
 
-  // Excluded node number when doing virtual force control
-  int mExtNodeNum;
+  ///
+  std::vector<int> mFingerTipIndices;
 
-  // Excluded dof number when doing virtual force control
-  int mExtDofNum;
+  /// Initial generalized positions of the ground
+  Eigen::VectorXd mGroundInitialPositions;
 
-  // Plan related
+  /// Initial generalized positions of the hand
+  Eigen::VectorXd mHandInitialPositions;
+
+  /// Initial generalized positions of the object
+  Eigen::VectorXd mObjectInitialPositions;
+
+  /// Backup state of the object
+  Eigen::VectorXd mObjectStateBackup;
+
+  /// Backup state of the hand
+  Eigen::VectorXd mHandStateBackup;
+
+  //----------------------------------------------------------------------------
+  // Task information
+  //----------------------------------------------------------------------------
+
+  /// the edges of the polygon (pivoting edges) in the local coordinate, use the
+  /// represent point in the 2D plane
+  std::vector<Eigen::Vector3d> mEdges;
+
+  /// the corners of the polygon in the local coodinate, the first dimension is
+  /// corresponding to edges, the second dimension is two corners for an edge,
+  /// the first one has positive coordinate (close to little finger), the second
+  /// one has negative coordinate
+  std::vector<std::vector<Eigen::Vector3d> > mCorners;
+
+  /// Current rolling number
+  int mRollNum;
+
+  ///
+  int mRollBackNum;
+
+  /// Total number of rollings to control
+  int mN;
+
+  ///
+  int mBackN;
+
+  ///
+  int mRollBackIndex;
+
+  /// Target tilting angles to roll the object on the hand
+  std::vector<double> mAngles;
+
+  ///
+  int mPreContactEdge;
+
+  ///
+  Eigen::Vector4d mPreOri;
+
+  ///
+  int mUpFace;
+
+  ///
+  std::vector<Eigen::Vector3d> mPreHighCorners;
+
+  ///
+  std::vector<Eigen::Vector3d> mCurHighCorners;
+
+  ///
+  int mRollDir;
+
+  //----------------------------------------------------------------------------
+  // Control
+  //----------------------------------------------------------------------------
+
+  /// Backup state of the hand
+  Eigen::VectorXd mHandControlForce;
+
+  /// Gravity compensation forces;
+  Eigen::VectorXd mHandGravityCompensationForce;
+
+  ///
+  Eigen::VectorXd mHandObjControlForce;
+
+  ///
+  Eigen::VectorXd mHandOriForce;
+
+  ///
+  Eigen::VectorXd mHandTrackForce;
+
+  ///
+  Eigen::VectorXd mHandTaskForce;
+
+  ///
+  Eigen::VectorXd mHandMaintainForce;
+
+  ///
+  Eigen::VectorXd mHandConstraintForce;
+
+  ///
+  Eigen::VectorXd mHandSPDDampForce;
+
+  //----------------------------------------------------------------------------
+
+  Eigen::MatrixXd mKd;
+  Eigen::MatrixXd mKp;
+
+  //----------------------------------------------------------------------------
+
+  ///
   bool mOriFlag;
-  int mOriSimFrame;
-  int mOriNumFrame;
-  bool mMaintainFlag;
 
   ///
-  bool mControlFlag;
-
-  ///
-  bool mTaskFlag;
-
-  ///
-  bool mOnPalmFlag;
-
   Eigen::Vector3d mPreOriTarget;
+
+  ///
   Eigen::Vector3d mAccumulateOriError;
+
+  ///
+  Eigen::VectorXd mDesiredDofs;
+
+  ///
+  Eigen::VectorXi mOriDofs;
 
 };
 
-
-
-#endif // #CONTROLLER_H
+#endif  // APPS_HANDOBJECTROLLING_CONTROLLER_H_

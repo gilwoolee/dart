@@ -63,10 +63,10 @@ public:
   virtual void evalTaskFinish();
 
   ///
-  void setName(char* _n);
+  void setName(const std::string& _name);
 
   ///
-  inline char* getName();
+  inline const std::string& getName() const;
 
 public:
   ///
@@ -76,7 +76,7 @@ public:
   Task* mDependTask;
 
   /// Name
-  char mName[MAX_TASK_NAME];
+  std::string mName;
 
   /// Task type
   taskType mTaskType;

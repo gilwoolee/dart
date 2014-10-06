@@ -55,13 +55,13 @@ void Task::evalTaskFinish()
 }
 
 //==============================================================================
-void Task::setName(char* _n)
+void Task::setName(const std::string& _name)
 {
-  strcpy(mName, _n);
+  mName = _name;
 }
 
 //==============================================================================
-char*Task::getName()
+const std::string& Task::getName() const
 {
   return mName;
 }

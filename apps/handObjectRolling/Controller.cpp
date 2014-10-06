@@ -1,175 +1,289 @@
+/*
+ * Copyright (c) 2014, Georgia Tech Research Corporation
+ * All rights reserved.
+ *
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
+ *
+ * Georgia Tech Graphics Lab and Humanoid Robotics Lab
+ *
+ * Directed by Prof. C. Karen Liu and Prof. Mike Stilman
+ * <karenliu@cc.gatech.edu> <mstilman@cc.gatech.edu>
+ *
+ * This file is provided under the following "BSD-style" License:
+ *   Redistribution and use in source and binary forms, with or
+ *   without modification, are permitted provided that the following
+ *   conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ *   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ *   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ *   AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *   POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include "Controller.h"
 
-#include <Eigen/Geometry>
-
+#include "dart/common/Console.h"
+#include "dart/math/Helpers.h"
 #include "dart/dynamics/Skeleton.h"
 #include "dart/dynamics/BodyNode.h"
-#include "dart/math/Helpers.h"
-//#include "optimizer/ObjectiveBox.h"
-//#include "optimizer/snopt/SnoptSolver.h"
-//#include "optimizer/Var.h"
-//#include "ControlTorqueProblem.h"
-//#include "TorqueProjConstraint.h"
-//#include "TorqueMagniConstraint.h"
-//#include "IKProblem.h"
-//#include "PositionConstraint.h"
+#include "dart/dynamics/Shape.h"
+#include "dart/dynamics/Joint.h"
+#include "dart/constraint/ConstraintSolver.h"
+#include "dart/constraint/WeldJointConstraint.h"
+#include "dart/collision/CollisionDetector.h"
+#include "dart/simulation/World.h"
+
+#include "TrackOriTask.h"
+
+#define EPS_DISTANCE 0.001
+
+double gAngleX = 0.0;
+double gAngleY = 1.0;
+double gAngleZ = 0.0;
+double gHandPosX = 0.0;
+double gHandPosY = 0.0;
+double gHandPosZ = 0.0;
+double gObjPosX = 0.0;
+double gObjPosY = 0.0;
+double gObjPosZ = 0.0;
+
+using namespace std;
 
 using namespace Eigen;
-using namespace dart;
-using namespace math;
-using namespace dynamics;
-using namespace tasks;
-using namespace optimizer;
 
-double angleX = 0.0;
-double angleY = 1.0;
-double angleZ = 0.0;
-double handPosX = 0.0;
-double handPosY = 0.0;
-double handPosZ = 0.0;
-double objPosX = 0.0;
-double objPosY = 0.0;
-double objPosZ = 0.0;
+using namespace dart;
+using namespace collision;
+using namespace constraint;
+using namespace dynamics;
+using namespace simulation;
 
 //==============================================================================
-Controller::Controller(Skeleton* _skel,
-                       double _t,
-                       std::vector<Task*>& _tasks,
-                       int _fingerNum,
-                       std::vector<std::string>& _fingerRootNames,
-                       std::vector<std::string>& _fingerTipNames,
-                       std::string _palmName)
-  : mSkel(_skel),
-    mTimestep(_t),
-    mTasks(_tasks),
-    mFingerNum(_fingerNum),
-    mFingerRootNames(_fingerRootNames),
-    mFingerTipNames(_fingerTipNames),
-    mPalmName(_palmName)
+Controller::Controller(World* _world,
+                       Skeleton* _ground,
+                       Skeleton* _shadowHand,
+                       Skeleton* _object)
+  : mWorld(_world),
+    mGround(_ground),
+    mHand(_shadowHand),
+    mObjectSkel(_object)
 {
-  int nDof = mSkel->getNumDofs();
-  mKp = MatrixXd::Identity(nDof, nDof);
-  mKd = MatrixXd::Identity(nDof, nDof);;
+  assert(_world);
+  assert(_ground);
+  assert(_shadowHand);
+  assert(_object);
 
-  mTorques.resize(nDof);
-  mGravityCompensationForce.resize(nDof);
-  mObjControlForce.resize(nDof);
-  mTrackForce.resize(nDof);
-  mDampForce.resize(nDof);
-  mOriForce.resize(nDof);
-  mMaintainForce.resize(nDof);
-  mTaskForce.resize(nDof);
-  mConstraintForce.resize(nDof);
-  mFingerEndPose.resize(nDof);
-  mFingerRestPose.resize(nDof);
-  mFingerInterceptPose.resize(nDof);
-  mDesiredDofs.resize(nDof);
+  //----------------------------------------------------------------------------
+  // Initial states
+  //----------------------------------------------------------------------------
 
-  mTorques.setZero();
-  mGravityCompensationForce.setZero();
-  mObjControlForce.setZero();
-  mTrackForce.setZero();
-  mDampForce.setZero();
-  mOriForce.setZero();
-  mMaintainForce.setZero();
-  mTaskForce.setZero();
-  mConstraintForce.setZero();
-  mFingerEndPose.setZero();
+  setInitialTransformation();
+  backupInitialStates();
 
-  float fingerRestPose[] = {-0.8000000119, 0, 0, 0, 0, 0, 0, -0.7428935766, 0, 0, 0, 0, 1.072659612, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.8000000119, 0, 0.200000003};
-  float fingerInterceptPose[] = {-0.8, 0, 0, 0, 0, 0, 0, 0, 0.4, 0, 0.4, 0.4, 0, 0.6, 0, 0.6, 0.6, 0, 0.4, 0.6, 0.4, 0.4, 0, 0.4, 0};
-  for (int i = 0; i < nDof; i++)
+  //----------------------------------------------------------------------------
+  // World setting
+  //----------------------------------------------------------------------------
+
+  mWorld->setGravity(Eigen::Vector3d(0, -9.81, 0));
+  mTimestep = mWorld->getTimeStep();
+
+  mConstratinSolver = mWorld->getConstraintSolver();
+  mCollisionDetector = mConstratinSolver->getCollisionDetector();
+
+  //----------------------------------------------------------------------------
+  // Hand setting
+  //----------------------------------------------------------------------------
+
+  mHand->disableSelfCollision();
+  mHandDof = mHand->getNumDofs();
+  mFingerNum = 5;
+
+  std::string palmName = "palm";
+  mPalm = mHand->getBodyNode(palmName);
+  assert(mPalm);
+
+  mFingerNames.resize(mFingerNum);
+  mFingerNames[0] = "thdistal";
+  mFingerNames[1] = "ffdistal";
+  mFingerNames[2] = "mfdistal";
+  mFingerNames[3] = "rfdistal";
+  mFingerNames[4] = "lfdistal";
+
+  mFingerRootNames.resize(mFingerNum);
+  mFingerRootNames[0] = "thbase";
+  mFingerRootNames[1] = "ffknuckle";
+  mFingerRootNames[2] = "mfknuckle";
+  mFingerRootNames[3] = "rfknuckle";
+  mFingerRootNames[4] = "lfknuckle";
+
+//  mFingerTipIndices.resize(mFingerNum);
+//	for (int i = 0; i < mFingerNum; ++i)
+//  {
+//		mFingerTipIndices[i] = mHand->getBodyNode(mFingerNames[i])->getSkelIndex();
+//	}
+
+  //----------------------------------------------------------------------------
+  // Object setting
+  //----------------------------------------------------------------------------
+
+  mObject = mObjectSkel->getBodyNode(0);
+
+  int numEdges = 4;
+
+  // the order is determined by the order of pivoting, related to roll direction
+  //
+  //      Y
+  //      ^
+  //      |  mEdges[1] ------- mEdges[2]
+  //      |    |                 |
+  // Z <---    |                 |
+  //           |                 |
+  //         mEdges[0] ------- mEdges[3]
+  //
+  mEdges.resize(numEdges);
+  mEdges[3] = Eigen::Vector3d(0.0, -0.02, -0.02);
+  mEdges[2] = Eigen::Vector3d(0.0,  0.02, -0.02);
+  mEdges[1] = Eigen::Vector3d(0.0,  0.02,  0.02);
+  mEdges[0] = Eigen::Vector3d(0.0, -0.02,  0.02);
+
+  //      Y
+  //      ^      mCorners[1][1] ---- mCorners[2][1]
+  //      |        /|                  /|
+  //      |       / |                 / |
+  // Z <---      /  |                /  |
+  //     /   mCorners[1][0] ---- mCorners[2][0]
+  //    /       |mCorners[0][1] ----|mCorners[3][1]
+  //   X        |  /                |  /
+  //            | /                 | /
+  //            |/                  |/
+  //         mCorners[0][0] ---- mCorners[3][0]
+  //
+  //                    ___
+  //                    |   \_
+  //          ___________|    \__
+  //       __/________           /______
+  //      /__________
+  //      |/________           _______
+  //       |_/________________/|______
+  //         |________________|/
+  //
+  //
+  mCorners.resize(numEdges);
+  for (int i = 0; i < numEdges; ++i)
   {
-    mDesiredDofs[i] = mSkel->getPosition(i);
-    mFingerRestPose[i] = fingerRestPose[i];
-    mFingerInterceptPose[i] = fingerInterceptPose[i];
+    mCorners[i].resize(2);
+    mCorners[i][0] = mCorners[i][1] = mEdges[i];
+    mCorners[i][0][0] =  0.02;
+    mCorners[i][1][0] = -0.02;
   }
 
-  mActiveNumFrame.resize(mFingerNum);
-  mActiveSimFrame.resize(mFingerNum);
-  mTrackNumFrame.resize(mFingerNum);
-  mTrackSimFrame.resize(mFingerNum);
-  mInContactFrame.resize(mFingerNum);
-  mActiveFingers.resize(mFingerNum);
-  mContactFingers.resize(mFingerNum);
-  mInContactFingers.resize(mFingerNum);
-  mRestFingers.resize(mFingerNum);
-  mTrackFingers.resize(mFingerNum);
-  mFingerDofs.resize(mFingerNum);
+  // Number of rolling + 1
+  mN = 3;
 
-  for (int i = 0; i < mFingerNum; ++i) {
-    mActiveNumFrame[i] = 150;
-    mActiveSimFrame[i] = 0;
-    mTrackNumFrame[i] = 300;
-    mTrackSimFrame[i] = 0;
-    mInContactFrame[i] = 0;
-    mActiveFingers[i] = false;
-    mContactFingers[i] = false;
-    mInContactFingers[i] = false;
-    mRestFingers[i] = true;
-    mTrackFingers[i] = false;
+  mBackN = 0;
+  mRollNum = 0;
+  mRollBackNum = 0;
+  mRollBackIndex = 0;
+  mAngles.resize(mN);
+
+  // TODO: Precomputed angles
+//  mAngles[0] = 0.740675;
+//  mAngles[1] = 0.137237;
+//  mAngles[2] = -0.358023;
+
+  mAngles[0] = 0.840675;
+  mAngles[1] = 0.437237;
+  mAngles[2] = -0.558023;
+
+  mRollDir = 0;
+
+  setHandAngle(mAngles[0]);
+
+  mPreOri = mHand->getPositions().head<4>();
+  mPreContactEdge = 0;
+
+  mUpFace = 2;
+
+  mPreHighCorners.resize(2);
+  mCurHighCorners.resize(2);
+
+  mPreHighCorners[0] = mPalm->getTransform().inverse()
+                       * mObject->getTransform()
+                       * mCorners[1][0];
+  mPreHighCorners[1] = mPalm->getTransform().inverse()
+                       * mObject->getTransform()
+                       * mCorners[2][0];
+  mCurHighCorners[0] = mPreHighCorners[0];
+  mCurHighCorners[1] = mPreHighCorners[1];
+
+  //----------------------------------------------------------------------------
+  // Hand controller setting
+  //----------------------------------------------------------------------------
+
+  mDesiredDofs.resize(mHandDof);
+
+//  float fingerRestPose[] = {0, -0.8000000119, 0, 0, 0, 0, 0, 0, -0.7428935766, 0, 0, 0, 0, 1.072659612, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.8000000119, 0, 0.200000003};
+//  float fingerInterceptPose[] = {0, -0.8, 0, 0, 0, 0, 0, 0, 0, 0.4, 0, 0.4, 0.4, 0, 0.6, 0, 0.6, 0.6, 0, 0.4, 0.6, 0.4, 0.4, 0, 0.4, 0};
+  for (int i = 0; i < mHandDof; i++)
+  {
+    mDesiredDofs[i] = mHand->getPosition(i);
+//    mFingerRestPose[i] = fingerRestPose[i];
+//    mFingerInterceptPose[i] = fingerInterceptPose[i];
   }
 
-  mOriFlag = false;
-  mOriSimFrame = 0;
-  mOriNumFrame = 500;
-  mMaintainFlag = false;
-  mControlFlag = false;
-  mTaskFlag = false;
-  mOnPalmFlag = false;
+  // Set flags related to control
+  mOriFlag = true;
 
-  mFingerDofs[0].resize(5);
-  mFingerDofs[1].resize(4);
-  mFingerDofs[2].resize(4);
-  mFingerDofs[3].resize(4);
-  mFingerDofs[4].resize(5);
-  mFingerDofs[0](0) = 7;
-  mFingerDofs[0](1) = 12;
-  mFingerDofs[0](2) = 17;
-  mFingerDofs[0](3) = 22;
-  mFingerDofs[0](4) = 24;
-  mFingerDofs[1](0) = 3;
-  mFingerDofs[1](1) = 8;
-  mFingerDofs[1](2) = 13;
-  mFingerDofs[1](3) = 18;
-  mFingerDofs[2](0) = 5;
-  mFingerDofs[2](1) = 10;
-  mFingerDofs[2](2) = 15;
-  mFingerDofs[2](3) = 20;
-  mFingerDofs[3](0) = 6;
-  mFingerDofs[3](1) = 11;
-  mFingerDofs[3](2) = 16;
-  mFingerDofs[3](3) = 21;
-  mFingerDofs[4](0) = 4;
-  mFingerDofs[4](1) = 9;
-  mFingerDofs[4](2) = 14;
-  mFingerDofs[4](3) = 19;
-  mFingerDofs[4](4) = 23;
+  // Resize all the control forces
+  mHandControlForce.setZero(mHandDof);
+  mHandGravityCompensationForce.setZero(mHandDof);
+  mHandObjControlForce.setZero(mHandDof);
+  mHandOriForce.setZero(mHandDof);
+  mHandMaintainForce.setZero(mHandDof);
+  mHandConstraintForce.setZero(mHandDof);
+  mHandSPDDampForce.setZero(mHandDof);
+  mHandTrackForce.setZero(mHandDof);
+  mHandTaskForce.setZero(mHandDof);
 
   // use three DoF at the wrist to control rolling motion
   mOriDofs.resize(3);
-  mOriDofs(0) = 0;
-  mOriDofs(1) = 1;
-  mOriDofs(2) = 2;
+  mOriDofs(0) = 1;
+  mOriDofs(1) = 2;
+  mOriDofs(2) = 3;
+//  mOriDofs(3) = 3;
 
-  mExtNodeNum = 5;
-  mExtDofNum = 3;
-
-  mKp(0, 0) = 50;
-  mKp(1, 1) = 50;
-  mKp(2, 2) = 50;
-  mKd(0, 0) = 20;
-  mKd(1, 1) = 20;
-  mKd(2, 2) = 20;
-
-  for (int i = 3; i < nDof; i++) {
+  // Set spd gains
+  mKp.setZero(mHandDof, mHandDof);
+  mKd.setZero(mHandDof, mHandDof);
+  // -- arm and wrist
+  for (int i = 0; i < 4; i++)
+  {
+    mKp(i, i) = 50.0;
+    mKd(i, i) = 20.0;
+  }
+  // -- hand
+  for (int i = 4; i < mHandDof; i++)
+  {
     mKp(i, i) = 15.0;
     mKd(i, i) = 2.0;
   }
-  mFrame = 0;
 
-  mPreOriTarget = Vector3d::Zero();
-  mAccumulateOriError = Vector3d::Zero();
+  mPreOriTarget.setZero();
+  mAccumulateOriError.setZero();
+
 }
 
 //==============================================================================
@@ -177,536 +291,684 @@ Controller::~Controller()
 {
 }
 
-//void Controller::resetController(std::vector<tasks::Task*>& _tasks)
-//{
-//  mTasks = _tasks;
-//}
-
-//void Controller::evalTargetOri(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel, const Eigen::VectorXd& _objDof, const Eigen::VectorXd& _objVel, const Eigen::Vector3d& _offset, const Eigen::Vector3d& _targetOri, const Eigen::Vector3d& _objOri)
-//{
-//  Vector3d palmOri;
-//  // based on the object position with respect to palm
-//  if (mOnPalmFlag && _objVel(2) < -0.1) {
-//    palmOri = Vector3d(0.0,1.0,1.0).normalized();
-//  }
-
-//  else {
-//    // based on the object orientation
-//    Vector3d oriDir = _objOri.cross(_targetOri); // two vectors are all normalized
-//    double angle = acos(_objOri.dot(_targetOri)/(_objOri.norm()*_targetOri.norm()));
-
-//    double kp = 0.3;
-//    double kd = 0.2;
-//    Eigen::Quaternion<double> q;
-//    q = (Eigen::Quaternion<double>)Eigen::AngleAxis<double>(kp*angle+kd*(5.0-abs(_objVel(3))), oriDir);
-
-//    Vector3d palmInitOri = Vector3d(0.0,1.0,0.0).normalized();
-//    palmOri = q*palmInitOri;
-//  }
-
-//  angleX = palmOri(0);
-//  angleY = palmOri(1);
-//  angleZ = palmOri(2);
-
-//}
 
 //==============================================================================
-void Controller::evalTargetPose(const Eigen::VectorXd& _dof,
-                                const Eigen::VectorXd& _dofVel,
-                                const Eigen::VectorXd& _objDof,
-                                const Eigen::VectorXd& _objVel,
-                                const Eigen::Vector3d& _offset,
-                                const Eigen::Vector3d& _targetOri,
-                                const Eigen::Vector3d& _objOri)
+void Controller::setInitialTransformation()
 {
-  // set the desired angle for wrist and elbow to be rest
-  for (int i = 0; i < mSkel->getNumDofs(); ++i)
-    setDesiredDof(i,mFingerRestPose(i));
+  // Ground initial generalized positions
+  int groundDof = mGround->getNumDofs();  // 6
+  mGroundInitialPositions.setZero(groundDof);
+  mGroundInitialPositions[4] = -0.5;  // y-axis
 
-  // set pose for contact finger and active finger
-  for (int i = 0; i < mFingerNum; ++i)
-  {
-    for (int j = 0; j < mFingerDofs[i].size(); ++j)
-      setDesiredDof(mFingerDofs[i](j), mFingerEndPose[mFingerDofs[i](j)]);
-  }
+  // Hand initial generalized positions
+  int handDof = mHand->getNumDofs();  // 6
+  mHandInitialPositions.setZero(handDof);
 
-  // set pose for rest finger
-  for (int i = 0; i < mFingerNum; ++i)
-  {
-    if (mRestFingers[i])
-    {
-      for (int j = 0; j < mFingerDofs[i].size(); ++j)
-        setDesiredDof(mFingerDofs[i](j), mFingerRestPose(mFingerDofs[i](j)));
-    }
-  }
+//  mHandInitialPositions <<
+//      0, -0.8000000119,          // lowerarm, handsupport
+//      0, 0,                      // wrist(<-->, ^V)
+//      0, 0, 0, 0,                // 2nd finger
+//      -0.7428935766, 0, 0, 0, 0, // 5th finger
+//      1.072659612, 0, 0, 0,      // 3rd finger
+//      0, 0, 0, 0,                // 4th finger
+//      0, 0, 0.8000000119, 0, 0.200000003 // 1st finger (thumb)
+//      ;
 
-}
+  mHandInitialPositions <<
+      0, -0.8000000119,          // lowerarm, handsupport
+      0, 0,                      // wrist(<-->, ^V)
+      0, 0, 0, 0,                // 2nd finger
+      0, 0, 0, 0, 0,             // 5th finger
+      0, 0, 0, 0,         // 3rd finger
+      0, 0, 0, 0,                // 4th finger
+      -0.7428935766, 1.072659612, 0, 0.8000000119, 0.200000003  // 1st finger (thumb)
+      ;
 
-//Eigen::MatrixXd Controller::evalTaskNullSpace()
-//{
-//  int numRows = 0;
-//  int rowIndex = 0;
-//  Eigen::MatrixXd rowSpaceMatrix,nullSpaceMatrix;
+  // Object initial generalized positions
+  int objectDof = mObjectSkel->getNumDofs();
+  mObjectInitialPositions.setZero(objectDof);
+  mObjectInitialPositions
+      << 0.0, 0.0, 0.0, 0.0775, -0.160, 0.23;
+  mObjectInitialPositions[4] = -0.155;
 
-//  for (int i = 0; i < mTasks.size(); ++i) {
-//    numRows += mTasks.at(i)->mOmega.rows();
-//  }
-//  rowSpaceMatrix = MatrixXd::Zero(numRows, mSkel->getNumDofs());
-//  for (int i = 0; i < mTasks.size(); ++i) {
-//    for (int j = 0; j < mTasks.at(i)->mOmega.rows(); ++j) {
-//      rowSpaceMatrix.row(rowIndex) = mTasks.at(i)->mOmega.row(j);
-//      rowIndex ++;
-//    }
-//  }
+  mGround->setPositions(mGroundInitialPositions);
+  mHand->setPositions(mHandInitialPositions);
+  mObjectSkel->setPositions(mObjectInitialPositions);
 
-//  FullPivLU<MatrixXd> lu_decomp(rowSpaceMatrix);
-//  nullSpaceMatrix = lu_decomp.kernel();
-//  return nullSpaceMatrix;
-//}
-
-//==============================================================================
-VectorXd Controller::getTorques()
-{
-  return mTorques;
+  mGround->computeForwardKinematics(true, true, false);
+  mHand->computeForwardKinematics(true, true, false);
+  mObjectSkel->computeForwardKinematics(true, true, false);
 }
 
 //==============================================================================
-void Controller::setDesiredDof(int _index, double _val)
+void Controller::backupInitialStates()
 {
-  mDesiredDofs[_index] = _val;
+  mHandStateBackup   = mHand->getState();
+  mObjectStateBackup = mObjectSkel->getState();
 }
 
 //==============================================================================
-void Controller::computeTorques(const VectorXd& _dof,
-                                const VectorXd& _dofVel,
-                                const VectorXd& _dofAcc,
-                                const VectorXd& _objDof,
-                                const VectorXd& _objVel,
-                                std::vector<Vector3d>& _contactPoints,
-                                std::vector<Vector3d>& _contactForces,
-                                std::vector<std::string>& _contactBodyNames,
-                                const Vector3d& _targetOri,
-                                const Vector3d& _objOri)
+void Controller::restoreInitialStates()
 {
-  mTorques.setZero();
+  mHand->setState(mHandStateBackup);
+  mObjectSkel->setState(mObjectStateBackup);
 
-  // plan related
-  Eigen::Vector3d onHandOffset(0.0, -0.01, 0.04);
+  mHand->computeForwardKinematics(true, true, false);
+  mObjectSkel->computeForwardKinematics(true, true, false);
+}
 
-  std::vector<int> taskDofIndex;
-  for (int i = 0; i < mFingerNum; ++i)
+//==============================================================================
+void Controller::update(double /*_currentTime*/)
+{
+  // Compute target palm angles
+  setPose();
+
+  // Compute control forces for the target palm angles
+  computeHandTotalControlForce();
+
+  // Apply the control forces to the hand
+  mHand->setForces(mHandControlForce);
+}
+
+//==============================================================================
+void Controller::setPose()
+{
+  const Isometry3d objTransform = mObject->getTransform();
+
+  //dynamics::BodyNode* wrist = mSkels[1]->getBodyNode(mPalmName);
+  int contactEdgeIndex = evalContactEdge();
+
+  if (contactEdgeIndex == mPreContactEdge || contactEdgeIndex == -1)
   {
-    if (mInContactFingers[i])
+    //setHandTrans(mPreOri,mEdges[contactEdgeIndex]);
+  }
+  else if (contactEdgeIndex != -1)
+  {
+    mPreContactEdge = contactEdgeIndex;
+  }
+
+  // If we found contact edge, then set it as previous contact edge
+  if (contactEdgeIndex != -1)
+    mPreContactEdge = contactEdgeIndex;
+
+  mPreOri = mHand->getPositions().head<4>();
+
+  const bool isLastRoll = mRollNum == mN - 1 ? true : false;
+  assert(mRollNum <= mN - 1);
+
+  int index1 = (mRollNum                    ) % mEdges.size();
+  int index2 = (mRollNum + mEdges.size() / 2) % mEdges.size();
+
+
+//  std::cout << "mRollNum: " << mRollNum << std::endl;
+
+  if (isLastRoll)
+  {
+    static bool called = false;
+    if (!called)
+      std::cout << "Last roll detected." << std::endl;
+    called = true;
+  }
+
+  if (!isLastRoll)
+  {
+    if (contactEdgeIndex == mRollNum % (int)mEdges.size())
     {
-      for (int j = 0; j < mFingerDofs[i].size(); ++j)
-        taskDofIndex.push_back(mFingerDofs[i](j));
+      // contact edge position in world coordinate
+      Vector3d contactPos = mObject->getTransform() * mEdges[contactEdgeIndex];
+
+      // if change the roll direction, the condition will be changed
+      // accordingly, related to roll direction
+      const double& comZ        = mObjectSkel->getWorldCOM()[2];
+      const double& contactPosZ = contactPos[2];
+
+      const bool& cond1 = comZ - contactPosZ > 0.005 ? true : false;
+      const bool& cond2 = comZ - contactPosZ > 0.002 ? true : false;
+      const bool& isFirstRoll = mRollNum == 0 ? true : false;
+
+      //
+      if ((cond1 && isFirstRoll) || (cond2 && !isFirstRoll))
+      {
+        const int index1 = (mRollNum + mEdges.size() - 1) % mEdges.size();
+        const int index2 = (mRollNum + mEdges.size() + 1) % mEdges.size();
+        const int index3 = (mRollNum                    ) % mEdges.size();
+
+        const Vector3d& liftEdge    = objTransform * mEdges[index1];
+        const Vector3d& dropEdge    = objTransform * mEdges[index2];
+        const Vector3d& contactEdge = objTransform * mEdges[index3];
+
+        const double& liftDistY = liftEdge(1) - contactEdge(1);
+        const double& liftDistZ = contactEdge(2) - liftEdge(2);
+        const double& dropDistY = dropEdge(1) - contactEdge(1);
+        const double& dropDistZ = dropEdge(2) - contactEdge(2);
+
+        const double& liftAngle = atan(liftDistY / liftDistZ);
+        const double& dropAngle = atan(dropDistY / dropDistZ);
+
+        const double& nextAngle = mAngles[mRollNum + 1];
+
+        if (liftAngle > nextAngle && dropAngle > -nextAngle)
+        {
+          mRollNum++;
+          setHandAngle(mAngles[mRollNum]);
+
+          std::cout << "Target angel: " << mAngles[mRollNum] << std::endl;
+        }
+      }
+    }
+  }
+  else if (isLastRoll && (isEdgeInContact(index1) || evalUpFace() == index2))
+  {
+    setHandAngle(0.0);
+  }
+
+  // calculate up face if know the high corners local coordinates
+  if (evalUpFace() != mUpFace)
+    mUpFace = evalUpFace();
+
+////  for (unsigned int i = 0; i < mSkels.size(); i++)
+////  {
+////    mSkels[i]->setPositions(mDofs[i]);
+////    mSkels[i]->setVelocities(mDofVels[i]);
+////    mSkels[i]->computeForwardKinematics(true, false, false);
+
+////    if (mSkels[i]->isMobile())
+////    {
+////      // need to update first derivatives for collision
+////      mSkels[i]->setGravity(mGravity);
+////      mSkels[i]->setPositions(mDofs[i]);
+////      mSkels[i]->setVelocities(mDofVels[i]);
+////      mSkels[i]->computeForwardKinematics(true, true, false);
+////    }
+////    else
+////    {
+////      // need to update node transformation for collision
+////      mSkels[i]->setPositions(mDofs[i]);
+////      mSkels[i]->computeForwardKinematics(true, false, false);
+////    }
+////  }
+}
+
+//==============================================================================
+void Controller::setHandAngle(double _angle)
+{
+  // change the rotation axis to change the roll direction
+  Vector3d palmRotateAxis = Vector3d::UnitX();
+  Quaternion<double> q
+      = (Quaternion<double>)AngleAxis<double>(_angle, palmRotateAxis);
+
+  Vector3d palmInitOri = Vector3d::UnitY();
+  Vector3d palmOri = q * palmInitOri;
+
+  gAngleX = palmOri(0);
+  gAngleY = palmOri(1);
+  gAngleZ = palmOri(2);
+}
+
+//==============================================================================
+int Controller::evalContactEdge()
+{
+  CollisionDetector* cd = mCollisionDetector;
+
+  // Find closest edges with the contact points in YZ-plane
+  std::vector<bool> inContactEdges(mEdges.size(), false);
+  for (size_t i = 0; i < cd->getNumContacts(); ++i)
+  {
+    const Vector3d&   contactPos      = cd->getContact(i).point;
+    const Isometry3d& cubeInvT        = mObject->getTransform().inverse();
+    const Vector3d&   contactLocalPos = cubeInvT * contactPos;
+
+    for (size_t j = 0; j < mEdges.size(); ++j)
+    {
+      // Distance between contact point and edges in YZ-plane
+      double distance = (contactLocalPos.tail(2) - mEdges[j].tail(2)).norm();
+
+      // If the distance is less than 0.001, mark inContactEdges[i] as true
+      if (distance < 0.001)
+        inContactEdges[j] = true;
     }
   }
 
-  // target
-  evalTargetPose(_dof, _dofVel, _objDof, _objVel,
-                 onHandOffset, _targetOri, _objOri);
-  // evalTargetOri(_dof,_dofVel,_objDof,_objVel,onHandOffset,_targetOri,_objOri);
-
-  // add virtual force to prevent dropping
-  Vector3d objDofVec(_objDof(0), _objDof(1), _objDof(2));
-  for (int i = 0; i < mFingerNum; ++i)
+  // Return the index of contact edges
+  for (size_t i = 0; i < mEdges.size(); ++i)
   {
-    if (mContactFingers[i] && !mInContactFingers[i] && !mTrackFingers[i])
+    if (inContactEdges[i] == true)
     {
-      BodyNode* fingerTip    = mSkel->getBodyNode(mFingerTipNames[i]);
-      Vector3d  fingerTipCom = fingerTip->getWorldCOM();
-      Vector3d  direction    = (objDofVec - fingerTipCom).normalized();
+      // If the contact edge is not single, then return -1
+      for (size_t j = i + 1; j < mEdges.size(); ++j)
+      {
+        if (inContactEdges[j] == true)
+          return -1;
+      }
 
-      _contactPoints.push_back(fingerTipCom);
-      _contactForces.push_back(1.0*direction);
-      _contactBodyNames.push_back(mFingerTipNames[i]);
+      // return the contact edge
+      return i;
     }
   }
 
-  // TODO(JS): We just control palm.
-  // evaluate force
-//  if (mControlFlag)
-//  {
-//    evalObjControlForce(_contactPoints, _contactForces, _contactBodyNames);
-//  }
-//  else
+  // If we couldn't find any contact edge, then return -1
+  return -1;
+}
+
+//==============================================================================
+bool Controller::isEdgeInContact(int _edgeIndex)
+{
+  CollisionDetector* cd = mCollisionDetector;
+
+  for (size_t i = 0; i < cd->getNumContacts(); ++i)
   {
-    mObjControlForce = Eigen::VectorXd::Zero(mSkel->getNumDofs());
+    Vector3d contactPos      = cd->getContact(i).point;
+    Vector3d contactLocalPos = mObject->getTransform().inverse() * contactPos;
+
+    const Vector2d& contactLocalPosYZ = contactLocalPos.tail<2>();
+    const Vector2d& edgeYZ            = mEdges[_edgeIndex].tail<2>();
+    const double& distance            = (contactLocalPosYZ - edgeYZ).norm();
+
+    if (distance < EPS_DISTANCE)
+      return true;
   }
 
-  evalTrackForce(_dof,_dofVel);
+  return false;
+}
 
-  if (mOriFlag)
-  {
-    for (int i = 0; i < mOriDofs.size(); ++i)
-      mTrackForce(mOriDofs(i)) = 0.0;
-  }
+//==============================================================================
+Matrix3d Controller::evalObjOri()
+{
+  const BodyNode*   mObject = mObjectSkel->getBodyNode(0);
+  const Isometry3d& objectT = mObject->getTransform();
 
-  if (mControlFlag)
-  {
-    // if use the tracking force as secondary force than not set the tracking force to be zero
-    for (int i = 0; i < taskDofIndex.size(); ++i)
-      mTrackForce(taskDofIndex[i]) = 0.0;
-  }
+  Vector3d oriAxisX = (mCorners[2][1] - mCorners[2][0]).normalized();
+  Vector3d oriAxisY = (mCorners[3][1] - mCorners[2][1]).normalized();
+  Vector3d oriAxisZ = oriAxisX.cross(oriAxisY);
 
-  // not using tracking force to prevent dropping
-  for (int i = 0; i < mFingerNum; ++i)
+  Vector3d axisX = (objectT * mCorners[2][1] - objectT * mCorners[2][0]).normalized();
+  Vector3d axisY = (objectT * mCorners[3][1] - objectT * mCorners[2][1]).normalized();
+  Vector3d axisZ = axisX.cross(axisY);
+
+  Matrix3d oriRotMat;
+  oriRotMat.col(0) = oriAxisX;
+  oriRotMat.col(1) = oriAxisY;
+  oriRotMat.col(2) = oriAxisZ;
+
+  Matrix3d rotMat;
+  rotMat.col(0) = axisX;
+  rotMat.col(1) = axisY;
+  rotMat.col(2) = axisZ;
+
+  return rotMat * oriRotMat.inverse();
+}
+
+//==============================================================================
+int Controller::evalUpFace()
+{
+  const BodyNode*   palm     = mHand->getBodyNode(4);
+  const Isometry3d& invT     = palm->getTransform().inverse();
+
+  int    highVerIndex = -1;
+  double height       = 10.0;
+
+  const Matrix3d& rotMat = evalObjOri();
+  Vector3d transVec = mObject->getTransform().translation();
+//  Vector3d transVec(mDofs[2][0], mDofs[2][1], mDofs[2][2]);
+
+  for (size_t i = 0; i < mCorners.size(); ++i)
   {
-    if (mContactFingers[i]
-        && !mInContactFingers[i]
-        && mControlFlag
-        && !mTrackFingers[i])
+    const Vector3d& cornerPinky       = mCorners[i][0];
+    const Vector3d& cornerPinkyInPalm = invT * rotMat * cornerPinky + transVec;
+    const double& cornerPinkyInPalmY = cornerPinkyInPalm[1];
+
+    if (cornerPinkyInPalmY < height)
     {
-      for (int j = 0; j < mFingerDofs[i].size(); ++j)
-        mTrackForce(mFingerDofs[i](j)) = 0.0;
+      height = cornerPinkyInPalmY;
+      highVerIndex = i;
     }
   }
 
-  // TODO(JS): Commented out since mTaskFlag is always false for rolling control
-//  if (mTaskFlag)
-//  {
-//    evalTaskForce();
-//  }
-//  else
-  {
-    mTaskForce = Eigen::VectorXd::Zero(mSkel->getNumDofs());
-  }
+  const size_t& index1 = (highVerIndex + 1) % mCorners.size();
+  const size_t& index2 = (highVerIndex - 1) % mCorners.size();
 
-  // gravity compensation and damp force
-  evalGravityCompensationForce();
-  evalDampForce(_dofVel);
+  const double& val1 = (invT * rotMat * mCorners[index1][0] + transVec)[1];
+  const double& val2 = (invT * rotMat * mCorners[index2][0] + transVec)[1];
 
-  if (mOriFlag)
-    evalOriForce(_dof,_dofVel);
+  if (val1 < val2)
+    return ((highVerIndex + 1) % mCorners.size());
   else
-    mOriForce = Eigen::VectorXd::Zero(mSkel->getNumDofs());
-
-  mTorques = mGravityCompensationForce + mObjControlForce + mDampForce + mTrackForce + mTaskForce + mOriForce;
-
-  mFrame++;
-
+    return highVerIndex;
 }
 
 //==============================================================================
-void Controller::evalGravityCompensationForce()
+void Controller::computeHandTotalControlForce()
 {
-  mGravityCompensationForce = mSkel->getGravityForces();
+  //----------------------------------------------------------------------------
+  // Update mHandConstraintForce
+  //
+  computeHandConstraintForce();
+  //----------------------------------------------------------------------------
+
+
+  //----------------------------------------------------------------------------
+  //
+  //
+  // computeHandObjControlForce();
+  //----------------------------------------------------------------------------
+
+  //----------------------------------------------------------------------------
+  //
+  //
+  computeTrackForce();
+  //----------------------------------------------------------------------------
+
+  //----------------------------------------------------------------------------
+  //
+  //
+  computeHandOriForce();
+  //----------------------------------------------------------------------------
+
+
+  //----------------------------------------------------------------------------
+  //
+  //
+  // computeHandMaintainForce();
+  //----------------------------------------------------------------------------
+
+
+  //----------------------------------------------------------------------------
+  //
+  //
+  // computeHandTaskForce();
+  //----------------------------------------------------------------------------
+
+
+  //----------------------------------------------------------------------------
+  //
+  //
+  computeHandGravityCompensationForce();
+  //----------------------------------------------------------------------------
+
+
+  //----------------------------------------------------------------------------
+  //
+  //
+  computeHandDampForce();
+  //----------------------------------------------------------------------------
+
+
+  //----------------------------------------------------------------------------
+  //
+  //
+  // computeHandMaintainForce();
+  //----------------------------------------------------------------------------
+
+
+  //----------------------------------------------------------------------------
+  //
+  //
+  mHandControlForce = mHandGravityCompensationForce
+                      + mHandObjControlForce
+                      + mHandSPDDampForce
+                      + mHandTrackForce
+                      + mHandTaskForce
+                      + mHandOriForce;
+  //----------------------------------------------------------------------------
 }
 
 //==============================================================================
-//void Controller::evalObjControlForce(
-//    const std::vector<Eigen::Vector3d>& _contactPoints,
-//    const std::vector<Eigen::Vector3d>& _contactForces,
-//    const std::vector<std::string>& _contactBodyNames)
-//{
-//  Eigen::VectorXd tempExtForce = mSkel->getExternalForces();
-//  mSkel->clearExternalForces();
-
-//  for (size_t i = 0; i < _contactForces.size(); ++i)
-//  {
-//    BodyNode* contactBody = mSkel->getBodyNode(_contactBodyNames[i]);
-//    contactBody->addExtForce(_contactForces[i], _contactPoints[i], false, false);
-//  }
-
-//  mJVec.clear();
-//  mInvJVec.clear();
-
-//  // only one contact for each link
-//  for (size_t i = 0; i < _contactForces.size(); ++i)
-//  {
-//    size_t    dof = mSkel->getNumDofs();
-//    MatrixXd  J   = MatrixXd::Zero(3, dof);
-
-//    BodyNode*  contactBody = mSkel->getBodyNode(_contactBodyNames[i]);
-//    int        numDepDofs  = contactBody->getNumDependentGenCoords();
-//    Isometry3d W           = contactBody->getTransform();
-
-//    // do not consider the dof at wrist
-//    for(int j = mExtDofNum; j < numDepDofs; j++)
-//    {
-//      int colIndex = contactBody->getDependentDof(j);
-//      Matrix4d Wq = contactBody->getDerivWorldTransform(j);
-
-//      // only one contact for each link
-//      Vector3d point = (mSkel->getBodyNode(_contactBodyNames[i]))->mContacts.at(0).first;
-//      J.col(colIndex) = dart_math::xformHom(Wq,point);
-//    }
-//    mJVec.push_back(J);
-//  }
-
-//  // evaluate the generalized inverse of Jacobian
-//  for (int i = 0; i < _contactForces.size(); ++i) {
-//    MatrixXd J = mJVec[i];
-//    MatrixXd InvJ = J.transpose()*((J*J.transpose()).inverse());
-//    mInvJVec.push_back(InvJ);
-//  }
-
-//  mCombinedJ = MatrixXd::Zero(mSkel->getNumDofs(), 3*_contactForces.size());
-//  for (int i = 0; i < _contactForces.size(); ++i)
-//  {
-//    for (int k = 0; k < 3; ++k)
-//      mCombinedJ.col(i*3+k) = mInvJVec[i].col(k);
-//  }
-
-//  // the transpose of combined general inverse
-//  mCombinedJTrans = mCombinedJ.transpose();
-
-//  mSkel->evalExternalForcesPartial(false, mExtNodeNum, mExtDofNum);
-
-//  // if not evaluate the object control using virtual force, then comment
-//  mObjControlForce = mSkel->getExternalForces();
-//  mSkel->clearExternalForces();
-//  mSkel->setExternalForces(tempExtForce);
-//}
+void Controller::computeHandConstraintForce()
+{
+//  int dof = mHand->getNumDofs();
+  mHandConstraintForce = mHand->getConstraintForces();
+}
 
 //==============================================================================
-void Controller::evalTrackForce(const Eigen::VectorXd& _dof,
-                                const Eigen::VectorXd& _dofVel)
+void Controller::computeHandTaskForce()
 {
+  int dof = mHand->getNumDofs();
+  mHandTaskForce.setZero(dof);
+}
+
+//==============================================================================
+void Controller::computeHandObjControlForce()
+{
+  int dof = mHand->getNumDofs();
+  mHandObjControlForce.setZero(dof);
+}
+
+//==============================================================================
+void Controller::computeTrackForce()
+{
+  int dof = mHand->getNumDofs();
+//  mHandTrackForce.setZero(dof);
+
   // other force
-  Eigen::VectorXd otherForce;
-  otherForce = mSkel->getExternalForces();
-  otherForce += mGravityCompensationForce
-                + mObjControlForce
-                + mOriForce
-                + mDampForce
-                + mMaintainForce
-                + mConstraintForce;
+  Eigen::VectorXd otherForce
+      = mHandGravityCompensationForce
+        // + mHand->getExternalForces()
+        + mHandObjControlForce
+        + mHandOriForce
+        + mHandSPDDampForce
+        + mHandMaintainForce
+        + mHandConstraintForce;
 
   // track a pose using SPD
-  MatrixXd invM = (mSkel->getMassMatrix() + mKd * mTimestep).inverse();
-  VectorXd p = -mKp * (_dof + _dofVel * mTimestep - mDesiredDofs);
-  VectorXd d = -mKd * _dofVel;
-  VectorXd qddot = invM * (-mSkel->getCombinedVector() + p + d + otherForce);
+  VectorXd  q = mHand->getPositions();
+  VectorXd dq = mHand->getVelocities();
+  MatrixXd invM = (mHand->getMassMatrix() + mKd * mTimestep).inverse();
+  VectorXd p = -100 * mKp * (q + dq * mTimestep - mDesiredDofs);
+  VectorXd d = -mKd * dq;
+  VectorXd qddot = invM * (-mHand->getCoriolisAndGravityForces() + p + d + otherForce);
 
-  mTrackForce = p + d - mKd * qddot * mTimestep;
+  mHandTrackForce = p + d - mKd * qddot * mTimestep;
+
+//  std::cout << "mHandTrackForce1: " << mHandTrackForce.transpose() << std::endl;
+  if (mOriFlag)
+  {
+//    for (int i = 0; i < mOriDofs.size(); ++i)
+//      mHandTrackForce(mOriDofs(i)) = 0.0;
+  }
+//  std::cout << "mHandTrackForce2: " << mHandTrackForce.transpose() << std::endl;
+
+  // TODO(JS): mControlFlags is always false for our rolling controller
+//  if (mControlFlag)
+//  {
+//    // if use the tracking force as secondary force than not set the tracking force to be zero
+//    for (int i = 0; i < taskDofIndex.size(); ++i)
+//      mHandTrackForce(taskDofIndex[i]) = 0.0;
+//  }
+
+  // not using tracking force to prevent dropping
+//  for (int i = 0; i < mFingerNum; ++i)
+//  {
+//    if (mContactFingers[i]
+//        && !mInContactFingers[i]
+//        && mControlFlag
+//        && !mTrackFingers[i])
+//    {
+//      for (int j = 0; j < mFingerDofs[i].size(); ++j)
+//        mHandTrackForce(mFingerDofs[i](j)) = 0.0;
+//    }
+//  }
+
+//  std::cout << "mDesiredDofs: " << mDesiredDofs.transpose() << std::endl;
+}
+
+//==============================================================================
+void Controller::computeTaskForce()
+{
+  int dof = mHand->getNumDofs();
+  mHandTaskForce.setZero(dof);
+}
+
+//==============================================================================
+void Controller::computeHandGravityCompensationForce()
+{
+  mHandGravityCompensationForce = mHand->getCoriolisAndGravityForces()
+                              - mHand->getCoriolisForces();
+
+  //  std::cout << "g: " << mGravityCompensationForce.transpose();
 }
 
 //===============================================================================
-void Controller::evalDampForce(const Eigen::VectorXd& _dofVel)
+void Controller::computeHandDampForce()
 {
   // other force
   Eigen::VectorXd otherForce;
-  otherForce = mSkel->getExternalForces();
-  otherForce += mGravityCompensationForce
-                + mObjControlForce
-                + mOriForce
-                + mDampForce
-                + mMaintainForce
-                + mConstraintForce;
+  otherForce =
+      mHandGravityCompensationForce
+//      + mHand->getExternalForces()
+      + mHandObjControlForce
+      + mHandOriForce
+      + mHandSPDDampForce
+      + mHandMaintainForce
+      + mHandConstraintForce;
 
   // damp using SPD
-  MatrixXd invM = (mSkel->getMassMatrix() + mKd * mTimestep).inverse();
-  VectorXd p = -mKp * (_dofVel * mTimestep);
-  VectorXd d = -mKd * _dofVel;
-  VectorXd qddot = invM * (-mSkel->getCombinedVector() + p + d + otherForce);
-  mDampForce = 0.05 * (p + d - mKd * qddot * mTimestep);
+  VectorXd dq = mHand->getVelocities();
+  VectorXd Cg = mHand->getCoriolisAndGravityForces();
+  MatrixXd invM = (mHand->getMassMatrix() + mKd * mTimestep).inverse();
+  VectorXd p = -mKp * (dq  * mTimestep);
+  VectorXd d = -mKd * dq ;
+  VectorXd qddot = invM * (-Cg + p + d + otherForce);
+
+  mHandSPDDampForce = 0.05 * (p + d - mKd * qddot * mTimestep);
 }
 
 //==============================================================================
-//void Controller::evalTaskForce()
-//{
-//  for (int i = 0; i < mTasks.size(); ++i)
-//    mTasks[i]->evalTorque();
-
-//  Eigen::VectorXd taskTorque = VectorXd::Zero(mSkel->getNumDofs());
-//  int numRemainTask = mTasks.size();
-
-//  // the vector stores the torque for each task
-//  std::vector<Eigen::VectorXd> torqueStars;
-//  torqueStars.resize(mTasks.size());
-
-//  // the vector stores the inconsistency for each task
-//  std::vector<double> inconsistencies;
-//  inconsistencies.resize(mTasks.size());
-
-//  bool consistency = true;
-//  bool running = true;
-
-//  while (running)
-//  {
-//    running = false;
-
-//    // only one task
-//    if (numRemainTask == 1)
-//    {
-//      MatrixXd nullSpaceMatrix = MatrixXd::Identity(mSkel->getNumDofs(), mSkel->getNumDofs());
-//      ControlTorqueProblem prob(mTasks, 0, mTasks[0]->mTorque, nullSpaceMatrix, mTasks[0]->mNullSpace);
-//      snopt::SnoptSolver solver(&prob);
-//      solver.solve();
-//      VectorXd z = solver.getState();
-//      taskTorque = mTasks[0]->mTorque + mTasks[0]->mNullSpace*z;
-//    }
-//    // multiple tasks
-//    else
-//    {
-//      for (int i = 0; i < numRemainTask; ++i)
-//      {
-//        torqueStars.at(i) = VectorXd::Zero(mSkel->getNumDofs());
-//        inconsistencies.at(i) = 0.0;
-
-//        // calculate the null space matrix for other tasks
-//        int numRows = 0;
-//        for (int j = 0; j < numRemainTask; ++j)
-//        {
-//          if (i == j)
-//            continue;
-//          else
-//            numRows += mTasks[j]->mOmega.rows();
-//        }
-
-//        MatrixXd rowSpaceMatrix = MatrixXd::Zero(numRows, mSkel->getNumDofs());
-//        int rowIndex = 0;
-
-//        for (int j = 0; j < numRemainTask; ++j)
-//        {
-//          if (i == j)
-//          {
-//            continue;
-//          }
-//          else
-//          {
-//            for (int k = 0; k < mTasks[j]->mOmega.rows(); ++k)
-//            {
-//              rowSpaceMatrix.row(rowIndex) = mTasks[j]->mOmega.row(k);
-//              rowIndex ++;
-//            }
-//          }
-//        }
-
-//        FullPivLU<MatrixXd> lu_decomp(rowSpaceMatrix);
-//        MatrixXd nullSpaceMatrix = lu_decomp.kernel();
-
-//        // calculate the control torque
-//        // if other tasks have intersection
-//        if (nullSpaceMatrix.cols() >= 2)
-//        {
-//          // calculate control torque using control torque optimization
-//          ControlTorqueProblem prob(mTasks, i, mTasks[i]->mTorque, nullSpaceMatrix, mTasks[i]->mNullSpace);
-//          snopt::SnoptSolver solver(&prob);
-//          solver.solve();
-//          VectorXd z = solver.getState();
-//          torqueStars.at(i) = mTasks[i]->mTorque + mTasks[i]->mNullSpace*z;
-
-//          // evaluate the inconsistency
-//          MatrixXd matrixA = nullSpaceMatrix*(nullSpaceMatrix.transpose()*nullSpaceMatrix).inverse()*nullSpaceMatrix.transpose()*mTasks[i]->mNullSpace-mTasks[i]->mNullSpace;
-//          VectorXd vectorb = -nullSpaceMatrix*(nullSpaceMatrix.transpose()*nullSpaceMatrix).inverse()*nullSpaceMatrix.transpose()*mTasks[i]->mTorque+mTasks[i]->mTorque;
-//          inconsistencies.at(i) = (matrixA*z - vectorb).norm();
-//          // 					std::cout << "task " << i << " inconsistency: " << inconsistencies.at(i) << std::endl;
-//        }
-//        else
-//        {
-//          std::cout << "Give up the task having lowest priority according to tasks conflicts with other except task " << i << "." << std::endl;
-//          getchar();
-//          consistency = false;
-//          numRemainTask--;
-//          running = true;
-//          break;
-//          torqueStars.at(i) = mTasks[i]->mTorque;
-//        }
-
-//        // evaluate inconsistency
-//        double totalInconsistency = 0.0;
-//        for (int j = 0; j <= i; ++j) { // sum up the inconsistency for the current evaluated tasks
-//          totalInconsistency += inconsistencies.at(j);
-//        }
-//        if (totalInconsistency > 60.0) {
-//          std::cout << "Give up the task having lowest priority according to total consistency beyond threshold." << std::endl;
-//          std::cout << "The consistency for each task is:" << std::endl;
-//          for (int j = 0; j <= i; ++j) {
-//            std::cout << "Active task " << j << ":  " << inconsistencies.at(j) << std::endl;
-//          }
-//          consistency = false;
-//          numRemainTask--;
-//          running = true;
-//          break;
-//        }
-//      }
-//    }
-//  }
-
-//  // if multitasks, then sum up all torque star to get control torque
-//  if (mTasks.size() > 1)
-//  {
-//    for (int i = 0; i < numRemainTask; ++i)
-//      taskTorque += torqueStars.at(i);
-//  }
-
-//  mTaskForce = taskTorque;
-//}
-
-//==============================================================================
-void Controller::evalOriForce(const Eigen::VectorXd& _dof,
-                              const Eigen::VectorXd& _dofVel)
+void Controller::computeHandOriForce()
 {
-  BodyNode*   wrist     = mSkel->getBodyNode(mPalmName.c_str());
-  std::string wristName = wrist->getName();
-  tasks::TrackOriTask* trackWristOri = new tasks::TrackOriTask(mSkel,
-                                                               wristName,
-                                                               "trackWristOri");
-  Vector3d angle = Eigen::Vector3d(angleX, angleY, angleZ).normalized();
-  trackWristOri->setTarget(angle);
+  /////////////////////////
+  ///
+//  setHandAngle(-DART_PI / 6);
+//  setHandAngle(0);
+  ///
+  /////////////////////////
+
+  int dof = mHand->getNumDofs();
+
+  if (mOriFlag == false)
+  {
+    mHandOriForce.setZero(dof);
+    return;
+  }
+
+  tasks::TrackOriTask* trackPalmOri
+      = new tasks::TrackOriTask("trackWristOri", mHand, mPalm);
+
+  Eigen::Vector3d targetAngles(gAngleX, gAngleY, gAngleZ);
+  targetAngles.normalize();
+  trackPalmOri->setTarget(targetAngles);
 
   // state of hand
-  Eigen::VectorXd state(_dof.size()+_dofVel.size());
-  state.head(_dof.size()) = _dof;
-  state.tail(_dofVel.size()) = _dofVel;
+  Eigen::VectorXd  q = mHand->getPositions();
+  Eigen::VectorXd dq = mHand->getVelocities();
+  Eigen::VectorXd state = Eigen::VectorXd::Zero(q.size() + dq.size());
+  state << q, dq;
 
   // other force
-  Eigen::VectorXd otherForce = Eigen::VectorXd::Zero(mSkel->getNumDofs());
-  otherForce = mSkel->getExternalForces();
-  otherForce += mGravityCompensationForce
-                + mObjControlForce
-                + mTrackForce
-                + mDampForce
-                + mMaintainForce
-                + mConstraintForce;
-  trackWristOri->updateTask(state, angle, otherForce);
+  Eigen::VectorXd otherForce = Eigen::VectorXd::Zero(mHandDof);
+  otherForce =
+//      mHand->getExternalForces()
+      mHandGravityCompensationForce
+      + mHandObjControlForce
+      + mHandTrackForce
+      + mHandSPDDampForce
+      + mHandMaintainForce
+      + mHandConstraintForce;
+  trackPalmOri->updateTask(state, targetAngles, otherForce);
 
-  //
-  double taskError = (mPreOriTarget - trackWristOri->getTarget()).norm();
-
-  //
-  if (math::isZero(taskError))
+  Eigen::Vector3d diff = mPreOriTarget - trackPalmOri->getTarget();
+  if (dart::math::isZero(diff.norm()))
   {
     mAccumulateOriError = mAccumulateOriError
-                          + trackWristOri->evalTaskError() * mTimestep;
+                          + trackPalmOri->evalTaskError() * mTimestep;
   }
   else
   {
     mAccumulateOriError = Eigen::Vector3d::Zero();
-    mPreOriTarget = trackWristOri->getTarget();
+    mPreOriTarget = trackPalmOri->getTarget();
     //getchar();
   }
 
-  //
-  trackWristOri->setAccumulateError(mAccumulateOriError);
+  trackPalmOri->setAccumulateError(mAccumulateOriError);
 
-  //
-  trackWristOri->evalTorque();
+  trackPalmOri->evalTorque();
+  mHandOriForce = trackPalmOri->mTorque;
 
-  //
-  mOriForce = trackWristOri->mTorque;
+//  std::cout << "mHandOriForce: " << mHandOriForce.transpose() << std::endl;
 }
 
-//void Controller::evalMaintainForce(const Eigen::VectorXd& _dof, const Eigen::VectorXd& _dofVel)
-//{
-//  int wristIndex = 1;
-//  tasks::MaintainTask *maintainWrist = new tasks::MaintainTask(mSkel,wristIndex,"maintainWrist");
-//  maintainWrist->setTarget(mSkel->getBodyNode(wristIndex)->getWorldCOM());
+//==============================================================================
+void Controller::computeHandMaintainForce()
+{
+  int dof = mHand->getNumDofs();
+  mHandMaintainForce.setZero(dof);
 
-//  // state of hand
-//  Eigen::VectorXd state(_dof.size()+_dofVel.size());
-//  state.head(_dof.size()) = _dof;
-//  state.tail(_dofVel.size()) = _dofVel;
+}
 
-//  // other force
-//  Eigen::VectorXd otherForce;
-//  otherForce = mSkel->getExternalForces();
-//  otherForce += mGravityCompensationForce+mObjControlForce+mTrackForce+mDampForce+mOriForce+mConstraintForce;
-//  maintainWrist->updateTask(state,Eigen::Vector3d(0.0,0.0,0.0),otherForce);
+//==============================================================================
+VectorXd Controller::computeOtherForces()
+{
+  Eigen::VectorXd otherForce;
+  otherForce =
+      mHandGravityCompensationForce
+//      + mHand->getExternalForces()
+      + mHandObjControlForce
+      + mHandOriForce
+      + mHandSPDDampForce
+      + mHandMaintainForce
+      + mHandConstraintForce;
+}
 
-//  maintainWrist->evalTorque();
-//  mMaintainForce = maintainWrist->mTorque;
-//}
+//==============================================================================
+void Controller::keyboard(unsigned char _key, int _x, int _y,
+                          double _currentTime)
+{
+  switch (_key)
+  {
+    case 'i':  // Reset robot
+      printDebugInfo();
+      break;
+    case 'r':  // Reset robot
+      reset();
+      break;
+
+    default:
+      break;
+  }
+}
+
+//==============================================================================
+void Controller::printDebugInfo() const
+{
+  std::cout << "[Shadow hand]"  << std::endl
+            << " NUM NODES : " << mHand->getNumBodyNodes() << std::endl
+            << " NUM DOF   : " << mHand->getNumDofs() << std::endl
+            << " NUM JOINTS: " << mHand->getNumBodyNodes() << std::endl;
+
+  for(size_t i = 0; i < mHand->getNumBodyNodes(); ++i)
+  {
+    Joint* joint = mHand->getJoint(i);
+    BodyNode* body = mHand->getBodyNode(i);
+    BodyNode* parentBody = mHand->getBodyNode(i)->getParentBodyNode();
+
+    std::cout << "  Joint [" << i << "]: "
+              << joint->getName()
+              << " (" << joint->getNumDofs() << ")"
+              << std::endl;
+    if (parentBody != NULL)
+    {
+      std::cout << "    Parent body: " << parentBody->getName() << std::endl;
+    }
+
+    std::cout << "    Child body : " << body->getName() << std::endl;
+  }
+}
+
+////==============================================================================
+void Controller::reset()
+{
+  restoreInitialStates();
+
+  dtmsg << "Robot is reset." << std::endl;
+}
+
+

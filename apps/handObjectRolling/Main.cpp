@@ -50,6 +50,7 @@
 #include "dart/utils/sdf/SoftSdfParser.h"
 
 #include "MyWindow.h"
+#include "Controller.h"
 
 using namespace std;
 using namespace Eigen;
@@ -64,33 +65,49 @@ int main(int argc, char* argv[])
   // URDF loader
   DartLoader dl;
 
+  // Setting colors
+  Vector3d gray(0.9, 0.9, 0.9);
+  Vector3d red(1.0, 0.0, 0.0);
+
   // Load skeleton files
   std::string groundPath = DART_DATA_PATH"skel/ground3.skel";
   Skeleton*   groundSkel = SkelParser::readSkeleton(groundPath);
+  groundSkel->getBodyNode(0)->getVisualizationShape(0)->setColor(gray);
 
   std::string cubePath = DART_DATA_PATH"skel/cube1.skel";
   Skeleton*   cubeSkel = SkelParser::readSkeleton(cubePath);
-
-  std::string pathArmAndHandSdf = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.sdf";
-  Skeleton*   armAndHandSdf     = SoftSdfParser::readSkeleton(pathArmAndHandSdf);
+  cubeSkel->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
 
   std::string pathArmAndHandUrdf = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.urdf";
   Skeleton*   armAndHandUrdf     = dl.parseSkeleton(pathArmAndHandUrdf);
 
-  std::string pathForearmAndHandSdf = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_JS.sdf";
-  Skeleton*   forearmAndHandSdf     = SoftSdfParser::readSkeleton(pathForearmAndHandSdf);
+  std::string pathArmAndHandSdf = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.sdf";
+  Skeleton*   armAndHandSdf     = SoftSdfParser::readSkeleton(pathArmAndHandSdf);
 
   std::string pathForearmAndHandUrdf = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_JS.urdf";
   Skeleton*   forearmAndHandUrdf     = dl.parseSkeleton(pathForearmAndHandUrdf);
 
-  // Setting colors
-  Vector3d gray(0.9, 0.9, 0.9);
-  Vector3d red(1.0, 0.0, 0.0);
-  groundSkel->getBodyNode(0)->getVisualizationShape(0)->setColor(gray);
-  cubeSkel->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
+  std::string pathForearmAndHandSdf = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_JS.sdf";
+  Skeleton*   forearmAndHandSdf     = SoftSdfParser::readSkeleton(pathForearmAndHandSdf);
+
+  std::string pathForearmAndSoftHandSdf = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_soft_hand.sdf";
+  Skeleton*   forearmAndSoftHandSdf     = SoftSdfParser::readSkeleton(pathForearmAndSoftHandSdf);
+
+  // Create empty soft world
+  World* world = new World;
+  world->addSkeleton(groundSkel);
+//  world->addSkeleton(armAndHandUrdf);
+//  world->addSkeleton(armAndHandSdf);
+//  world->addSkeleton(forearmAndHandUrdf);
+//  world->addSkeleton(forearmAndHandSdf);
+  world->addSkeleton(forearmAndSoftHandSdf);
+  world->addSkeleton(cubeSkel);
 
   // Create window and run main loop
-  MyWindow window(groundSkel, forearmAndHandSdf, cubeSkel, NULL);
+  Controller* controller
+      = new Controller(world, groundSkel, forearmAndSoftHandSdf, cubeSkel);
+  MyWindow window(controller);
+  window.setWorld(world);
   glutInit(&argc, argv);
   window.initWindow(640, 480, "Manipulator");
 #ifdef WIN32

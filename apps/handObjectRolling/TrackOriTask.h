@@ -38,6 +38,9 @@
 #ifndef	TRACK_ORI_TASK_H
 #define TRACK_ORI_TASK_H
 
+#include <string>
+#include <Eigen/Dense>
+
 #include "Task.h"
 
 namespace tasks {
@@ -50,9 +53,9 @@ public:
   /// \param[in] _model
   /// \param[in] _eeName
   /// \param[in] _name
-  TrackOriTask(dart::dynamics::Skeleton* _model,
-               const std::string& _eeName,
-               char *_name);
+  TrackOriTask(const std::string& _name,
+               dart::dynamics::Skeleton* _model,
+               dart::dynamics::BodyNode* _targetBodyNode);
 
   /// Destructor
   virtual ~TrackOriTask();
@@ -110,6 +113,9 @@ protected:
 
   ///
   Eigen::Vector3d mAccumulateError;
+
+  ///
+  dart::dynamics::BodyNode* mBodyNode;
 };
 
 } // namespace tasks
