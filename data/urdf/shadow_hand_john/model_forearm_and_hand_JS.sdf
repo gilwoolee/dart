@@ -314,7 +314,7 @@
         <pose>0.005 0 0.035 0 -0 0</pose>
         <geometry>
           <box>
-            <size>0.05 0.02 0.07</size>
+            <size>0.05 0.02 0.10</size>
           </box>
         </geometry>
         <surface>
@@ -327,12 +327,11 @@
         </surface>
       </collision>
       <visual name='palm_visual'>
-        <pose>0 0 0 0 -0 0</pose>
+        <pose>0.005 0 0.035 0 -0 0</pose>
         <geometry>
-          <mesh>
-            <scale>0.001 0.001 0.001</scale>
-            <uri>sr_description/hand/model/palm.dae</uri>
-          </mesh>
+          <box>
+            <size>0.05 0.02 0.10</size>
+          </box>
         </geometry>
         <material>
           <script>

@@ -121,6 +121,9 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
       glutPostRedisplay();
     }
     break;
+    case 'v':
+      mShowMarkers = !mShowMarkers;
+      break;
   default:
     Win3D::keyboard(_key, _x, _y);
   }

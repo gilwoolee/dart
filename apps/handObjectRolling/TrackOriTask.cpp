@@ -69,8 +69,8 @@ TrackOriTask::TrackOriTask(const std::string& _name,
   mOmega.resize(3,numDofs);
   mJ.resize(3,numDofs);
   mJDot.resize(3,numDofs);
-  mPGain = 200.0;
-  mVGain = 5.0/*0.0*/;
+  mPGain = 300.0;
+  mVGain = 1.0/*0.0*/;
   mIGain = 10.0/*0.0*/;
   mOtherForce = VectorXd::Zero(mModel->getNumDofs());
   mAccumulateError = Vector3d::Zero();
@@ -119,7 +119,9 @@ void TrackOriTask::evalTorque()
   // use integrate term
   commandF = commandF + mIGain*mAccumulateError;
 
-  // the dof index related to the rotation of the wrist is 2 (JS: 3), we care about the rotation about x axis whose index is 0, the minus is because local coordinate and world coordinate is opposite
+  // the dof index related to the rotation of the wrist is 2 (JS: 3), we care
+  // about the rotation about x axis whose index is 0, the minus is because
+  // local coordinate and world coordinate is opposite
   mTorque(3) = -commandF(0);
 
 

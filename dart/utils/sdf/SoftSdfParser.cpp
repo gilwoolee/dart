@@ -341,7 +341,7 @@ SdfParser::SDFBodyNode SoftSdfParser::readSoftBodyNode(
   // transformation
   if (hasElement(_softBodyNodeElement, "pose"))
   {
-    Eigen::Isometry3d W = getValueIsometry3d(_softBodyNodeElement, "pose");
+    Eigen::Isometry3d W = getValueIsometry3dWithExtrinsicRotation(_softBodyNodeElement, "pose");
     initTransform = _skeletonFrame * W;
   }
   else
@@ -432,7 +432,7 @@ SdfParser::SDFBodyNode SoftSdfParser::readSoftBodyNode(
     // pose
     Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
     if (hasElement(softShapeEle, "pose"))
-      T = getValueIsometry3d(softShapeEle, "pose");
+      T = getValueIsometry3dWithExtrinsicRotation(softShapeEle, "pose");
 
     // geometry
     tinyxml2::XMLElement* geometryEle = getElement(softShapeEle, "geometry");

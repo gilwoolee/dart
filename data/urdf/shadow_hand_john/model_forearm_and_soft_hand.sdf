@@ -311,17 +311,17 @@
         </inertia>
       </inertial>
       <soft_shape>
-        <total_mass>0.5</total_mass>
-        <pose>0.005 0 0.035 0 -0 0</pose>
+        <total_mass>1.0</total_mass>
+        <pose>0.005 0 0.045 0 -0 0</pose>
         <geometry>
           <box>
-            <size>0.05 0.02 0.07</size>
+            <size>0.05 0.02 0.09</size>
             <frags>5 3 7</frags>
           </box>
         </geometry>
-	<kv>5000.0</kv>
+	<kv>10000.0</kv>
 	<ke>100.0</ke>
-	<damp>100.0</damp>
+	<damp>1000.0</damp>
       </soft_shape>
       <!--collision name='palm_collision'>
         <pose>0.005 0 0.035 0 -0 0</pose>
@@ -419,20 +419,7 @@
           <izz>1e-06</izz>
         </inertia>
       </inertial>
-      <soft_shape>
-        <total_mass>0.1</total_mass>
-        <pose>0 0 0 0 -0 0</pose>
-        <geometry>
-          <box>
-            <size>0.005 0.005 0.005</size>
-            <frags>3 3 3</frags>
-          </box>
-        </geometry>
-	<kv>50000.0</kv>
-	<ke>100.0</ke>
-	<damp>1000.0</damp>
-      </soft_shape>
-      <!--collision name='ffknuckle_collision'>
+      <collision name='ffknuckle_collision'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <box>
@@ -462,7 +449,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual-->
+      </visual>
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -528,11 +515,24 @@
           <izz>1e-05</izz>
         </inertia>
       </inertial>
-      <collision name='ffproximal_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.025 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.04</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='ffproximal_collision'>
+        <pose>0 0 0.025 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.02</size>
           </box>
         </geometry>
         <surface>
@@ -544,7 +544,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='ffproximal_visual'>
+      <!--visual name='ffproximal_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -558,7 +558,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -624,11 +624,24 @@
           <izz>1e-05</izz>
         </inertia>
       </inertial>
-      <collision name='ffmiddle_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.0125 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.015</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='ffmiddle_collision'>
+        <pose>0 0 0.0125 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.0075</size>
           </box>
         </geometry>
         <surface>
@@ -640,7 +653,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='ffmiddle_visual'>
+      <!--visual name='ffmiddle_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -654,7 +667,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -817,11 +830,24 @@
           <izz>1e-06</izz>
         </inertia>
       </inertial>
-      <collision name='lfmetacarpal_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.04 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.03</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='lfmetacarpal_collision'>
+        <pose>0 0 0.04 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.015</size>
           </box>
         </geometry>
         <surface>
@@ -833,7 +859,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='lfmetacarpal_visual'>
+      <!--visual name='lfmetacarpal_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -847,7 +873,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -1009,11 +1035,24 @@
           <izz>1e-05</izz>
         </inertia>
       </inertial>
-      <collision name='lfproximal_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.025 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.04</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='lfproximal_collision'>
+        <pose>0 0 0.025 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.02</size>
           </box>
         </geometry>
         <surface>
@@ -1025,7 +1064,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='lfproximal_visual'>
+      <!--visual name='lfproximal_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -1039,7 +1078,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -1105,11 +1144,24 @@
           <izz>1e-05</izz>
         </inertia>
       </inertial>
-      <collision name='lfmiddle_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.0125 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.015</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='lfmiddle_collision'>
+        <pose>0 0 0.0125 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.0075</size>
           </box>
         </geometry>
         <surface>
@@ -1121,7 +1173,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='lfmiddle_visual'>
+      <!--visual name='lfmiddle_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -1135,7 +1187,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -1394,11 +1446,24 @@
           <izz>1e-05</izz>
         </inertia>
       </inertial>
-      <collision name='mfproximal_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.025 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.04</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='mfproximal_collision'>
+        <pose>0 0 0.025 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.02</size>
           </box>
         </geometry>
         <surface>
@@ -1410,7 +1475,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='mfproximal_visual'>
+      <!--visual name='mfproximal_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -1424,7 +1489,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -1490,11 +1555,24 @@
           <izz>1e-05</izz>
         </inertia>
       </inertial>
-      <collision name='mfmiddle_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.0125 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.015</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='mfmiddle_collision'>
+        <pose>0 0 0.0125 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.0075</size>
           </box>
         </geometry>
         <surface>
@@ -1506,7 +1584,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='mfmiddle_visual'>
+      <!--visual name='mfmiddle_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -1520,7 +1598,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -1779,11 +1857,24 @@
           <izz>1e-05</izz>
         </inertia>
       </inertial>
-      <collision name='rfproximal_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.025 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.04</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='rfproximal_collision'>
+        <pose>0 0 0.025 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.02</size>
           </box>
         </geometry>
         <surface>
@@ -1795,7 +1886,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='rfproximal_visual'>
+      <!--visual name='rfproximal_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -1809,7 +1900,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -1875,11 +1966,24 @@
           <izz>1e-05</izz>
         </inertia>
       </inertial>
-      <collision name='rfmiddle_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.0125 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.015</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='rfmiddle_collision'>
+        <pose>0 0 0.0125 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.0075</size>
           </box>
         </geometry>
         <surface>
@@ -1891,7 +1995,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='rfmiddle_visual'>
+      <!--visual name='rfmiddle_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -1905,7 +2009,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -2163,11 +2267,24 @@
           <izz>1e-06</izz>
         </inertia>
       </inertial>
-      <collision name='thproximal_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.019 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.02</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='thproximal_collision'>
+        <pose>0 0 0.019 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.01</size>
           </box>
         </geometry>
         <surface>
@@ -2179,7 +2296,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='thproximal_visual'>
+      <!--visual name='thproximal_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -2193,7 +2310,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>
@@ -2354,11 +2471,24 @@
           <izz>1e-06</izz>
         </inertia>
       </inertial>
-      <collision name='thmiddle_collision'>
+      <soft_shape>
+        <total_mass>0.1</total_mass>
         <pose>0 0 0.016 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.008 0.008 0.015</size>
+            <frags>3 3 3</frags>
+          </box>
+        </geometry>
+	<kv>10000.0</kv>
+	<ke>100.0</ke>
+	<damp>1000.0</damp>
+      </soft_shape>
+      <collision name='thmiddle_collision'>
+        <pose>0 0 0.016 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.004 0.0075</size>
           </box>
         </geometry>
         <surface>
@@ -2370,7 +2500,7 @@
           </friction>
         </surface>
       </collision>
-      <visual name='thmiddle_visual'>
+      <!--visual name='thmiddle_visual'>
         <pose>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
@@ -2384,7 +2514,7 @@
             <uri>__default__</uri>
           </script>
         </material>
-      </visual>
+      </visual-->
       <gravity>1</gravity>
       <velocity_decay>
         <linear>0</linear>

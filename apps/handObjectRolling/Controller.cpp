@@ -154,10 +154,10 @@ Controller::Controller(World* _world,
   //         mEdges[0] ------- mEdges[3]
   //
   mEdges.resize(numEdges);
-  mEdges[3] = Eigen::Vector3d(0.0, -0.02, -0.02);
-  mEdges[2] = Eigen::Vector3d(0.0,  0.02, -0.02);
-  mEdges[1] = Eigen::Vector3d(0.0,  0.02,  0.02);
   mEdges[0] = Eigen::Vector3d(0.0, -0.02,  0.02);
+  mEdges[1] = Eigen::Vector3d(0.0,  0.02,  0.02);
+  mEdges[2] = Eigen::Vector3d(0.0,  0.02, -0.02);
+  mEdges[3] = Eigen::Vector3d(0.0, -0.02, -0.02);
 
   //      Y
   //      ^      mCorners[1][1] ---- mCorners[2][1]
@@ -200,13 +200,13 @@ Controller::Controller(World* _world,
   mAngles.resize(mN);
 
   // TODO: Precomputed angles
-//  mAngles[0] = 0.740675;
-//  mAngles[1] = 0.137237;
-//  mAngles[2] = -0.358023;
+  mAngles[0] = 0.740675;
+  mAngles[1] = 0.087237;
+  mAngles[2] = -0.358023;
 
-  mAngles[0] = 0.840675;
-  mAngles[1] = 0.437237;
-  mAngles[2] = -0.558023;
+//  mAngles[0] = 0.840675;
+//  mAngles[1] = 0.437237;
+//  mAngles[2] = -0.358023;
 
   mRollDir = 0;
 
@@ -329,7 +329,8 @@ void Controller::setInitialTransformation()
   mObjectInitialPositions.setZero(objectDof);
   mObjectInitialPositions
       << 0.0, 0.0, 0.0, 0.0775, -0.160, 0.23;
-  mObjectInitialPositions[4] = -0.155;
+//  mObjectInitialPositions[4] = -0.155;
+//  mObjectInitialPositions[3] = -10.155;
 
   mGround->setPositions(mGroundInitialPositions);
   mHand->setPositions(mHandInitialPositions);
@@ -360,8 +361,15 @@ void Controller::restoreInitialStates()
 //==============================================================================
 void Controller::update(double /*_currentTime*/)
 {
+  //
+  updateHandPose();
+
+
   // Compute target palm angles
   setPose();
+
+  //
+  updateContact();
 
   // Compute control forces for the target palm angles
   computeHandTotalControlForce();
@@ -373,10 +381,16 @@ void Controller::update(double /*_currentTime*/)
 //==============================================================================
 void Controller::setPose()
 {
+  const bool isFirstRoll = mRollNum == 0 ? true : false;
+
   const Isometry3d objTransform = mObject->getTransform();
 
   //dynamics::BodyNode* wrist = mSkels[1]->getBodyNode(mPalmName);
   int contactEdgeIndex = evalContactEdge();
+
+  if (contactEdgeIndex != -1)
+    if (mPreContactEdge != contactEdgeIndex || contactEdgeIndex == 0)
+      std::cout << "ContactEdge: " << contactEdgeIndex << std::endl;
 
   if (contactEdgeIndex == mPreContactEdge || contactEdgeIndex == -1)
   {
@@ -388,8 +402,8 @@ void Controller::setPose()
   }
 
   // If we found contact edge, then set it as previous contact edge
-  if (contactEdgeIndex != -1)
-    mPreContactEdge = contactEdgeIndex;
+//  if (contactEdgeIndex != -1)
+//    mPreContactEdge = contactEdgeIndex;
 
   mPreOri = mHand->getPositions().head<4>();
 
@@ -399,6 +413,8 @@ void Controller::setPose()
   int index1 = (mRollNum                    ) % mEdges.size();
   int index2 = (mRollNum + mEdges.size() / 2) % mEdges.size();
 
+//  std::cout << "index2: " << index2 << std::endl;
+
 
 //  std::cout << "mRollNum: " << mRollNum << std::endl;
 
@@ -406,7 +422,7 @@ void Controller::setPose()
   {
     static bool called = false;
     if (!called)
-      std::cout << "Last roll detected." << std::endl;
+      std::cout << "----------------- Last roll detected. ----------------" << std::endl;
     called = true;
   }
 
@@ -419,12 +435,19 @@ void Controller::setPose()
 
       // if change the roll direction, the condition will be changed
       // accordingly, related to roll direction
-      const double& comZ        = mObjectSkel->getWorldCOM()[2];
+      // Assume the the rolling direction is algon with z-axis
+      const double& comZ        = mObject->getWorldCOM()[2];
       const double& contactPosZ = contactPos[2];
 
       const bool& cond1 = comZ - contactPosZ > 0.005 ? true : false;
       const bool& cond2 = comZ - contactPosZ > 0.002 ? true : false;
-      const bool& isFirstRoll = mRollNum == 0 ? true : false;
+
+//      std::cout << "contactEdgeIndex  : " << contactEdgeIndex << std::endl;
+//      std::cout << "mRollNum          : " << mRollNum << std::endl;
+//      std::cout << "comZ              : " << comZ << std::endl;
+//      std::cout << "contactPosZ       : " << contactPosZ << std::endl;
+//      std::cout << "comZ - contactPosZ: " << comZ - contactPosZ << std::endl;
+//      std::cout << std::endl;
 
       //
       if ((cond1 && isFirstRoll) || (cond2 && !isFirstRoll))
@@ -450,21 +473,31 @@ void Controller::setPose()
         if (liftAngle > nextAngle && dropAngle > -nextAngle)
         {
           mRollNum++;
+//          std::cout << "Target angel: " << mAngles[mRollNum] << std::endl;
           setHandAngle(mAngles[mRollNum]);
-
-          std::cout << "Target angel: " << mAngles[mRollNum] << std::endl;
         }
       }
     }
   }
-  else if (isLastRoll && (isEdgeInContact(index1) || evalUpFace() == index2))
+  else if (isLastRoll && (/*isEdgeInContact(index1) || */evalUpFace() == index2))
   {
+//    if (isEdgeInContact(index1))
+//      std::cout << "COND 1 !!";
+
+//    if (evalUpFace() == index2)
+//      std::cout << "COND 2 !!";
+
+//    std::cout << "Target angel: " << 0.0 << std::endl;
     setHandAngle(0.0);
   }
+
+  std::cout << "(evalUpFace, index2): " << evalUpFace() << ", " << index2 << std::endl;
 
   // calculate up face if know the high corners local coordinates
   if (evalUpFace() != mUpFace)
     mUpFace = evalUpFace();
+
+//  std::cout << "RollNum: " << mRollNum << std::endl;
 
 ////  for (unsigned int i = 0; i < mSkels.size(); i++)
 ////  {
@@ -486,7 +519,13 @@ void Controller::setPose()
 ////      mSkels[i]->setPositions(mDofs[i]);
 ////      mSkels[i]->computeForwardKinematics(true, false, false);
 ////    }
-////  }
+  ////  }
+}
+
+//==============================================================================
+void Controller::updateContact()
+{
+
 }
 
 //==============================================================================
@@ -530,24 +569,25 @@ int Controller::evalContactEdge()
   }
 
   // Return the index of contact edges
+  int contactEdgeIndex = -1;
   for (size_t i = 0; i < mEdges.size(); ++i)
   {
     if (inContactEdges[i] == true)
     {
       // If the contact edge is not single, then return -1
-      for (size_t j = i + 1; j < mEdges.size(); ++j)
+      for (size_t j = 0; j < mEdges.size(); ++j)
       {
-        if (inContactEdges[j] == true)
+        if (j != i && inContactEdges[j] == true)
           return -1;
       }
 
       // return the contact edge
-      return i;
+      contactEdgeIndex = i;
     }
   }
 
   // If we couldn't find any contact edge, then return -1
-  return -1;
+  return contactEdgeIndex;
 }
 
 //==============================================================================
@@ -601,7 +641,7 @@ Matrix3d Controller::evalObjOri()
 //==============================================================================
 int Controller::evalUpFace()
 {
-  const BodyNode*   palm     = mHand->getBodyNode(4);
+  const BodyNode*   palm     = mPalm;
   const Isometry3d& invT     = palm->getTransform().inverse();
 
   int    highVerIndex = -1;
@@ -645,6 +685,11 @@ void Controller::computeHandTotalControlForce()
   computeHandConstraintForce();
   //----------------------------------------------------------------------------
 
+  //----------------------------------------------------------------------------
+  //
+  //
+  computeHandGravityCompensationForce();
+  //----------------------------------------------------------------------------
 
   //----------------------------------------------------------------------------
   //
@@ -679,17 +724,12 @@ void Controller::computeHandTotalControlForce()
   //----------------------------------------------------------------------------
 
 
-  //----------------------------------------------------------------------------
-  //
-  //
-  computeHandGravityCompensationForce();
-  //----------------------------------------------------------------------------
 
 
   //----------------------------------------------------------------------------
   //
   //
-  computeHandDampForce();
+//  computeHandDampForce();
   //----------------------------------------------------------------------------
 
 
@@ -704,11 +744,13 @@ void Controller::computeHandTotalControlForce()
   //
   //
   mHandControlForce = mHandGravityCompensationForce
-                      + mHandObjControlForce
+//                      + mHandObjControlForce
                       + mHandSPDDampForce
                       + mHandTrackForce
-                      + mHandTaskForce
-                      + mHandOriForce;
+//                      + mHandTaskForce
+                      + mHandOriForce
+                      ;
+//  std::cout << "mHandOriForce: " << mHandOriForce.transpose() << std::endl;
   //----------------------------------------------------------------------------
 }
 
@@ -737,35 +779,37 @@ void Controller::computeHandObjControlForce()
 void Controller::computeTrackForce()
 {
   int dof = mHand->getNumDofs();
-//  mHandTrackForce.setZero(dof);
+  mHandTrackForce.setZero(dof);
 
   // other force
   Eigen::VectorXd otherForce
-      = mHandGravityCompensationForce
-        // + mHand->getExternalForces()
-        + mHandObjControlForce
-        + mHandOriForce
-        + mHandSPDDampForce
-        + mHandMaintainForce
-        + mHandConstraintForce;
+      = mHandGravityCompensationForce // force to be added by controller
+        + mHandObjControlForce        // force to be added by controller
+        + mHandOriForce               // force to be added by controller
+        + mHandSPDDampForce           // force to be added by controller
+        + mHandMaintainForce          // force to be added by controller
+//        + mHand->getExternalForces()  // force to be added by simulator
+        + mHandConstraintForce        // force to be added by simulator
+        ;
 
   // track a pose using SPD
   VectorXd  q = mHand->getPositions();
   VectorXd dq = mHand->getVelocities();
-  MatrixXd invM = (mHand->getMassMatrix() + mKd * mTimestep).inverse();
-  VectorXd p = -100 * mKp * (q + dq * mTimestep - mDesiredDofs);
+  VectorXd Cg = mHand->getCoriolisAndGravityForces();
+  MatrixXd invM = (mHand->getAugMassMatrix() + mKd * mTimestep).inverse();
+  VectorXd p = -mKp * (q + dq * mTimestep - mDesiredDofs);
   VectorXd d = -mKd * dq;
-  VectorXd qddot = invM * (-mHand->getCoriolisAndGravityForces() + p + d + otherForce);
+  VectorXd qddot = invM * (-Cg + p + d + otherForce);
 
-  mHandTrackForce = p + d - mKd * qddot * mTimestep;
+//  mHandTrackForce = p + d - mKd * qddot * mTimestep;
+  mHandTrackForce = -10*mKp*(q - mDesiredDofs) - mKd * dq;
 
-//  std::cout << "mHandTrackForce1: " << mHandTrackForce.transpose() << std::endl;
   if (mOriFlag)
   {
 //    for (int i = 0; i < mOriDofs.size(); ++i)
 //      mHandTrackForce(mOriDofs(i)) = 0.0;
+    mHandTrackForce(3) = 0.0;
   }
-//  std::cout << "mHandTrackForce2: " << mHandTrackForce.transpose() << std::endl;
 
   // TODO(JS): mControlFlags is always false for our rolling controller
 //  if (mControlFlag)
@@ -824,7 +868,7 @@ void Controller::computeHandDampForce()
   // damp using SPD
   VectorXd dq = mHand->getVelocities();
   VectorXd Cg = mHand->getCoriolisAndGravityForces();
-  MatrixXd invM = (mHand->getMassMatrix() + mKd * mTimestep).inverse();
+  MatrixXd invM = (mHand->getAugMassMatrix() + mKd * mTimestep).inverse();
   VectorXd p = -mKp * (dq  * mTimestep);
   VectorXd d = -mKd * dq ;
   VectorXd qddot = invM * (-Cg + p + d + otherForce);
@@ -837,7 +881,7 @@ void Controller::computeHandOriForce()
 {
   /////////////////////////
   ///
-//  setHandAngle(-DART_PI / 6);
+//  setHandAngle(-DART_PI / 12);
 //  setHandAngle(0);
   ///
   /////////////////////////
@@ -865,14 +909,15 @@ void Controller::computeHandOriForce()
 
   // other force
   Eigen::VectorXd otherForce = Eigen::VectorXd::Zero(mHandDof);
-  otherForce =
-//      mHand->getExternalForces()
-      mHandGravityCompensationForce
-      + mHandObjControlForce
-      + mHandTrackForce
-      + mHandSPDDampForce
-      + mHandMaintainForce
-      + mHandConstraintForce;
+  otherForce
+      = mHandGravityCompensationForce // force to be added by controller
+        + mHandObjControlForce        // force to be added by controller
+        + mHandOriForce               // force to be added by controller
+        + mHandSPDDampForce           // force to be added by controller
+        + mHandMaintainForce          // force to be added by controller
+//        + mHand->getExternalForces()  // force to be added by simulator
+        + mHandConstraintForce;       // force to be added by simulator
+
   trackPalmOri->updateTask(state, targetAngles, otherForce);
 
   Eigen::Vector3d diff = mPreOriTarget - trackPalmOri->getTarget();

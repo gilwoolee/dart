@@ -70,11 +70,11 @@ class World;
 
 class StateMachine;
 
-/// In-hand manipulation controller
+/// \brief In-hand manipulation controller
 class Controller
 {
 public:
-  /// Constructor
+  /// \brief Constructor
   Controller(
       dart::simulation::World*  _world,
       dart::dynamics::Skeleton* _ground,
@@ -84,16 +84,17 @@ public:
   /// Destructor
   virtual ~Controller();
 
-  ///
+  /// \brief
   void setInitialTransformation();
 
-  ///
+  /// \brief
   void backupInitialStates();
 
-  ///
+  /// \brief
   void restoreInitialStates();
 
-  /// Called before every simulation time step in MyWindow class.
+  /// \brief Called before every simulation time step in MyWindow class.
+  ///
   /// Compute control force and apply it to Atlas robot
   virtual void update(double _currentTime);
 
@@ -101,56 +102,69 @@ public:
   // Task information
   //----------------------------------------------------------------------------
 
+  /// \brief
+  ///
+  /// This function should assign reference hand pose based on task and IK, can
+  /// utilize the bounding sphere to avoid collision, and can be called on the
+  /// fly as update task array.
+  void updateHandPose() {}
+
   /// \biref
   void setPose();
 
-  /// Compute gAngleX, gAngleY, gAngleZ
+  /// \brief
+  ///
+  /// This function should assign the contact points and contact forces, based
+  /// on the contact point from collision detection, and do contact planning.
+  void updateContact();
+
+  /// \brief Compute gAngleX, gAngleY, gAngleZ
   void setHandAngle(double _angle);
 
-  ///
+  /// \brief Get edge number in contact, or -1 if multiple edges are in contact
   int evalContactEdge();
 
-  /// Return true if _edgeIndex is in contact
+  /// \brief Return true if _edgeIndex is in contact
   bool isEdgeInContact(int _edgeIndex);
 
-  /// Return the orientation of the object
+  /// \brief Return the orientation of the object
   Eigen::Matrix3d evalObjOri();
 
-  ///
+  /// \brief
   int evalUpFace();
 
   //----------------------------------------------------------------------------
   // Compute control forces
   //----------------------------------------------------------------------------
 
-  /// Update control force for the hand
+  /// \brief Update control force for the hand
   void computeHandTotalControlForce();
 
-  ///
+  /// \brief
   void computeHandConstraintForce();
 
-  ///
+  /// \brief
   void computeHandObjControlForce();
 
-  ///
+  /// \brief
   void computeTrackForce();
 
-  ///
+  /// \brief
   void computeTaskForce();
 
-  ///
+  /// \brief
   void computeHandTaskForce();
 
-  /// Update control force for the hand
+  /// \brief Update control force for the hand
   void computeHandGravityCompensationForce();
 
-  ///
+  /// \brief
   void computeHandDampForce();
 
-  ///
+  /// \brief
   void computeHandOriForce();
 
-  ///
+  /// \brief
   void computeHandMaintainForce();
 
   //----------------------------------------------------------------------------
@@ -159,31 +173,31 @@ public:
 
 
 
-  ///
+  /// \brief
   Eigen::VectorXd computeOtherForces();
 
 
 
-  /// Keyboard control
+  /// \brief Keyboard control
   void keyboard(unsigned char _key, int _x, int _y, double _currentTime);
 
-  /// Print debug information
+  /// \brief Print debug information
   void printDebugInfo() const;
 
-  /// Reset
+  /// \brief Reset
   void reset();
 
 private:
-  /// World
+  /// \brief World
   dart::simulation::World* mWorld;
 
-  /// Ground
+  /// \brief Ground
   dart::dynamics::Skeleton* mGround;
 
-  /// Shadow hand
+  /// \brief Shadow hand
   dart::dynamics::Skeleton* mHand;
 
-  /// Palm of the shadow hand
+  /// \brief Palm of the shadow hand
   dart::dynamics::BodyNode* mPalm;
 
   /// Object skeleton to be manipulated
@@ -334,7 +348,6 @@ private:
 
   ///
   Eigen::VectorXi mOriDofs;
-
 };
 
 #endif  // APPS_HANDOBJECTROLLING_CONTROLLER_H_

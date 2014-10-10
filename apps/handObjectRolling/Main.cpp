@@ -42,6 +42,7 @@
 #include "dart/dynamics/Shape.h"
 #include "dart/dynamics/Skeleton.h"
 #include "dart/constraint/ConstraintSolver.h"
+#include "dart/collision/bullet/BulletCollisionDetector.h"
 #include "dart/simulation/World.h"
 #include "dart/utils/Paths.h"
 #include "dart/utils/SkelParser.h"
@@ -95,6 +96,9 @@ int main(int argc, char* argv[])
 
   // Create empty soft world
   World* world = new World;
+
+//  world->getConstraintSolver()->setCollisionDetector(new dart::collision::BulletCollisionDetector());
+
   world->addSkeleton(groundSkel);
 //  world->addSkeleton(armAndHandUrdf);
 //  world->addSkeleton(armAndHandSdf);

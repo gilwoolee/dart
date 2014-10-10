@@ -520,51 +520,52 @@ void SoftBodyNode::updateMassMatrix()
 {
   BodyNode::updateMassMatrix();
 
-  for (size_t i = 0; i < mPointMasses.size(); ++i)
-    mPointMasses.at(i)->updateMassMatrix();
+//  for (size_t i = 0; i < mPointMasses.size(); ++i)
+//    mPointMasses.at(i)->updateMassMatrix();
 }
 
 //==============================================================================
 void SoftBodyNode::aggregateMassMatrix(Eigen::MatrixXd* _MCol, int _col)
 {
-  //------------------------ PointMass Part ------------------------------------
-  for (size_t i = 0; i < mPointMasses.size(); ++i)
-    mPointMasses.at(i)->aggregateMassMatrix(_MCol, _col);
+  BodyNode::aggregateMassMatrix(_MCol, _col);
+//  //------------------------ PointMass Part ------------------------------------
+//  for (size_t i = 0; i < mPointMasses.size(); ++i)
+//    mPointMasses.at(i)->aggregateMassMatrix(_MCol, _col);
 
-  //----------------------- SoftBodyNode Part ----------------------------------
-  //
-  mM_F.noalias() = mI * mM_dV;
+//  //----------------------- SoftBodyNode Part ----------------------------------
+//  //
+//  mM_F.noalias() = mI * mM_dV;
 
-  // Verification
-  assert(!math::isNan(mM_F));
+//  // Verification
+//  assert(!math::isNan(mM_F));
 
-  //
-  for (std::vector<BodyNode*>::const_iterator it = mChildBodyNodes.begin();
-       it != mChildBodyNodes.end(); ++it)
-  {
-    mM_F += math::dAdInvT((*it)->getParentJoint()->getLocalTransform(),
-                          (*it)->mM_F);
-  }
+//  //
+//  for (std::vector<BodyNode*>::const_iterator it = mChildBodyNodes.begin();
+//       it != mChildBodyNodes.end(); ++it)
+//  {
+//    mM_F += math::dAdInvT((*it)->getParentJoint()->getLocalTransform(),
+//                          (*it)->mM_F);
+//  }
 
-  //
-  for (std::vector<PointMass*>::iterator it = mPointMasses.begin();
-       it != mPointMasses.end(); ++it)
-  {
-    mM_F.head<3>() += (*it)->mX.cross((*it)->mM_F);
-    mM_F.tail<3>() += (*it)->mM_F;
-  }
+//  //
+//  for (std::vector<PointMass*>::iterator it = mPointMasses.begin();
+//       it != mPointMasses.end(); ++it)
+//  {
+//    mM_F.head<3>() += (*it)->mX.cross((*it)->mM_F);
+//    mM_F.tail<3>() += (*it)->mM_F;
+//  }
 
-  // Verification
-  assert(!math::isNan(mM_F));
+//  // Verification
+//  assert(!math::isNan(mM_F));
 
-  //
-  int dof = mParentJoint->getNumDofs();
-  if (dof > 0)
-  {
-    int iStart = mParentJoint->getIndexInSkeleton(0);
-    _MCol->block(iStart, _col, dof, 1).noalias()
-        = mParentJoint->getLocalJacobian().transpose() * mM_F;
-  }
+//  //
+//  int dof = mParentJoint->getNumDofs();
+//  if (dof > 0)
+//  {
+//    int iStart = mParentJoint->getIndexInSkeleton(0);
+//    _MCol->block(iStart, _col, dof, 1).noalias()
+//        = mParentJoint->getLocalJacobian().transpose() * mM_F;
+//  }
 }
 
 //==============================================================================
@@ -797,51 +798,52 @@ void SoftBodyNode::updateCombinedVector()
 {
   BodyNode::updateCombinedVector();
 
-  for (size_t i = 0; i < mPointMasses.size(); ++i)
-    mPointMasses.at(i)->updateCombinedVector();
+//  for (size_t i = 0; i < mPointMasses.size(); ++i)
+//    mPointMasses.at(i)->updateCombinedVector();
 }
 
 //==============================================================================
 void SoftBodyNode::aggregateCombinedVector(Eigen::VectorXd* _Cg,
                                            const Eigen::Vector3d& _gravity)
 {
-  //------------------------ PointMass Part ------------------------------------
-  for (size_t i = 0; i < mPointMasses.size(); ++i)
-    mPointMasses.at(i)->aggregateCombinedVector(_Cg, _gravity);
+  BodyNode::aggregateCombinedVector(_Cg, _gravity);
+//  //------------------------ PointMass Part ------------------------------------
+//  for (size_t i = 0; i < mPointMasses.size(); ++i)
+//    mPointMasses.at(i)->aggregateCombinedVector(_Cg, _gravity);
 
-  //----------------------- SoftBodyNode Part ----------------------------------
-  // H(i) = I(i) * W(i) -
-  //        dad{V}(I(i) * V(i)) + sum(k \in children) dAd_{T(i,j)^{-1}}(H(k))
-  if (mGravityMode == true)
-    mFgravity = mI * math::AdInvRLinear(mW, _gravity);
-  else
-    mFgravity.setZero();
+//  //----------------------- SoftBodyNode Part ----------------------------------
+//  // H(i) = I(i) * W(i) -
+//  //        dad{V}(I(i) * V(i)) + sum(k \in children) dAd_{T(i,j)^{-1}}(H(k))
+//  if (mGravityMode == true)
+//    mFgravity = mI * math::AdInvRLinear(mW, _gravity);
+//  else
+//    mFgravity.setZero();
 
-  mCg_F = mI * mCg_dV;
-  mCg_F -= mFgravity;
-  mCg_F -= math::dad(mV, mI * mV);
+//  mCg_F = mI * mCg_dV;
+//  mCg_F -= mFgravity;
+//  mCg_F -= math::dad(mV, mI * mV);
 
-  for (std::vector<BodyNode*>::iterator it = mChildBodyNodes.begin();
-       it != mChildBodyNodes.end(); ++it)
-  {
-    mCg_F += math::dAdInvT((*it)->getParentJoint()->getLocalTransform(),
-                           (*it)->mCg_F);
-  }
+//  for (std::vector<BodyNode*>::iterator it = mChildBodyNodes.begin();
+//       it != mChildBodyNodes.end(); ++it)
+//  {
+//    mCg_F += math::dAdInvT((*it)->getParentJoint()->getLocalTransform(),
+//                           (*it)->mCg_F);
+//  }
 
-  for (std::vector<PointMass*>::iterator it = mPointMasses.begin();
-       it != mPointMasses.end(); ++it)
-  {
-    mCg_F.head<3>() += (*it)->mX.cross((*it)->mCg_F);
-    mCg_F.tail<3>() += (*it)->mCg_F;
-  }
+//  for (std::vector<PointMass*>::iterator it = mPointMasses.begin();
+//       it != mPointMasses.end(); ++it)
+//  {
+//    mCg_F.head<3>() += (*it)->mX.cross((*it)->mCg_F);
+//    mCg_F.tail<3>() += (*it)->mCg_F;
+//  }
 
-  int nGenCoords = mParentJoint->getNumDofs();
-  if (nGenCoords > 0)
-  {
-    Eigen::VectorXd Cg = mParentJoint->getLocalJacobian().transpose() * mCg_F;
-    int iStart = mParentJoint->getIndexInSkeleton(0);
-    _Cg->segment(iStart, nGenCoords) = Cg;
-  }
+//  int nGenCoords = mParentJoint->getNumDofs();
+//  if (nGenCoords > 0)
+//  {
+//    Eigen::VectorXd Cg = mParentJoint->getLocalJacobian().transpose() * mCg_F;
+//    int iStart = mParentJoint->getIndexInSkeleton(0);
+//    _Cg->segment(iStart, nGenCoords) = Cg;
+//  }
 }
 
 //==============================================================================
@@ -912,19 +914,19 @@ void SoftBodyNode::draw(renderer::RenderInterface* _ri,
 
   // vertex
 //  if (_showPointMasses)
-  {
-    for (size_t i = 0; i < mPointMasses.size(); ++i)
-    {
-      _ri->pushMatrix();
-      mPointMasses[i]->draw(_ri, _color, _useDefaultColor);
-      _ri->popMatrix();
-    }
-  }
+//  {
+//    for (size_t i = 0; i < mPointMasses.size(); ++i)
+//    {
+//      _ri->pushMatrix();
+//      mPointMasses[i]->draw(_ri, _color, _useDefaultColor);
+//      _ri->popMatrix();
+//    }
+//  }
 
   // edges (mesh)
-  Eigen::Vector4d fleshColor = _color;
-  fleshColor[3] = 0.5;
-  _ri->setPenColor(fleshColor);
+//  Eigen::Vector4d fleshColor = _color;
+//  fleshColor[3] = 0.5;
+//  _ri->setPenColor(fleshColor);
 //  if (_showMeshs)
   {
     Eigen::Vector3d pos;
