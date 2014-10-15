@@ -35,45 +35,69 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APPS_HANDTILTINGANGLE_MYWINDOW_H_
-#define APPS_HANDTILTINGANGLE_MYWINDOW_H_
+#ifndef APPS_HANDOBJECTROLLING__ROLLINGANGLE_H_
+#define APPS_HANDOBJECTROLLING__ROLLINGANGLE_H_
 
 #include "dart/gui/SimWindow.h"
 
-#include "apps/handTiltingAngle/RollingAngle.h"
+#include "dart/dynamics/BodyNode.h"
 
 /// class MyWindow
-class MyWindow : public dart::gui::SimWindow
+class RollingAngle
 {
 public:
-  MyWindow();
+  ///
+  RollingAngle();
 
   ///
-  virtual ~MyWindow();
+  RollingAngle(dart::dynamics::BodyNode* _body,
+               const Eigen::Vector3d& _gravity);
 
   ///
-  virtual void timeStepping();
+  virtual ~RollingAngle();
 
   ///
-  virtual void drawSkels();
+  void setBodyNode(dart::dynamics::BodyNode* _body);
 
   ///
-  virtual void keyboard(unsigned char key, int x, int y);
+  void setGravity(const Eigen::Vector3d& _gravity);
 
   ///
   void updateAngles();
 
   ///
-  void setGroundAngle(double _angle, const Eigen::Vector3d& _axis);
+  int getNumAngles() const;
 
   ///
   double getAngle(int _index);
 
   ///
-  int evalContactEdge();
+  const std::vector<Eigen::Vector3d> getEdges() const;
+
+  double getHalfDepth() const;
+
+protected:
+  ///
+  void setInitVel(const Eigen::Vector3d& _vel);
+
+  ///
+  void evalN();
+
+  ///
+  void evalGeometry();
+
+  ///
+  void evalInertia();
+
+  ///
+  void evalAngles();
 
 private:
-  RollingAngle mRollingAngleEvaluator;
+  ///
+  dart::dynamics::BodyNode* mBodyNode;
+
+  ///
+  Eigen::Vector3d mGravity;
 
   ///
   Eigen::Vector3d mForce;
@@ -85,12 +109,36 @@ private:
   /// For example, use 3 for 2 rollings.
   int mN;
 
+  ///
+  Eigen::Vector3d mInitVel;
+
+  /// the velocity magnitude at the beginning of a rolling cycle
+  std::vector<double> mStartVels;
+
+  /// the velocity magnitude at the end of a rolling cycle
+  std::vector<double> mEndVels;
+
+  /// the COM with respect to local coordinate
+  Eigen::Vector3d mCOM;
+
   /// the edges of the polygon (pivoting edges) in the local coordinate, use
   /// the represent point in the 2D plane
   std::vector<Eigen::Vector3d> mEdges;
+
+  /// distance between the pivoting edge and COM
+  std::vector<double> mRs;
+
+  /// the angle between COM and pivoting edge with the previous face
+  std::vector<double> mAlphas;
+
+  /// the angle between COM and pivoting edge with the next face
+  std::vector<double> mPhis;
+
+  /// the inertia matrices with respect to each pivoting edge
+  std::vector<Eigen::Matrix3d> mIs;
 
   ///
   int mRollNum;
 };
 
-#endif  // APPS_HANDTILTINGANGLE_MYWINDOW_H_
+#endif  // APPS_HANDOBJECTROLLING__ROLLINGANGLE_H_

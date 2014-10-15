@@ -41,6 +41,8 @@
 
 #include <Eigen/Dense>
 
+#include "RollingAngle.h"
+
 extern double gAngleX;
 extern double gAngleY;
 extern double gAngleZ;
@@ -194,6 +196,8 @@ public:
   void reset();
 
 private:
+  RollingAngle mRollingAngleEvaluator;
+
   /// \brief World
   dart::simulation::World* mWorld;
 

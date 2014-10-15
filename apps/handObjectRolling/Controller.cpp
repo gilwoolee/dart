@@ -42,6 +42,7 @@
 #include "dart/dynamics/BodyNode.h"
 #include "dart/dynamics/Shape.h"
 #include "dart/dynamics/Joint.h"
+#include "dart/dynamics/BoxShape.h"
 #include "dart/constraint/ConstraintSolver.h"
 #include "dart/constraint/WeldJointConstraint.h"
 #include "dart/collision/CollisionDetector.h"
@@ -85,6 +86,8 @@ Controller::Controller(World* _world,
   assert(_ground);
   assert(_shadowHand);
   assert(_object);
+
+  mObject = mObjectSkel->getBodyNode(0);
 
   //----------------------------------------------------------------------------
   // Initial states
@@ -139,21 +142,28 @@ Controller::Controller(World* _world,
   // Object setting
   //----------------------------------------------------------------------------
 
-  mObject = mObjectSkel->getBodyNode(0);
 
-  // Default object
-  double halfDepthX = 0.02;
-  std::vector<Eigen::Vector3d> edges;
-  edges.resize(4);
-  edges[3] = Eigen::Vector3d(0.0, -0.02, -0.02);
-  edges[2] = Eigen::Vector3d(0.0,  0.02, -0.02);
-  edges[1] = Eigen::Vector3d(0.0,  0.02,  0.02);
-  edges[0] = Eigen::Vector3d(0.0, -0.02,  0.02);
 
+  mRollingAngleEvaluator.setBodyNode(mObject);
+  mRollingAngleEvaluator.setGravity(mWorld->getGravity());
+  mRollingAngleEvaluator.updateAngles();
+
+  // WE ASSUME THAT THE OBJECT HAS ONE COLLISION BOX SHAPE
+//  BoxShape* boxShape = (BoxShape*)mObject->getCollisionShape(0);
+//  Eigen::Vector3d halfSize = boxShape->getSize()/2;
+
+//  edges.resize(4);
+//  edges[0] = Eigen::Vector3d(0.0, -halfSize[1],  halfSize[2]);
+//  edges[1] = Eigen::Vector3d(0.0,  halfSize[1],  halfSize[2]);
+//  edges[2] = Eigen::Vector3d(0.0,  halfSize[1], -halfSize[2]);
+//  edges[3] = Eigen::Vector3d(0.0, -halfSize[1], -halfSize[2]);
+
+  double halfDepthX = mRollingAngleEvaluator.getHalfDepth();
+  std::vector<Eigen::Vector3d> edges = mRollingAngleEvaluator.getEdges();
   setObjectInfo(edges, halfDepthX);
 
   // Number of rolling + 1
-  mN = 3;
+  mN = mRollingAngleEvaluator.getNumAngles();
 
   mBackN = 0;
   mRollNum = 0;
@@ -169,6 +179,13 @@ Controller::Controller(World* _world,
 //  mAngles[0] = 0.840675;
 //  mAngles[1] = 0.437237;
 //  mAngles[2] = -0.358023;
+
+  mAngles[0] = 0.940675;
+  mAngles[1] = 0.31345;
+  mAngles[2] = 0.158023;
+
+  for (int i = 0; i < mN; ++i)
+    mAngles[i] = mRollingAngleEvaluator.getAngle(i);
 
   mRollDir = 0;
 
@@ -290,9 +307,14 @@ void Controller::setInitialTransformation()
   int objectDof = mObjectSkel->getNumDofs();
   mObjectInitialPositions.setZero(objectDof);
   mObjectInitialPositions
-      << 0.0, 0.0, 0.0, 0.0775, -0.160, 0.23;
+      << 0.0, 0.0, 0.0, 0.0775, -0.180, 0.23;
 //  mObjectInitialPositions[4] = -0.155;
 //  mObjectInitialPositions[3] = -10.155;
+
+  mObjectInitialPositions[4]
+      += ((BoxShape*)mObject->getCollisionShape(0))->getSize()[1]/2;
+
+  mObjectInitialPositions[5] -= 0.03;
 
   mGround->setPositions(mGroundInitialPositions);
   mHand->setPositions(mHandInitialPositions);
@@ -405,9 +427,9 @@ void Controller::setPose()
   //dynamics::BodyNode* wrist = mSkels[1]->getBodyNode(mPalmName);
   int contactEdgeIndex = evalContactEdge();
 
-  if (contactEdgeIndex != -1)
-    if (mPreContactEdge != contactEdgeIndex || contactEdgeIndex == 0)
-      std::cout << "ContactEdge: " << contactEdgeIndex << std::endl;
+//  if (contactEdgeIndex != -1)
+//    if (mPreContactEdge != contactEdgeIndex || contactEdgeIndex == 0)
+//      std::cout << "ContactEdge: " << contactEdgeIndex << std::endl;
 
   if (contactEdgeIndex == mPreContactEdge || contactEdgeIndex == -1)
   {
@@ -496,7 +518,7 @@ void Controller::setPose()
       }
     }
   }
-  else if (isLastRoll && (/*isEdgeInContact(index1) || */evalUpFace() == index2))
+  else if (isLastRoll && (isEdgeInContact(index1) || evalUpFace() == index2))
   {
 //    if (isEdgeInContact(index1))
 //      std::cout << "COND 1 !!";
@@ -508,7 +530,7 @@ void Controller::setPose()
     setHandAngle(0.0);
   }
 
-  std::cout << "(evalUpFace, index2): " << evalUpFace() << ", " << index2 << std::endl;
+//  std::cout << "(evalUpFace, index2): " << evalUpFace() << ", " << index2 << std::endl;
 
   // calculate up face if know the high corners local coordinates
   if (evalUpFace() != mUpFace)

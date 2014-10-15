@@ -86,11 +86,7 @@ int main(int argc, char* argv[])
   // create a window and link it to the world
   MyWindow window;
   window.setWorld(myWorld);
-  window.evalN();
-  window.evalGeometry();
-  window.evalInertia();
-  window.setInitVel(Eigen::Vector3d::Zero());
-  window.evalAngles();
+  window.updateAngles();
 
   VectorXd initPose = ground->getPositions();
   initPose[2] = window.getAngle(0);
@@ -98,7 +94,7 @@ int main(int argc, char* argv[])
   ground->computeForwardKinematics(true, true, true);
 
   initPose.setZero();
-  Vector3d localPos(-0.5, 0.02 + 0.5 * 0.05, 0.0);
+  Vector3d localPos(-0.5, 0.2 + 0.5 * 0.05, 0.0);
   Vector3d worldPos = ground->getBodyNode(0)->getTransform() * localPos;
   Isometry3d cubeT = Isometry3d::Identity();
   cubeT.translation() = worldPos;

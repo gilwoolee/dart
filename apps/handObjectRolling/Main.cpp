@@ -80,16 +80,16 @@ int main(int argc, char* argv[])
   cubeSkel1->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
 
   std::string cubePath2 = DART_DATA_PATH"skel/cube2.skel";
-  Skeleton*   cubeSkel2 = SkelParser::readSkeleton(cubePath1);
-  cubeSkel1->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
+  Skeleton*   cubeSkel2 = SkelParser::readSkeleton(cubePath2);
+  cubeSkel2->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
 
   std::string cubePath3 = DART_DATA_PATH"skel/cube3.skel";
-  Skeleton*   cubeSkel3 = SkelParser::readSkeleton(cubePath1);
-  cubeSkel1->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
+  Skeleton*   cubeSkel3 = SkelParser::readSkeleton(cubePath3);
+  cubeSkel3->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
 
   std::string cubePath4 = DART_DATA_PATH"skel/cube4.skel";
-  Skeleton*   cubeSkel4 = SkelParser::readSkeleton(cubePath1);
-  cubeSkel1->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
+  Skeleton*   cubeSkel4 = SkelParser::readSkeleton(cubePath4);
+  cubeSkel4->getBodyNode(0)->getVisualizationShape(0)->setColor(red);
 
   std::string pathArmAndHandUrdf = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.urdf";
   Skeleton*   armAndHandUrdf     = dl.parseSkeleton(pathArmAndHandUrdf);
@@ -117,14 +117,14 @@ int main(int argc, char* argv[])
 //  world->addSkeleton(forearmAndHandUrdf);
 //  world->addSkeleton(forearmAndHandSdf);
   world->addSkeleton(forearmAndSoftHandSdf);
-  world->addSkeleton(cubeSkel1);
-//  world->addSkeleton(cubeSkel2);
+//  world->addSkeleton(cubeSkel1);
+  world->addSkeleton(cubeSkel2);
 //  world->addSkeleton(cubeSkel3);
 //  world->addSkeleton(cubeSkel4);
 
   // Create window and run main loop
   Controller* controller
-      = new Controller(world, groundSkel, forearmAndSoftHandSdf, cubeSkel1);
+      = new Controller(world, groundSkel, forearmAndSoftHandSdf, cubeSkel2);
 
 
 
