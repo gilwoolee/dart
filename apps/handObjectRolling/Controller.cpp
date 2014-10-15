@@ -141,54 +141,16 @@ Controller::Controller(World* _world,
 
   mObject = mObjectSkel->getBodyNode(0);
 
-  int numEdges = 4;
+  // Default object
+  double halfDepthX = 0.02;
+  std::vector<Eigen::Vector3d> edges;
+  edges.resize(4);
+  edges[3] = Eigen::Vector3d(0.0, -0.02, -0.02);
+  edges[2] = Eigen::Vector3d(0.0,  0.02, -0.02);
+  edges[1] = Eigen::Vector3d(0.0,  0.02,  0.02);
+  edges[0] = Eigen::Vector3d(0.0, -0.02,  0.02);
 
-  // the order is determined by the order of pivoting, related to roll direction
-  //
-  //      Y
-  //      ^
-  //      |  mEdges[1] ------- mEdges[2]
-  //      |    |                 |
-  // Z <---    |                 |
-  //           |                 |
-  //         mEdges[0] ------- mEdges[3]
-  //
-  mEdges.resize(numEdges);
-  mEdges[0] = Eigen::Vector3d(0.0, -0.02,  0.02);
-  mEdges[1] = Eigen::Vector3d(0.0,  0.02,  0.02);
-  mEdges[2] = Eigen::Vector3d(0.0,  0.02, -0.02);
-  mEdges[3] = Eigen::Vector3d(0.0, -0.02, -0.02);
-
-  //      Y
-  //      ^      mCorners[1][1] ---- mCorners[2][1]
-  //      |        /|                  /|
-  //      |       / |                 / |
-  // Z <---      /  |                /  |
-  //     /   mCorners[1][0] ---- mCorners[2][0]
-  //    /       |mCorners[0][1] ----|mCorners[3][1]
-  //   X        |  /                |  /
-  //            | /                 | /
-  //            |/                  |/
-  //         mCorners[0][0] ---- mCorners[3][0]
-  //
-  //                    ___
-  //                    |   \_
-  //          ___________|    \__
-  //       __/________           /______
-  //      /__________
-  //      |/________           _______
-  //       |_/________________/|______
-  //         |________________|/
-  //
-  //
-  mCorners.resize(numEdges);
-  for (int i = 0; i < numEdges; ++i)
-  {
-    mCorners[i].resize(2);
-    mCorners[i][0] = mCorners[i][1] = mEdges[i];
-    mCorners[i][0][0] =  0.02;
-    mCorners[i][1][0] = -0.02;
-  }
+  setObjectInfo(edges, halfDepthX);
 
   // Number of rolling + 1
   mN = 3;
@@ -376,6 +338,61 @@ void Controller::update(double /*_currentTime*/)
 
   // Apply the control forces to the hand
   mHand->setForces(mHandControlForce);
+}
+
+//==============================================================================
+void Controller::setObjectInfo(std::vector<Eigen::Vector3d> _edges,
+                               double _halfDepthX)
+{
+  assert(!_edges.empty());
+
+  int numEdges = _edges.size();
+
+  // the order is determined by the order of pivoting, related to roll direction
+  //
+  //      Y
+  //      ^
+  //      |  mEdges[1] ------- mEdges[2]
+  //      |    |                 |
+  // Z <---    |                 |
+  //           |                 |
+  //         mEdges[0] ------- mEdges[3]
+  //
+  mEdges.resize(numEdges);
+
+  for (int i = 0; i < numEdges; ++i)
+    mEdges[i] = _edges[i];
+
+  //      Y
+  //      ^      mCorners[1][1] ---- mCorners[2][1]
+  //      |        /|                  /|
+  //      |       / |                 / |
+  // Z <---      /  |                /  |
+  //     /   mCorners[1][0] ---- mCorners[2][0]
+  //    /       |mCorners[0][1] ----|mCorners[3][1]
+  //   X        |  /                |  /
+  //            | /                 | /
+  //            |/                  |/
+  //         mCorners[0][0] ---- mCorners[3][0]
+  //
+  //                    ___
+  //                    |   \_
+  //          ___________|    \__
+  //       __/________           /______
+  //      /__________
+  //      |/________           _______
+  //       |_/________________/|______
+  //         |________________|/
+  //
+  //
+  mCorners.resize(numEdges);
+  for (int i = 0; i < numEdges; ++i)
+  {
+    mCorners[i].resize(2);
+    mCorners[i][0] = mCorners[i][1] = mEdges[i];
+    mCorners[i][0][0] =  _halfDepthX;
+    mCorners[i][1][0] = -_halfDepthX;
+  }
 }
 
 //==============================================================================
