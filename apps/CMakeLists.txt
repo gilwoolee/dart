@@ -10,6 +10,7 @@ foreach(APPDIR
     #inertiaBot
     inertiaDisp
     inertiaEllipsoidTest
+    inertiaPlanning
     rigidLoop
     rigidCubes
     rigidChain
