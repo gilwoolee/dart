@@ -58,11 +58,11 @@ MyWindow::MyWindow()
   : SoftSimWindow()
 {
   mForceOnRigidBody = Eigen::Vector3d::Zero();
-  mForceOnVertex = Eigen::Vector3d::Zero();
-  mImpulseDuration = 0.0;
-  mDesiredQ = 0.0;
+  mForceOnVertex    = Eigen::Vector3d::Zero();
+  mImpulseDuration  = 0.0;
+  mDesiredQ   = 0.0;
   mDesiredIzz = 0.05;
-  mDesiredW = 0.43;
+  mDesiredW   = 1.0;
 }
 
 MyWindow::~MyWindow()
