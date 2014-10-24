@@ -1839,13 +1839,14 @@ double Skeleton::setDesiredIzz(double _Izz)
     getJoint(1)->setPosition(0, newQ);
     computeForwardKinematics(true, false, false);
     double I = getTotalSpatialInertiaTensorRoot()(2,2);
+
     getJoint(1)->setPosition(0, newQ + eps);
     computeForwardKinematics(true, false, false);
     double Ieps = getTotalSpatialInertiaTensorRoot()(2,2);
 
     double dI = (Ieps - I)/eps;
 
-    newQ = newQ - (_Izz - I)/dI;
+    newQ = newQ - (I - _Izz)/dI;
 
     if (std::fabs((_Izz - I)/dI) < 1e-3)
     {

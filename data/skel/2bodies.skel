@@ -59,12 +59,12 @@
             <joint type="revolute" name="joint 1">
                 <parent>world</parent>
                 <child>link 1</child>
-                <transformation>0 0 0 0 0 0</transformation>
+                <transformation>+0.25 0 0 0 0 0</transformation>
                 <axis>
                     <xyz>0 0 1</xyz>
                 </axis>
                 <init_pos>0</init_pos>
-                <init_vel>0.5</init_vel>
+                <init_vel>1.0</init_vel>
             </joint>
             <joint type="revolute" name="joint 2">
                 <parent>link 1</parent>
@@ -73,6 +73,8 @@
                 <axis>
                     <xyz>0 0 1</xyz>
                 </axis>
+                <init_pos>3.14</init_pos>
+                <init_vel>0.0</init_vel>
             </joint>
         </skeleton>
 	

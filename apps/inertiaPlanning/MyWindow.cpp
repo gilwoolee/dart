@@ -61,7 +61,8 @@ MyWindow::MyWindow()
   mForceOnVertex = Eigen::Vector3d::Zero();
   mImpulseDuration = 0.0;
   mDesiredQ = 0.0;
-  mDesiredIzz = 0.25;
+  mDesiredIzz = 0.05;
+  mDesiredW = 0.43;
 }
 
 MyWindow::~MyWindow()
@@ -75,21 +76,20 @@ void MyWindow::timeStepping()
 //  dart::dynamics::SoftBodyNode* softBodyNode = Skeleton->getSoftBodyNode(0);
 //  softBodyNode->addExtForce(mForceOnRigidBody);
 
-  double q = mWorld->getSkeleton(0)->getJoint(1)->getPosition(0);
-  double dq = mWorld->getSkeleton(0)->getJoint(1)->getVelocity(0);
+  double q   = mWorld->getSkeleton(0)->getJoint(1)->getPosition(0);
+  double dq  = mWorld->getSkeleton(0)->getJoint(1)->getVelocity(0);
+  double Izz = mWorld->getSkeleton(0)->getTotalSpatialInertiaTensorRoot()(2,2);
 
-  mDesiredQ = mWorld->getSkeleton(0)->setDesiredIzz(mDesiredIzz);
-
-  double tau = -20.0*(q - mDesiredQ) - 1.0*dq;
   double w = mWorld->getSkeleton(0)->getBodyNode(0)->getWorldAngularVelocity()[2];
+  double H = Izz * w;
+
+  mDesiredIzz = mH / mDesiredW;
+  mDesiredQ   = mWorld->getSkeleton(0)->setDesiredIzz(mDesiredIzz);
+  double tau  = -20.0*(q - mDesiredQ) - 1.0*dq;
 
   mWorld->getSkeleton(0)->getJoint(1)->setForce(0, tau);
 
-  double Izz = mWorld->getSkeleton(0)->getTotalSpatialInertiaTensorRoot()(2,2);
-
-  double H = Izz * w;
-
-  std::cout << "DesiredI: " << mDesiredIzz << ", q: " << q << ", w: " << w
+  std::cout << "DesiredW: " << mDesiredW << ", q: " << q << ", w: " << w
             << ", I: " << Izz << ", H: " << H << std::endl;
 
   mWorld->step();
@@ -130,21 +130,31 @@ void MyWindow::drawSkels()
   SimWindow::drawSkels();
 }
 
+void MyWindow::init()
+{
+//  double q   = mWorld->getSkeleton(0)->getJoint(1)->getPosition(0);
+//  double dq  = mWorld->getSkeleton(0)->getJoint(1)->getVelocity(0);
+  double Izz = mWorld->getSkeleton(0)->getTotalSpatialInertiaTensorRoot()(2,2);
+
+  double w = mWorld->getSkeleton(0)->getBodyNode(0)->getWorldAngularVelocity()[2];
+  mH = Izz * w;
+}
+
 void MyWindow::keyboard(unsigned char key, int x, int y)
 {
   switch (key)
   {
-    case ' ':  // use space key to play or stop the motion
-      mSimulating = !mSimulating;
-      if (mSimulating)
-      {
-        mPlay = false;
-        glutTimerFunc(mDisplayTimeout, refreshTimer, 0);
-      }
-      break;
-    case 'p':  // playBack
-      mPlay = !mPlay;
-      if (mPlay)
+  case ' ':  // use space key to play or stop the motion
+    mSimulating = !mSimulating;
+    if (mSimulating)
+    {
+      mPlay = false;
+      glutTimerFunc(mDisplayTimeout, refreshTimer, 0);
+    }
+    break;
+  case 'p':  // playBack
+    mPlay = !mPlay;
+    if (mPlay)
       {
         mSimulating = false;
         glutTimerFunc(mDisplayTimeout, refreshTimer, 0);
@@ -187,13 +197,13 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
     case 'q':
     case 'Q':
     {
-      mDesiredIzz -= 0.1;
+      mDesiredW -= 0.01;
       break;
     }
     case 'w':
     case 'W':
     {
-      mDesiredIzz += 0.1;
+      mDesiredW += 0.01;
       break;
     }
     case '1':  // upper right force

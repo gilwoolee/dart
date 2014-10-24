@@ -68,6 +68,8 @@ public:
   /// \brief
   virtual void drawSkels();
 
+  void init();
+
 //  ///
 //  void setController(Controller* _controller);
 
@@ -83,6 +85,8 @@ private:
 
   double mDesiredQ;
   double mDesiredIzz;
+  double mDesiredW;
+  double mH;
 
 //  ///
 //  Controller* mController;
