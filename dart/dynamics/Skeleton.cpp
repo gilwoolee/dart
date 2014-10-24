@@ -78,7 +78,7 @@ Skeleton::Skeleton(const std::string& _name)
     mIsImpulseApplied(false),
     mUnionRootSkeleton(this),
     mUnionSize(1),
-    mShowTotalInertia(true)
+    mShowTotalInertia(false)
 {
 }
 
@@ -1821,6 +1821,45 @@ Eigen::Matrix6d Skeleton::getTotalSpatialInertiaTensorCom() const
   I = math::transformInertia(comT, I);
 
   return I;
+}
+
+//==============================================================================
+double Skeleton::setDesiredIzz(double _Izz)
+{
+  double desiredQ;
+  int maxIter = 100;
+  double oldQ = getJoint(1)->getPosition(0);
+  double newQ = oldQ;
+
+  double eps = 1e-6;
+
+  int i = 0;
+  for (i = 0; i < maxIter; ++i)
+  {
+    getJoint(1)->setPosition(0, newQ);
+    computeForwardKinematics(true, false, false);
+    double I = getTotalSpatialInertiaTensorRoot()(2,2);
+    getJoint(1)->setPosition(0, newQ + eps);
+    computeForwardKinematics(true, false, false);
+    double Ieps = getTotalSpatialInertiaTensorRoot()(2,2);
+
+    double dI = (Ieps - I)/eps;
+
+    newQ = newQ - (_Izz - I)/dI;
+
+    if (std::fabs((_Izz - I)/dI) < 1e-3)
+    {
+      desiredQ = newQ;
+      break;
+    }
+  }
+
+  if (i == maxIter)
+    desiredQ = oldQ;
+
+  getJoint(1)->setPosition(0, oldQ);
+  computeForwardKinematics(true, false, false);
+  return desiredQ;
 }
 
 //==============================================================================

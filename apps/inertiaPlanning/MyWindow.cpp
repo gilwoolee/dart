@@ -42,6 +42,8 @@
 
 #include "MyWindow.h"
 
+#include <iostream>
+
 #include "dart/dynamics/SoftBodyNode.h"
 #include "dart/dynamics/Skeleton.h"
 #include "dart/dynamics/PointMass.h"
@@ -58,6 +60,8 @@ MyWindow::MyWindow()
   mForceOnRigidBody = Eigen::Vector3d::Zero();
   mForceOnVertex = Eigen::Vector3d::Zero();
   mImpulseDuration = 0.0;
+  mDesiredQ = 0.0;
+  mDesiredIzz = 0.25;
 }
 
 MyWindow::~MyWindow()
@@ -70,6 +74,23 @@ void MyWindow::timeStepping()
 //      static_cast<dart::dynamics::Skeleton*>(mWorld->getSkeleton(1));
 //  dart::dynamics::SoftBodyNode* softBodyNode = Skeleton->getSoftBodyNode(0);
 //  softBodyNode->addExtForce(mForceOnRigidBody);
+
+  double q = mWorld->getSkeleton(0)->getJoint(1)->getPosition(0);
+  double dq = mWorld->getSkeleton(0)->getJoint(1)->getVelocity(0);
+
+  mDesiredQ = mWorld->getSkeleton(0)->setDesiredIzz(mDesiredIzz);
+
+  double tau = -20.0*(q - mDesiredQ) - 1.0*dq;
+  double w = mWorld->getSkeleton(0)->getBodyNode(0)->getWorldAngularVelocity()[2];
+
+  mWorld->getSkeleton(0)->getJoint(1)->setForce(0, tau);
+
+  double Izz = mWorld->getSkeleton(0)->getTotalSpatialInertiaTensorRoot()(2,2);
+
+  double H = Izz * w;
+
+  std::cout << "DesiredI: " << mDesiredIzz << ", q: " << q << ", w: " << w
+            << ", I: " << Izz << ", H: " << H << std::endl;
 
   mWorld->step();
 
@@ -158,11 +179,23 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
       break;
     case 'i':
     case 'I':
-      if (mWorld->getSkeleton(1)->mShowTotalInertia)
-        mWorld->getSkeleton(1)->mShowTotalInertia = false;
+      if (mWorld->getSkeleton(0)->mShowTotalInertia)
+        mWorld->getSkeleton(0)->mShowTotalInertia = false;
       else
-        mWorld->getSkeleton(1)->mShowTotalInertia = true;
+        mWorld->getSkeleton(0)->mShowTotalInertia = true;
       break;
+    case 'q':
+    case 'Q':
+    {
+      mDesiredIzz -= 0.1;
+      break;
+    }
+    case 'w':
+    case 'W':
+    {
+      mDesiredIzz += 0.1;
+      break;
+    }
     case '1':  // upper right force
       mForceOnRigidBody[0] = -FORCE_ON_RIGIDBODY;
       mImpulseDuration = 100;
@@ -187,7 +220,7 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
       mForceOnRigidBody[2] = FORCE_ON_RIGIDBODY;
       mImpulseDuration = 100;
       break;
-    case 'q':
+//    case 'q':
 //    case 'Q':
 //      mController->setTorqueRotorX(-DESIRED_VELOCITY);
 //      mController->setTorqueRotorY(0);

@@ -81,6 +81,9 @@ private:
   /// \brief
   Eigen::Vector3d mForceOnVertex;
 
+  double mDesiredQ;
+  double mDesiredIzz;
+
 //  ///
 //  Controller* mController;
 };

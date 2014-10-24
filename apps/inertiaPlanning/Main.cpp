@@ -54,13 +54,13 @@ int main(int argc, char* argv[])
   // load a skeleton file
   // create and initialize the world
   dart::simulation::World* myWorld
-      = dart::utils::SkelParser::readWorld(DART_DATA_PATH"skel/inertia_bot.skel");
+      = dart::utils::SkelParser::readWorld(DART_DATA_PATH"skel/2bodies.skel");
   assert(myWorld != NULL);
 
   Eigen::Vector3d gravity(0.0, -9.81, 0.0);
   Eigen::Vector3d zero = Eigen::Vector3d::Zero();
 
-  myWorld->setGravity(gravity );
+  myWorld->setGravity(zero);
 
   // create controller
 //  Controller* myController = new Controller(myWorld->getSkeleton("cubli"),
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
   std::cout << "'1'--'6': programmed interaction" << std::endl;
 
   glutInit(&argc, argv);
-  window.initWindow(640, 480, "Soft Bodies");
+  window.initWindow(640, 480, "2 bodies");
   glutMainLoop();
 
   return 0;

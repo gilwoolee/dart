@@ -574,6 +574,8 @@ public:
 
   bool mShowTotalInertia;
 
+  double setDesiredIzz(double _Izz);
+
 protected:
   /// Update mass matrix of the skeleton.
   void updateMassMatrix();
