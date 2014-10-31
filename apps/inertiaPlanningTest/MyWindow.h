@@ -47,7 +47,7 @@
 #include "dart/gui/Win3D.h"
 #include "dart/gui/SoftSimWindow.h"
 
-#include "apps/inertiaPlanning/Controller.h"
+#include "apps/inertiaPlanningTest/Controller.h"
 
 /// \brief
 class MyWindow : public dart::gui::SoftSimWindow

@@ -40,7 +40,7 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "MyWindow.h"
+#include "apps/inertiaPlanning/MyWindow.h"
 
 #include <iostream>
 
@@ -55,7 +55,8 @@
 #define DESIRED_VELOCITY (25)
 
 MyWindow::MyWindow()
-  : SoftSimWindow()
+  : SoftSimWindow(),
+    mController(NULL)
 {
   mForceOnRigidBody = Eigen::Vector3d::Zero();
   mForceOnVertex    = Eigen::Vector3d::Zero();
@@ -67,6 +68,7 @@ MyWindow::MyWindow()
 
 MyWindow::~MyWindow()
 {
+  delete mController;
 }
 
 void MyWindow::timeStepping()
@@ -76,33 +78,36 @@ void MyWindow::timeStepping()
 //  dart::dynamics::SoftBodyNode* softBodyNode = Skeleton->getSoftBodyNode(0);
 //  softBodyNode->addExtForce(mForceOnRigidBody);
 
-  double q   = mWorld->getSkeleton(0)->getJoint(1)->getPosition(0);
-  double dq  = mWorld->getSkeleton(0)->getJoint(1)->getVelocity(0);
-  double Izz = mWorld->getSkeleton(0)->getTotalSpatialInertiaTensorRoot()(2,2);
+//  double q   = mWorld->getSkeleton(0)->getJoint(1)->getPosition(0);
+//  double dq  = mWorld->getSkeleton(0)->getJoint(1)->getVelocity(0);
+//  double Izz = mWorld->getSkeleton(0)->getTotalSpatialInertiaTensorRoot()(2,2);
 
-  double w = mWorld->getSkeleton(0)->getBodyNode(0)->getWorldAngularVelocity()[2];
-  double H = Izz * w;
+//  double w = mWorld->getSkeleton(0)->getBodyNode(0)->getWorldAngularVelocity()[2];
+//  double H = Izz * w;
 
-  mDesiredIzz = mH / mDesiredW;
-  mDesiredQ   = mWorld->getSkeleton(0)->setDesiredIzz(mDesiredIzz);
-  double tau  = -20.0*(q - mDesiredQ) - 1.0*dq;
+//  mDesiredIzz = mH / mDesiredW;
+//  mDesiredQ   = mWorld->getSkeleton(0)->setDesiredIzz(mDesiredIzz);
+//  double tau  = -20.0*(q - mDesiredQ) - 1.0*dq;
 
-  mWorld->getSkeleton(0)->getJoint(1)->setForce(0, tau);
+//  mWorld->getSkeleton(0)->getJoint(1)->setForce(0, tau);
 
-  std::cout << "DesiredW: " << mDesiredW << ", q: " << q << ", w: " << w
-            << ", I: " << Izz << ", H: " << H << std::endl;
+//  std::cout << "DesiredW: " << mDesiredW << ", q: " << q << ", w: " << w
+//            << ", I: " << Izz << ", H: " << H << std::endl;
 
-  mWorld->step();
+  mController->update(mWorld->getTime());
 
-  // for perturbation test
-  mImpulseDuration--;
-  if (mImpulseDuration <= 0)
-  {
-    mImpulseDuration = 0;
-    mForceOnRigidBody.setZero();
-  }
+  if (mController->getDuration() > mWorld->getTime())
+    mWorld->step();
 
-  mForceOnVertex /= 2.0;
+//  // for perturbation test
+//  mImpulseDuration--;
+//  if (mImpulseDuration <= 0)
+//  {
+//    mImpulseDuration = 0;
+//    mForceOnRigidBody.setZero();
+//  }
+
+//  mForceOnVertex /= 2.0;
 }
 
 void MyWindow::drawSkels()
@@ -134,10 +139,11 @@ void MyWindow::init()
 {
 //  double q   = mWorld->getSkeleton(0)->getJoint(1)->getPosition(0);
 //  double dq  = mWorld->getSkeleton(0)->getJoint(1)->getVelocity(0);
-  double Izz = mWorld->getSkeleton(0)->getTotalSpatialInertiaTensorRoot()(2,2);
 
-  double w = mWorld->getSkeleton(0)->getBodyNode(0)->getWorldAngularVelocity()[2];
-  mH = Izz * w;
+//  double Izz = mWorld->getSkeleton(0)->getTotalSpatialInertiaTensorRoot()(2,2);
+
+//  double w = mWorld->getSkeleton(0)->getBodyNode(0)->getWorldAngularVelocity()[2];
+//  mH = Izz * w;
 }
 
 void MyWindow::keyboard(unsigned char key, int x, int y)

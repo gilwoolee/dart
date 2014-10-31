@@ -68,6 +68,12 @@ public:
   /// \brief
   virtual void drawSkels();
 
+  void setController(Controller* _controller)
+  {
+    assert(_controller);
+    mController = _controller;
+  }
+
   void init();
 
 //  ///
@@ -82,6 +88,8 @@ private:
 
   /// \brief
   Eigen::Vector3d mForceOnVertex;
+
+  Controller* mController;
 
   double mDesiredQ;
   double mDesiredIzz;

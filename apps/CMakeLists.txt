@@ -11,6 +11,7 @@ foreach(APPDIR
     inertiaDisp
     inertiaEllipsoidTest
     inertiaPlanning
+    inertiaPlanningTest
     rigidLoop
     rigidCubes
     rigidChain

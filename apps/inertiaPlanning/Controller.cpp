@@ -34,7 +34,7 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Controller.h"
+#include "apps/inertiaPlanning/Controller.h"
 
 #include "dart/math/Helpers.h"
 #include "dart/dynamics/Skeleton.h"
@@ -42,54 +42,151 @@
 #include "dart/dynamics/Shape.h"
 #include "dart/collision/CollisionDetector.h"
 
+using namespace Eigen;
+
 using namespace dart;
 using namespace dynamics;
 using namespace math;
 
-Controller::Controller(dynamics::Skeleton* _skel,
-                       constraint::ConstraintSolver* _collisionSolver,
-                       double _t)
+Controller::Controller(dynamics::Skeleton* _skel)
 {
+  assert(_skel);
   mSkel = _skel;
-  mCollisionHandle = _collisionSolver;
-  mTimestep = _t;
-  mFrame = 0;
-  int nDof = mSkel->getNumDofs();
-  mKp = Eigen::MatrixXd::Identity(nDof, nDof);
-  mKd = Eigen::MatrixXd::Identity(nDof, nDof);
-  mConstrForces = Eigen::VectorXd::Zero(nDof);
+  int dof = mSkel->getNumDofs();
 
-  mTorques.resize(nDof);
-  mDesiredDofs.resize(nDof);
-  for (int i = 0; i < nDof; i++)
+  mTorques = Eigen::VectorXd::Zero(dof);
+
+  mOff = false;
+}
+
+void Controller::setInitState(double q0, double q1, double w0, double w1)
+{
+  mQ0_i = q0;
+  mQ1_i = q1;
+
+  mW0_i = w0;
+  mW1_i = w1;
+}
+
+void Controller::setFinalState(double q0, double q1, double w0, double w1)
+{
+  mQ0_f = q0;
+  mQ1_f = q1;
+
+  mW0_f = w0;
+  mW1_f = w1;
+}
+
+void Controller::setDesiredRotation(double desiredRotation)
+{
+  mDesiredRotation = desiredRotation;
+}
+
+void Controller::setDuration(double duration)
+{
+  mDuration = duration;
+}
+
+void Controller::init()
+{
+  mSkel->getJoint(0)->setPosition(0, mQ0_i);
+  mSkel->getJoint(1)->setPosition(0, mQ1_i);
+
+  mSkel->getJoint(0)->setVelocity(0, mW0_i);
+  mSkel->getJoint(1)->setVelocity(0, mW1_i);
+
+  mSkel->computeForwardKinematics(true, true, false);
+
+  double Izz = mSkel->getTotalSpatialInertiaTensorRoot()(2,2);
+  double w = mSkel->getBodyNode(0)->getWorldAngularVelocity()[2];
+  mH = Izz * w;
+
+  std::cout << "mH: " << mH << std::endl;
+
+  mW0_i;
+
+  mDesiredAngularVelocity = mDesiredRotation / (mDuration + 2.0);
+
+  std::cout << "Current W: " << w << std::endl;
+  std::cout << "Desired W: " << mDesiredAngularVelocity << std::endl;
+
+
+  double q   = mSkel->getJoint(1)->getPosition(0);
+  double dq  = mSkel->getJoint(1)->getVelocity(0);
+
+  double mDesiredIzz = mH / mDesiredAngularVelocity;
+  double mDesiredQ   = mSkel->setDesiredIzz(mDesiredIzz);
+  double tau  = -20.0*(q - mDesiredQ) - 1.0*dq;
+
+  // TODO(JS):
+//  mDesiredAngularVelocity *= 1.3;
+
+
+  std::cout << "Current Izz: " << Izz << std::endl;
+  std::cout << "Desired Izz: " << mDesiredIzz << std::endl;
+}
+
+void Controller::update(double time)
+{
+  if (mOff)
+    return;
+
+  if (time < 1.0)
   {
-    mTorques[i] = 0.0;
-    mDesiredDofs[i] = mSkel->getPosition(i);
+    double q   = mSkel->getJoint(1)->getPosition(0);
+    double dq  = mSkel->getJoint(1)->getVelocity(0);
+
+    double mDesiredIzz = mH / mDesiredAngularVelocity;
+    double mDesiredQ   = mSkel->setDesiredIzz(mDesiredIzz);
+    double tau  = -5.0*(q - DART_RADIAN*30) - 1.0*dq;
+
+    mSkel->getJoint(1)->setForce(0, tau);
+
+    double w = mSkel->getBodyNode(0)->getWorldAngularVelocity()[2];
+    double Izz = mSkel->getTotalSpatialInertiaTensorRoot()(2,2);
+
+    std::cout << "Delta Q: " << q - mDesiredQ << std::endl;
+//    std::cout << "Current W: " << w << std::endl;
+//    std::cout << "Current Izz: " << Izz << std::endl;
   }
+  else if (mDuration - 1.0 < time && time < mDuration)
+  {
+    double q   = mSkel->getJoint(1)->getPosition(0);
+    double dq  = mSkel->getJoint(1)->getVelocity(0);
 
-  mRotorX = mSkel->getJoint(1);
-  mRotorY = mSkel->getJoint(2);
-  mRotorZ = mSkel->getJoint(3);
+    double mDesiredIzz = mH / mDesiredAngularVelocity;
+    double mDesiredQ   = mSkel->setDesiredIzz(mDesiredIzz);
+    double tau  = -5.0*(q - mQ1_i) - 1.0*dq;
+
+    mSkel->getJoint(1)->setForce(0, tau);
+  }
 }
 
-void Controller::computeTorques(const Eigen::VectorXd& _dof,
-                                const Eigen::VectorXd& _dofVel)
+VectorXd Controller::linspace(double _val1, double _val2, int _numPoints)
 {
-  mFrame++;
+  assert(_numPoints > 1);
+
+  VectorXd res = VectorXd::Zero(_numPoints);
+
+  double delta = (_val2 - _val1) / static_cast<double>(_numPoints);
+
+  res[0] = _val1;
+  for (int i = 1; i < _numPoints - 1; ++i)
+    res[i] = res[i - 1] + delta;
+  res[_numPoints - 1] = _val2;
+
+  return res;
 }
 
-void Controller::setTorqueRotorX(double _torque)
+VectorXd Controller::diff(const VectorXd& _val)
 {
-  mRotorX->setForce(0, _torque);
-}
+  assert(_val.size() > 1);
 
-void Controller::setTorqueRotorY(double _torque)
-{
-  mRotorY->setForce(0, _torque);
-}
+  VectorXd res = VectorXd::Zero(_val.size() - 1);
 
-void Controller::setTorqueRotorZ(double _torque)
-{
-  mRotorZ->setForce(0, _torque);
+  for (int i = 0; i < _val.size() - 1; ++i)
+    res[i] = _val[i + 1] - _val[i];
+
+  return res;
 }
 

@@ -63,13 +63,18 @@ int main(int argc, char* argv[])
   myWorld->setGravity(zero);
 
   // create controller
-//  Controller* myController = new Controller(myWorld->getSkeleton("cubli"),
-//                                            myWorld->getConstraintSolver(),
-//                                            myWorld->getTimeStep());
+  Controller* controller = new Controller(myWorld->getSkeleton("robot"));
+  controller->setInitState(0, DART_RADIAN*160.0, DART_RADIAN*60.0, 0);
+//  controller->setFinalState(DART_RADIAN*90.0, 0, DART_RADIAN*10.0, 0);
+  controller->setDesiredRotation(DART_RADIAN*180.0);
+  controller->setDuration(6.0);
+  controller->init();
+//  controller->off();
 
   // create a window and link it to the world
   MyWindow window;
   window.setWorld(myWorld);
+  window.setController(controller);
   window.init();
 //  window.setController(myController);
 

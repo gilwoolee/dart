@@ -48,52 +48,64 @@
 class Controller
 {
 public:
-  Controller(dart::dynamics::Skeleton*_skel,
-             dart::constraint::ConstraintSolver* _collisionSolver,
-             double _t);
+  Controller(dart::dynamics::Skeleton*_skel);
   virtual ~Controller() {}
 
-  Eigen::VectorXd getTorques() { return mTorques; }
-  double getTorque(int _index) { return mTorques[_index]; }
-  void setDesiredDof(int _index, double _val) { mDesiredDofs[_index] = _val; }
-  void computeTorques(const Eigen::VectorXd& _dof,
-                      const Eigen::VectorXd& _dofVel);
-  dart::dynamics::Skeleton* getSkel() { return mSkel; }
-  Eigen::VectorXd getDesiredDofs() { return mDesiredDofs; }
-  Eigen::MatrixXd getKp() {return mKp; }
-  Eigen::MatrixXd getKd() {return mKd; }
-  void setConstrForces(const Eigen::VectorXd& _constrForce)
-  { mConstrForces = _constrForce; }
+  void setInitState(double q0, double q1, double w0, double w1);
 
-  void setTorqueRotorX(double _torque);
-  void setTorqueRotorY(double _torque);
-  void setTorqueRotorZ(double _torque);
+  void setFinalState(double q0, double q1, double w0, double w1);
+
+  void setDesiredRotation(double desiredRotation);
+
+  void setDuration(double duration);
+
+  double getDuration() const { return mDuration; }
+
+  void init();
+
+  void off() { mOff = true; }
+
+  void update(double time);
+
+  Eigen::VectorXd getTorques() { return mTorques; }
+
+  double getTorque(int _index) { return mTorques[_index]; }
+
+  dart::dynamics::Skeleton* getSkel() { return mSkel; }
+
+  /// \brief Compute linearly spaced vectors
+  static Eigen::VectorXd linspace(double _val1, double _val2, int _numPoints);
+
+  /// \brief Compute difference
+  static Eigen::VectorXd diff(const Eigen::VectorXd& _val);
 
 protected:
-  bool computeCoP(dart::dynamics::BodyNode *_node, Eigen::Vector3d *_cop);
-  Eigen::Vector3d evalLinMomentum(const Eigen::VectorXd& _dofVel);
-  Eigen::Vector3d evalAngMomentum(const Eigen::VectorXd& _dofVel);
-  Eigen::VectorXd adjustAngMomentum(Eigen::VectorXd _deltaMomentum,
-                                    Eigen::VectorXd _controlledAxis);
+  ///
   dart::dynamics::Skeleton* mSkel;
-  dart::constraint::ConstraintSolver* mCollisionHandle;
+
   Eigen::VectorXd mTorques;
-  Eigen::VectorXd mDesiredDofs;
-  Eigen::MatrixXd mKp;
-  Eigen::MatrixXd mKd;
-  int mFrame;
-  double mTimestep;
-  double mPreOffset;
-  Eigen::VectorXd mConstrForces; // SPD utilizes the current info about contact forces
 
-  ///
-  dart::dynamics::Joint* mRotorX;
+  double mQ0_i;
+  double mQ1_i;
 
-  ///
-  dart::dynamics::Joint* mRotorY;
+  double mW0_i;
+  double mW1_i;
 
-  ///
-  dart::dynamics::Joint* mRotorZ;
+  double mQ0_f;
+  double mQ1_f;
+
+  double mW0_f;
+  double mW1_f;
+
+  double mDesiredRotation;
+
+  double mDuration;
+
+  double mDesiredAngularVelocity;
+
+  double mH;
+
+  bool mOff;
 };
 
 #endif  // APPS_INERTIAPLANNING_CONTROLLER_H_

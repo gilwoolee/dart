@@ -7,7 +7,7 @@
             <collision_detector>fcl_mesh</collision_detector>
         </physics>
 
-        <skeleton name="robot">
+        <skeleton name="double_pendulum">
             <body name="link 1">
                 <gravity>1</gravity>
                 <transformation>0 0 0 0 0 0</transformation>
@@ -64,7 +64,7 @@
                     <xyz>0 0 1</xyz>
                 </axis>
                 <init_pos>0</init_pos>
-                <init_vel>0.0</init_vel>
+                <init_vel>1.0</init_vel>
             </joint>
             <joint type="revolute" name="joint 2">
                 <parent>link 1</parent>
@@ -73,7 +73,7 @@
                 <axis>
                     <xyz>0 0 1</xyz>
                 </axis>
-                <init_pos>3.14</init_pos>
+                <init_pos>0.0</init_pos>
                 <init_vel>0.0</init_vel>
             </joint>
         </skeleton>
