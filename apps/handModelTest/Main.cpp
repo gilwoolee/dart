@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   std::string pathArmAndHandSdf  = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.sdf";
   std::string pathArmAndHandUrdf = DART_DATA_PATH"urdf/shadow_hand_john/model_arm_and_hand.urdf";
 
-  std::string pathForearmAndHandSdf  = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_JS.sdf";
+  std::string pathForearmAndHandSdf  = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand.sdf";
   std::string pathForearmAndHandUrdf = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_hand_JS.urdf";
 
   std::string pathForearmAndSoftHandSdf  = DART_DATA_PATH"urdf/shadow_hand_john/model_forearm_and_soft_hand.sdf";
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 
   Skeleton* forearmAndHandSoftSdf    = SoftSdfParser::readSkeleton(pathForearmAndSoftHandSdf);
 
-  world->addSkeleton(forearmAndHandSoftSdf);
+  world->addSkeleton(forearmAndHandSdf);
   world->setGravity(Eigen::Vector3d(0, -9.81, 0));
 
 //  std::cout << "Num of skeletons: " << world->getNumSkeletons();
