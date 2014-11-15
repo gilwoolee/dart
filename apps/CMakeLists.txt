@@ -6,9 +6,6 @@ foreach(APPDIR
     addDeleteSkels
     atlasSimbicon
     bipedStand
-    rigidLoop
-    rigidCubes
-    rigidChain
     handTiltingAngle
     handManipulation
     handModelTest
