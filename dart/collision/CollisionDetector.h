@@ -64,10 +64,13 @@ struct Contact {
   /// Contact point w.r.t. the world frame
   Eigen::Vector3d point;
 
-  /// Contact normal vector w.r.t. the world frame
+  /// Contact normal vector from bodyNode2 to bodyNode1 w.r.t. the world frame
   Eigen::Vector3d normal;
 
-  /// Contact force vector w.r.t. the world frame
+  /// Contact force acting on bodyNode1 w.r.t. the world frame
+  ///
+  /// The contact force acting on bodyNode2 is -force, which is the opposite
+  /// direction of the force.
   Eigen::Vector3d force;
 
   /// First colliding body node
@@ -162,13 +165,13 @@ public:
   /// \brief
   void setNumMaxContacs(int _num);
 
+  /// \brief
+  bool isCollidable(const CollisionNode* _node1, const CollisionNode* _node2);
+
 protected:
   /// \brief
   virtual bool detectCollision(CollisionNode* _node1, CollisionNode* _node2,
                                bool _calculateContactPoints) = 0;
-
-  /// \brief
-  bool isCollidable(const CollisionNode* _node1, const CollisionNode* _node2);
 
   /// \brief
   std::vector<Contact> mContacts;
@@ -187,8 +190,13 @@ private:
   bool containSkeleton(const dynamics::Skeleton* _skeleton);
 
   /// \brief
-  std::vector<bool>::reference getPairCollidable(const CollisionNode* _node1,
-                                                 const CollisionNode* _node2);
+  bool getPairCollidable(const CollisionNode* _node1,
+                         const CollisionNode* _node2);
+
+  /// \brief
+  void setPairCollidable(const CollisionNode* _node1,
+                         const CollisionNode* _node2,
+                         bool _val);
 
   /// \brief Return true if _bodyNode1 and _bodyNode2 are adjacent bodies
   bool isAdjacentBodies(const dynamics::BodyNode* _bodyNode1,

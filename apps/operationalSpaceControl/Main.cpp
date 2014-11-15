@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2011-2014, Georgia Tech Research Corporation
+ * Copyright (c) 2014, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Karen Liu <karenliu@cc.gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
  * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -37,65 +37,41 @@
 #include "dart/utils/Paths.h"
 #include "dart/math/Helpers.h"
 #include "dart/dynamics/Skeleton.h"
-#include "dart/dynamics/BodyNode.h"
-#include "dart/dynamics/Joint.h"
-#include "dart/dynamics/Shape.h"
 #include "dart/simulation/World.h"
 #include "dart/utils/SkelParser.h"
-#include "dart/constraint/BallJointConstraint.h"
-#include "dart/constraint/WeldJointConstraint.h"
-#include "dart/constraint/ConstraintSolver.h"
+#include "dart/utils/urdf/DartLoader.h"
 
-#include "apps/rigidLoop/MyWindow.h"
-
-using namespace dart;
-using namespace math;
-using namespace dynamics;
-using namespace simulation;
-using namespace constraint;
+#include "apps/operationalSpaceControl/MyWindow.h"
 
 int main(int argc, char* argv[])
 {
-  // load a skeleton file
   // create and initialize the world
-  dart::simulation::World* myWorld
-    = utils::SkelParser::readWorld(DART_DATA_PATH"/skel/chain.skel");
-  assert(myWorld != NULL);
-    
+  dart::simulation::World* world = new dart::simulation::World;
+  assert(world != NULL);
+
+  // load skeletons
+  dart::utils::DartLoader dl;
+  dart::dynamics::Skeleton* ground
+          = dl.parseSkeleton(DART_DATA_PATH"urdf/KR5/ground.urdf");
+  dart::dynamics::Skeleton* robot
+          = dl.parseSkeleton(DART_DATA_PATH"urdf/KR5/KR5 sixx R650.urdf");
+  world->addSkeleton(ground);
+  world->addSkeleton(robot);
+
   // create and initialize the world
   Eigen::Vector3d gravity(0.0, -9.81, 0.0);
-  myWorld->setGravity(gravity);
-  myWorld->setTimeStep(1.0/2000);
-
-  int dof =  myWorld->getSkeleton(0)->getNumDofs();
-
-  Eigen::VectorXd initPose(dof);
-  initPose.setZero();
-  initPose[20] = 3.14159 * 0.4;
-  initPose[23] = 3.14159 * 0.4;
-  initPose[26] = 3.14159 * 0.4;
-  initPose[29] = 3.14159 * 0.4;
-  myWorld->getSkeleton(0)->setPositions(initPose);
-  myWorld->getSkeleton(0)->computeForwardKinematics(true, true, false);
-
-  // create a ball joint constraint
-  BodyNode* bd1 = myWorld->getSkeleton(0)->getBodyNode("link 6");
-  BodyNode* bd2 = myWorld->getSkeleton(0)->getBodyNode("link 10");
-  bd1->getVisualizationShape(0)->setColor(Eigen::Vector3d(1.0, 0.0, 0.0));
-  bd2->getVisualizationShape(0)->setColor(Eigen::Vector3d(1.0, 0.0, 0.0));
-  Eigen::Vector3d offset(0.0, 0.025, 0.0);
-  Eigen::Vector3d jointPos = bd1->getTransform() * offset;
-  BallJointConstraint *cl = new BallJointConstraint( bd1, bd2, jointPos);
-  //WeldJointConstraint *cl = new WeldJointConstraint(bd1, bd2);
-  myWorld->getConstraintSolver()->addConstraint(cl);
+  world->setGravity(gravity);
+  world->setTimeStep(1.0/1000);
 
   // create a window and link it to the world
-  MyWindow window;
-  window.setWorld(myWorld);
-  
+  MyWindow window(new Controller(robot, robot->getBodyNode("palm")));
+  window.setWorld(world);
+
   glutInit(&argc, argv);
-  window.initWindow(640, 480, "Closed Loop");
+  window.initWindow(640, 480, "Forward Simulation");
   glutMainLoop();
+
+  delete world;
 
   return 0;
 }
