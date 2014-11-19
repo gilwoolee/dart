@@ -51,13 +51,15 @@ simulation::World* SdfParser::readSdfFile(const std::string& _filename)
     //--------------------------------------------------------------------------
     // version attribute
     std::string version = getAttribute(sdfElement, "version");
+    // TODO: We need version aware SDF parser (see #264)
     // We support 1.4 only for now.
-    if (version != "1.4")
+    if (version != "1.4" && version != "1.5")
     {
-        dterr << "The file format of ["
-          << _filename
-          << "] is not sdf 1.4. Please try with sdf 1.4." << std::endl;
-        return NULL;
+      dterr << "The file format of ["
+            << _filename
+            << "] is not sdf 1.4 or 1.5."
+            << std::endl;
+      return NULL;
     }
 
     //--------------------------------------------------------------------------
@@ -103,15 +105,16 @@ dart::dynamics::Skeleton* SdfParser::readSkeleton(const std::string& _filename)
   //--------------------------------------------------------------------------
   // version attribute
   std::string version = getAttribute(sdfElement, "version");
+  // TODO: We need version aware SDF parser (see #264)
   // We support 1.4 only for now.
-  if (version != "1.4")
+  if (version != "1.4" && version != "1.5")
   {
-      dterr << "The file format of ["
-        << _filename
-        << "] is not sdf 1.4. Please try with sdf 1.4." << std::endl;
-      return NULL;
+    dterr << "The file format of ["
+          << _filename
+          << "] is not sdf 1.4 or 1.5."
+          << std::endl;
+    return NULL;
   }
-
   //--------------------------------------------------------------------------
   // Load skeleton
   tinyxml2::XMLElement* skelElement = NULL;

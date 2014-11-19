@@ -311,7 +311,7 @@
         </inertia>
       </inertial>
       <soft_shape>
-        <total_mass>1.0</total_mass>
+        <total_mass>0.15</total_mass>
         <pose>0.005 0 0.045 0 -0 0</pose>
         <geometry>
           <box>
