@@ -301,7 +301,8 @@ public:
 
   /// \brief
   /// This should be called before SoftBodyNode::init() is called
-  static void setBox(
+  /// \warning This is deprecated since DART 4.2. Please use another setBox().
+  DEPRECATED(4.2) static void setBox(
       SoftBodyNode*            _softBodyNode,
       const Eigen::Vector3d&   _size,
       const Eigen::Isometry3d& _localTransfom,
@@ -312,6 +313,9 @@ public:
 
   /// \brief
   /// This should be called before SoftBodyNode::init() is called
+  /// \param[in] _frags Number of vertices along each axis. Each component
+  ///   should be equal or greater than 2. For example, [2 2 2] is fine but
+  ///   [2 1 2] is not allowed.
   static void setBox(
       SoftBodyNode*            _softBodyNode,
       const Eigen::Vector3d&   _size,
