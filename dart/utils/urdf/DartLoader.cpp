@@ -94,6 +94,41 @@ simulation::World* DartLoader::parseWorld(std::string _urdfFileName) {
 }
 
 /**
+ * @function setPackageDirectory
+ */
+void DartLoader::setPackageDirectory(const std::string &_urdfPackageDirectory)
+{
+  mPackageDirectory = _urdfPackageDirectory;
+}
+
+/**
+ * @function getFullFilePath
+ */
+std::string DartLoader::getFullFilePath(const std::string &_filename,
+                                        const std::string& _rootToSkelPath) const
+{
+  std::string fullpath = _filename;
+  size_t p = fullpath.find("package:/");
+  if(p < std::string::npos)
+  {
+    if(mPackageDirectory.empty())
+      dtwarn << "[DartLoader] Trying to load a URDF that uses the 'package://' keyword, "
+                "but you did not set a package directory using "
+                "dart::utils::DartLoader::setPackageDirectory(~). "
+                "This will likely result in a segmentation fault." << std::endl;
+
+    fullpath.erase(p, p+9);
+    fullpath.insert(p, mPackageDirectory);
+  }
+  else
+  {
+    fullpath = _rootToSkelPath + fullpath;
+  }
+
+  return fullpath;
+}
+
+/**
  * @function parseWorldToEntityPaths
  */
 void DartLoader::parseWorldToEntityPaths(const std::string &_xml_string) {
@@ -241,17 +276,20 @@ dynamics::Joint* DartLoader::createDartJoint(const urdf::Joint* _jt)
       joint = new dynamics::RevoluteJoint(toEigen(_jt->axis));
       joint->setPositionLowerLimit(0, _jt->limits->lower);
       joint->setPositionUpperLimit(0, _jt->limits->upper);
-      joint->setDampingCoefficient(0, _jt->dynamics->damping);
+      if (_jt->dynamics)
+          joint->setDampingCoefficient(0, _jt->dynamics->damping);
       break;
   case urdf::Joint::CONTINUOUS:
       joint = new dynamics::RevoluteJoint(toEigen(_jt->axis));
-      joint->setDampingCoefficient(0, _jt->dynamics->damping);
+      if (_jt->dynamics)
+          joint->setDampingCoefficient(0, _jt->dynamics->damping);
       break;
   case urdf::Joint::PRISMATIC:
       joint = new dynamics::PrismaticJoint(toEigen(_jt->axis));
       joint->setPositionLowerLimit(0, _jt->limits->lower);
       joint->setPositionUpperLimit(0, _jt->limits->upper);
-      joint->setDampingCoefficient(0, _jt->dynamics->damping);
+      if (_jt->dynamics)
+          joint->setDampingCoefficient(0, _jt->dynamics->damping);
       break;
   case urdf::Joint::FIXED:
       joint = new dynamics::WeldJoint();
@@ -352,7 +390,7 @@ dynamics::Shape* DartLoader::createShape(const VisualOrCollision* _vizOrCol, std
 
   // Mesh
   else if(urdf::Mesh* mesh = dynamic_cast<urdf::Mesh*>(_vizOrCol->geometry.get())) {
-    std::string fullPath = _rootToSkelPath + mesh->filename;
+    std::string fullPath = getFullFilePath(mesh->filename, _rootToSkelPath);
     const aiScene* model = dynamics::MeshShape::loadMesh( fullPath );
     
     if(!model) {

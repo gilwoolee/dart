@@ -34,71 +34,52 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_UTILS_SDF_SOFTSDFPARSER_H_
-#define DART_UTILS_SDF_SOFTSDFPARSER_H_
+#ifndef APPS_OPERATIONALSPACECONTROL_CONTROLLER_H_
+#define APPS_OPERATIONALSPACECONTROL_CONTROLLER_H_
 
-#include <map>
-#include <string>
-#include <Eigen/Dense>
-#include <Eigen/StdVector>
-// TinyXML-2 Library
-// http://www.grinninglizard.com/tinyxml2/index.html
-#include <tinyxml2.h>
+#include <Eigen/Eigen>
 
-#include "dart/utils/sdf/SdfParser.h"
+#include "dart/gui/SimWindow.h"
+#include "dart/dynamics/Skeleton.h"
 
-namespace dart {
-namespace dynamics {
-class Joint;
-class SoftBodyNode;
-class Skeleton;
-}  // namespace dynamics
-namespace simulation {
-class World;
-}  // namespace simulation
-}  // namespace dart
-
-namespace dart {
-namespace utils {
-
-class SoftSdfParser : public SdfParser
+/// \brief Operational space controller for 6-dof manipulator
+class Controller
 {
 public:
-  /// \brief
-  static simulation::World* readSoftSdfFile(const std::string& _filename);
+  /// \brief Constructor
+  Controller(dart::dynamics::Skeleton* _robot,
+             dart::dynamics::BodyNode* _endEffector);
+
+  /// \brief Destructor
+  virtual ~Controller();
 
   /// \brief
-  static dynamics::Skeleton* readSkeleton(
-      const std::string& _fileName);
+  void update(const Eigen::Vector3d& _targetPosition);
 
-protected:
-  /// \brief
-  static simulation::World* readWorld(
-      tinyxml2::XMLElement* _worldElement,
-      const std::string& _skelPath);
+  /// \brief Get robot
+  dart::dynamics::Skeleton* getRobot() const;
 
-  /// \brief
-  static dynamics::Skeleton* readSkeleton(
-      tinyxml2::XMLElement* _skeletonElement,
-      const std::string& _skelPath);
+  /// \brief Get end effector of the robot
+  dart::dynamics::BodyNode* getEndEffector() const;
 
-  /// \brief
-  static SDFBodyNode readSoftBodyNode(
-      tinyxml2::XMLElement* _softBodyNodeElement,
-      dynamics::Skeleton* _Skeleton,
-      const Eigen::Isometry3d& _skeletonFrame,
-      const std::string& _skelPath);
+  /// \brief Keyboard control
+  virtual void keyboard(unsigned char _key, int _x, int _y);
 
-  /// \brief
-  static dynamics::Joint* readSoftJoint(
-      tinyxml2::XMLElement* _jointElement,
-      const std::vector<SDFBodyNode,
-      Eigen::aligned_allocator<SDFBodyNode> >& _bodies,
-      const Eigen::Isometry3d& _skeletonFrame);
+private:
+  /// \brief Robot
+  dart::dynamics::Skeleton* mRobot;
 
+  /// \brief End-effector of the robot
+  dart::dynamics::BodyNode* mEndEffector;
+
+  /// \brief Control forces
+  Eigen::VectorXd mForces;
+
+  /// \brief Proportional gain for the virtual spring forces at the end effector
+  Eigen::MatrixXd mKp;
+
+  /// \brief Derivative gain for the virtual spring forces at the end effector
+  Eigen::MatrixXd mKv;
 };
 
-} // namespace utils
-} // namespace dart
-
-#endif // #ifndef DART_UTILS_SDF_SOFTSDFPARSER_H_
+#endif  // APPS_OPERATIONALSPACECONTROL_CONTROLLER_H_

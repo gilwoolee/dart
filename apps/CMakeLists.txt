@@ -18,6 +18,10 @@ foreach(APPDIR
     hardcodedDesign
     jointConstraints
     mixedChain
+    operationalSpaceControl
+    rigidChain
+    rigidCubes
+    rigidLoop    
     softBodies
     vehicle
     )

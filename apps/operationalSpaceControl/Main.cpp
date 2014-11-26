@@ -34,71 +34,44 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_UTILS_SDF_SOFTSDFPARSER_H_
-#define DART_UTILS_SDF_SOFTSDFPARSER_H_
+#include "dart/utils/Paths.h"
+#include "dart/math/Helpers.h"
+#include "dart/dynamics/Skeleton.h"
+#include "dart/simulation/World.h"
+#include "dart/utils/SkelParser.h"
+#include "dart/utils/urdf/DartLoader.h"
 
-#include <map>
-#include <string>
-#include <Eigen/Dense>
-#include <Eigen/StdVector>
-// TinyXML-2 Library
-// http://www.grinninglizard.com/tinyxml2/index.html
-#include <tinyxml2.h>
+#include "apps/operationalSpaceControl/MyWindow.h"
 
-#include "dart/utils/sdf/SdfParser.h"
-
-namespace dart {
-namespace dynamics {
-class Joint;
-class SoftBodyNode;
-class Skeleton;
-}  // namespace dynamics
-namespace simulation {
-class World;
-}  // namespace simulation
-}  // namespace dart
-
-namespace dart {
-namespace utils {
-
-class SoftSdfParser : public SdfParser
+int main(int argc, char* argv[])
 {
-public:
-  /// \brief
-  static simulation::World* readSoftSdfFile(const std::string& _filename);
+  // create and initialize the world
+  dart::simulation::World* world = new dart::simulation::World;
+  assert(world != NULL);
 
-  /// \brief
-  static dynamics::Skeleton* readSkeleton(
-      const std::string& _fileName);
+  // load skeletons
+  dart::utils::DartLoader dl;
+  dart::dynamics::Skeleton* ground
+          = dl.parseSkeleton(DART_DATA_PATH"urdf/KR5/ground.urdf");
+  dart::dynamics::Skeleton* robot
+          = dl.parseSkeleton(DART_DATA_PATH"urdf/KR5/KR5 sixx R650.urdf");
+  world->addSkeleton(ground);
+  world->addSkeleton(robot);
 
-protected:
-  /// \brief
-  static simulation::World* readWorld(
-      tinyxml2::XMLElement* _worldElement,
-      const std::string& _skelPath);
+  // create and initialize the world
+  Eigen::Vector3d gravity(0.0, -9.81, 0.0);
+  world->setGravity(gravity);
+  world->setTimeStep(1.0/1000);
 
-  /// \brief
-  static dynamics::Skeleton* readSkeleton(
-      tinyxml2::XMLElement* _skeletonElement,
-      const std::string& _skelPath);
+  // create a window and link it to the world
+  MyWindow window(new Controller(robot, robot->getBodyNode("palm")));
+  window.setWorld(world);
 
-  /// \brief
-  static SDFBodyNode readSoftBodyNode(
-      tinyxml2::XMLElement* _softBodyNodeElement,
-      dynamics::Skeleton* _Skeleton,
-      const Eigen::Isometry3d& _skeletonFrame,
-      const std::string& _skelPath);
+  glutInit(&argc, argv);
+  window.initWindow(640, 480, "Forward Simulation");
+  glutMainLoop();
 
-  /// \brief
-  static dynamics::Joint* readSoftJoint(
-      tinyxml2::XMLElement* _jointElement,
-      const std::vector<SDFBodyNode,
-      Eigen::aligned_allocator<SDFBodyNode> >& _bodies,
-      const Eigen::Isometry3d& _skeletonFrame);
+  delete world;
 
-};
-
-} // namespace utils
-} // namespace dart
-
-#endif // #ifndef DART_UTILS_SDF_SOFTSDFPARSER_H_
+  return 0;
+}
