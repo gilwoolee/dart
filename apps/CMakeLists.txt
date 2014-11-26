@@ -7,15 +7,12 @@ foreach(APPDIR
     atlasSimbicon
     bipedStand
     cubli
-    #inertiaBot
+    hardcodedDesign
+    inertiaBot
     inertiaDisp
     inertiaEllipsoidTest
     inertiaPlanning
     inertiaPlanningTest
-    rigidLoop
-    rigidCubes
-    rigidChain
-    hardcodedDesign
     jointConstraints
     mixedChain
     operationalSpaceControl
