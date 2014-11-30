@@ -8,7 +8,7 @@ foreach(APPDIR
     bipedStand
     cubli
     hardcodedDesign
-    inertiaBot
+#    inertiaBot
     inertiaDisp
     inertiaEllipsoidTest
     inertiaPlanning
