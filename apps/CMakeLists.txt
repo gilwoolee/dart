@@ -5,6 +5,7 @@ set_property(DIRECTORY PROPERTY FOLDER Apps)
 foreach(APPDIR
     addDeleteSkels
     atlasSimbicon
+    bioloid
     bipedStand
     cubli
     hardcodedDesign
