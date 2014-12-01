@@ -46,6 +46,7 @@
 
 #include "apps/bioloid/MyWindow.h"
 #include "apps/bioloid/Controller.h"
+#include "apps/bioloid/ManualController.h"
 
 using namespace Eigen;
 using namespace dart;
@@ -75,8 +76,8 @@ int main(int argc, char* argv[])
         new BulletCollisionDetector());
 
   // create controller
-  Controller* myController = new Controller(myWorld->getSkeleton("BioloidGP"),
-                                            myWorld);
+  Controller* myController
+      = new ManualController(myWorld->getSkeleton("BioloidGP"), myWorld);
 
   // create a window and link it to the world
   MyWindow window;

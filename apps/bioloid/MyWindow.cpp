@@ -66,6 +66,8 @@ void MyWindow::timeStepping()
 //  dart::dynamics::SoftBodyNode* softBodyNode = Skeleton->getSoftBodyNode(0);
 //  softBodyNode->addExtForce(mForceOnRigidBody);
 
+  mController->update(mWorld->getTime());
+
   mWorld->step();
 
   // for perturbation test
@@ -202,6 +204,9 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
     default:
       Win3D::keyboard(key, x, y);
   }
+
+  mController->keyboard(key);
+
   glutPostRedisplay();
 }
 
