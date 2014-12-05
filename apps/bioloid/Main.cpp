@@ -65,10 +65,29 @@ int main(int argc, char* argv[])
   Skeleton* ground = dl.parseSkeleton(DART_DATA_PATH"urdf/ground.urdf");
   Skeleton* bioloid = dl.parseSkeleton(DART_DATA_PATH"urdf/BioloidGP/BioloidGP.URDF");
 
+  for (int i = 0; i < bioloid->getNumBodyNodes(); ++i)
+  {
+    BodyNode* body  = bioloid->getBodyNode(i);
+    Joint*    joint = body->getParentJoint();
+    joint->setPositionLimited(false);
+    for (int j = 0; j < joint->getNumDofs(); ++j)
+    {
+      joint->setSpringStiffness(j, 0.0);
+      joint->setDampingCoefficient(j, 0.0);
+    }
+  }
+
+  bioloid->getJoint("l_shoulder")->setPosition(0, 1.0*DART_PI);
+  bioloid->getJoint("r_shoulder")->setPosition(0, 1.0*DART_PI);
+  bioloid->getJoint("l_hand")->setPosition(0, -0.5*DART_PI);
+  bioloid->getJoint("r_hand")->setPosition(0, -0.5*DART_PI);
+  bioloid->computeForwardKinematics(true, true, false);
+
   Vector3d gravity(0.0, 0.0, -9.81);
   Vector3d zero = Vector3d::Zero();
 
   myWorld->setGravity(zero);
+  myWorld->setTimeStep(0.0001);
   myWorld->addSkeleton(ground);
   myWorld->addSkeleton(bioloid);
 

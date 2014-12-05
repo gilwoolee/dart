@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 
   // create controller
   Controller* controller = new Controller(myWorld->getSkeleton("robot"));
-  controller->setInitState(0, DART_RADIAN*160.0, DART_RADIAN*60.0, 0);
+  controller->setInitState(0, DART_RADIAN*0.0, DART_RADIAN*0.0, 0);
 //  controller->setFinalState(DART_RADIAN*90.0, 0, DART_RADIAN*10.0, 0);
   controller->setDesiredRotation(DART_RADIAN*180.0);
   controller->setDuration(6.0);

@@ -63,6 +63,7 @@ ManualController::ManualController(Skeleton* _skel,
     mKp(i, i) = 0.1;
     mKd(i, i) = 0.025;
   }
+  setHomeDesiredDofs();
 }
 
 ManualController::~ManualController()
@@ -100,7 +101,7 @@ void ManualController::update(double _time)
   mSkel->setForces(VectorXd::Zero(mSkel->getNumDofs()));
   mSkel->clearConstraintImpulses();
 
-  std::cout << "torque: " << getTorques().transpose() << std::endl;
+//  std::cout << "torque: " << getTorques().transpose() << std::endl;
 
   mSkel->setForces(getTorques());
 }
@@ -123,44 +124,85 @@ void ManualController::keyboard(unsigned char _key)
   switch(_key)
   {
     case 's': // center, linkage extended
-      setDesiredDof(6, 0.0);
-      setDesiredDof(7, 0.0);
+      setHomeDesiredDofs();
       break;
     case 'e': // top-right,
-      setDesiredDof(6, 0.9*pi);
-      setDesiredDof(7, 0.9*pi);
+      setHomeDesiredDofs();
+      setDesiredDof(6, -0.5*pi); // l_hip
+      setDesiredDof(8, -0.5*pi); // r_hip
+      setDesiredDof(11, 0.5*pi); // l_arm
+      setDesiredDof(13, 0.5*pi); // r_arm
       break;
     case 'w': // top
-      setDesiredDof(6, 0.0*pi);
-      setDesiredDof(7, 0.9*pi);
+      setHomeDesiredDofs();
+      setDesiredDof(6, -0.5*pi); // l_hip
+      setDesiredDof(8, -0.5*pi); // r_hip
+      setDesiredDof(11, 0.0*pi); // l_arm
+      setDesiredDof(13, 0.0*pi); // r_arm
       break;
     case 'q': // top-left, linkage collapsed (inverted)
-      setDesiredDof(6, -0.9*pi);
-      setDesiredDof(7, 0.9*pi);
+      setHomeDesiredDofs();
+      setDesiredDof(6, -0.5*pi); // l_hip
+      setDesiredDof(8, -0.5*pi); // r_hip
+      setDesiredDof(11, -0.5*pi); // l_arm
+      setDesiredDof(13, -0.5*pi); // r_arm
       break;
     case 'a': // left
-      setDesiredDof(6, -0.9*pi);
-      setDesiredDof(7, 0.0*pi);
+      setHomeDesiredDofs();
+      setDesiredDof(6, 0.0*pi); // l_hip
+      setDesiredDof(8, 0.0*pi); // r_hip
+      setDesiredDof(11, -0.5*pi); // l_arm
+      setDesiredDof(13, -0.5*pi); // r_arm
       break;
     case 'z': // bottom-left
-      setDesiredDof(6, -0.9*pi);
-      setDesiredDof(7, -0.9*pi);
+      setHomeDesiredDofs();
+      setDesiredDof(6, 0.5*pi); // l_hip
+      setDesiredDof(8, 0.5*pi); // r_hip
+      setDesiredDof(11, -0.5*pi); // l_arm
+      setDesiredDof(13, -0.5*pi); // r_arm
       break;
     case 'x': // bottom, left link extended
-      setDesiredDof(6, 0.0);
-      setDesiredDof(7, -0.9*pi);
+      setHomeDesiredDofs();
+      setDesiredDof(6, 0.5*pi); // l_hip
+      setDesiredDof(8, 0.5*pi); // r_hip
+      setDesiredDof(11, 0.0*pi); // l_arm
+      setDesiredDof(13, 0.0*pi); // r_arm
       break;
     case 'c': // bottom-right, linkage collapsed
-      setDesiredDof(6, 0.9*pi);
-      setDesiredDof(7, -0.9*pi);
+      setHomeDesiredDofs();
+      setDesiredDof(6, 0.5*pi); // l_hip
+      setDesiredDof(8, 0.5*pi); // r_hip
+      setDesiredDof(11, 0.5*pi); // l_arm
+      setDesiredDof(13, 0.5*pi); // r_arm
       break;
     case 'd': // right, right link extended
-      setDesiredDof(6, 0.5*pi);
-      setDesiredDof(7, 0.0);
+      setHomeDesiredDofs();
+      setDesiredDof(6, 0.0*pi); // l_hip
+      setDesiredDof(8, 0.0*pi); // r_hip
+      setDesiredDof(11, 0.5*pi); // l_arm
+      setDesiredDof(13, 0.5*pi); // r_arm
       break;
     default:
       break;
   }
+}
+
+void ManualController::setZeroDesiredDofs()
+{
+  mDesiredDofs.setZero();
+}
+
+void ManualController::setHomeDesiredDofs()
+{
+  mDesiredDofs.setZero();
+
+  const double pi = DART_PI;
+
+  setDesiredDof(7, 1.0*pi);
+  setDesiredDof(9, 1.0*pi);
+
+  setDesiredDof(15, -0.5*pi);
+  setDesiredDof(17, -0.5*pi);
 }
 
 void ManualController::setDesiredDof(int _index, double _val)

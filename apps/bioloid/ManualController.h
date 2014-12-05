@@ -78,6 +78,12 @@ public:
 
   //----------------------------------------------------------------------------
   /// \brief
+  void setZeroDesiredDofs();
+
+  /// \brief
+  void setHomeDesiredDofs();
+
+  /// \brief
   void setDesiredDof(int _index, double _val);
 
   /// \brief
