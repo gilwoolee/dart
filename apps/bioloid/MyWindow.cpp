@@ -104,6 +104,24 @@ void MyWindow::drawSkels()
   }
 
   SimWindow::drawSkels();
+
+//  for (unsigned int i = 0; i < mWorld->getNumSkeletons(); ++i)
+//  {
+//    dart::dynamics::Skeleton* skel = mWorld->getSkeleton(i);
+
+//    if (mVisibleCOM)
+    {
+      dart::dynamics::Skeleton* skel = mWorld->getSkeleton(1);
+      Eigen::Vector3d com   = skel->getWorldCOM();
+
+      mRI->pushMatrix();
+      mRI->setPenColor(Eigen::Vector3d(0.2, 0.8, 0.2));
+      mRI->translate(com);
+      mRI->drawEllipsoid(Eigen::Vector3d(0.025, 0.025, 0.025));
+      mRI->popMatrix();
+    }
+
+//  }
 }
 
 void MyWindow::keyboard(unsigned char key, int x, int y)
