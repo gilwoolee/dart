@@ -81,6 +81,9 @@ int main(int argc, char* argv[])
   bioloid->getJoint("r_shoulder")->setPosition(0, 1.0*DART_PI);
   bioloid->getJoint("l_hand")->setPosition(0, -0.5*DART_PI);
   bioloid->getJoint("r_hand")->setPosition(0, -0.5*DART_PI);
+
+  bioloid->getJoint(0)->setVelocity(0, 1);
+
   bioloid->computeForwardKinematics(true, true, false);
 
   Vector3d gravity(0.0, 0.0, -9.81);

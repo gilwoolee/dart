@@ -60,8 +60,8 @@ ManualController::ManualController(Skeleton* _skel,
   for (int i = 0; i < nDof; i++)
   {
     mDesiredDofs[i] = 0.0;
-    mKp(i, i) = 0.1;
-    mKd(i, i) = 0.025;
+    mKp(i, i) = 0.5;
+    mKd(i, i) = 0.1;
   }
   setHomeDesiredDofs();
 }
@@ -239,5 +239,7 @@ void ManualController::evalTorques()
   //std::cout << mTorques.transpose() << std::endl;
 
   mTorques = -mKp * (_q - mDesiredDofs) - mKd * _dq;
+
+  mTorques.head(6) = Eigen::Vector6d::Zero();
 }
 
