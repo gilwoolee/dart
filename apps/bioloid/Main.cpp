@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
   bioloid->getJoint("l_hand")->setPosition(0, -0.5*DART_PI);
   bioloid->getJoint("r_hand")->setPosition(0, -0.5*DART_PI);
 
-  bioloid->getJoint(0)->setVelocity(0, 1);
+//  bioloid->getJoint(0)->setVelocity(0, 1);
 
   bioloid->computeForwardKinematics(true, true, false);
 
