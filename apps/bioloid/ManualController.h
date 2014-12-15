@@ -111,6 +111,7 @@ protected:
 
   /// \brief
   Eigen::MatrixXd mKd;
+
 };
 
 #endif  // APPS_BIOLOID_MANUALCONTROLLER_H_

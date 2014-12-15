@@ -597,6 +597,14 @@ public:
 
   Eigen::Matrix6d getTotalSpatialInertiaTensorCom() const;
 
+  /// \brief Get generalized momentum at a point _offset from the origin of
+  ///        the local frame.
+  /// \param[in] _position
+  /// \return 6-dimensional vector. The first 3 values are for angular
+  ///         momentum and the last 3 values are for linear momentum.
+  Eigen::Vector6d getMomentum(const Eigen::Vector3d& _position
+                              = Eigen::Vector3d::Zero()) const;
+
   bool mShowTotalInertia;
 
   double setDesiredIzz(double _Izz);

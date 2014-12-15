@@ -104,6 +104,20 @@ void ManualController::update(double _time)
 //  std::cout << "torque: " << getTorques().transpose() << std::endl;
 
   mSkel->setForces(getTorques());
+
+  // Plotting angular velocity of the root body
+  BodyNode* root = mSkel->getBodyNode(0);
+  const Eigen::Vector3d w = root->getWorldAngularVelocity();
+
+  double angVelocityNorm = w.norm();
+
+  const Eigen::Vector6d V = mSkel->getMomentum();
+
+  double angMomentumNorm = V.head<3>().norm();
+
+  mAngVelocityNorms.push_back(angVelocityNorm);
+  mAngMomentumNorms.push_back(angMomentumNorm);
+  mTime.push_back(mWorld->getTime());
 }
 
 const VectorXd& ManualController::getTorques() const

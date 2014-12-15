@@ -219,6 +219,11 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
 
       break;
     }
+    case 'u':
+    {
+      mController->printAngularVelocityAndMomentumNorms("angular.txt");
+      break;
+    }
     default:
       Win3D::keyboard(key, x, y);
   }

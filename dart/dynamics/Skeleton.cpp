@@ -2353,5 +2353,28 @@ double Skeleton::getPotentialEnergy() const
   return PE;
 }
 
+//==============================================================================
+Eigen::Vector6d Skeleton::getMomentum(const Eigen::Vector3d& _position) const
+{
+  Eigen::Vector6d H = Eigen::Vector6d::Zero();
+
+  Eigen::Isometry3d Tso(Eigen::AngleAxisd() * Eigen::Translation3d(_position));
+
+  assert(Tso.translation() == _position);
+  assert(Tso.linear()      == Eigen::Matrix3d::Identity());
+
+  for (size_t i = 0; i < mBodyNodes.size(); ++i)
+  {
+    BodyNode* body = mBodyNodes[i];
+    Eigen::Vector6d localH
+        = math::dAdInvT(Tso.inverse() * body->getTransform(),
+                        body->getSpatialInertia() * body->getBodyVelocity());
+
+    H += localH;
+  }
+
+  return H;
+}
+
 }  // namespace dynamics
 }  // namespace dart

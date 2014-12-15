@@ -37,6 +37,7 @@
 #include "apps/bioloid/Controller.h"
 
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -110,3 +111,22 @@ void Controller::printDebugInfo() const
   }
 }
 
+void Controller::printAngularVelocityAndMomentumNorms(const string& _fileName)
+{
+  std::ofstream file;
+  std::string fullName = std::string(DART_DATA_PATH) + _fileName;
+  file.open(fullName.c_str());
+
+  int nFrames = mAngVelocityNorms.size();
+
+  for (int i = 0; i < nFrames; ++i)
+  {
+    file << mTime[i] << " "
+         << mAngVelocityNorms[i] << " "
+         << mAngMomentumNorms[i] << std::endl;
+  }
+
+  file.close();
+
+  std::cout << "Angular info is saved to [" << _fileName << "]" << std::endl;
+}

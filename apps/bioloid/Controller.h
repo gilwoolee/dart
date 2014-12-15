@@ -105,6 +105,8 @@ public:
   /// \brief
   void printDebugInfo() const;
 
+  virtual void printAngularVelocityAndMomentumNorms(const std::string& _fileName);
+
 protected:
   /// \brief
   dart::dynamics::Skeleton* mSkel;
@@ -114,6 +116,10 @@ protected:
 
   /// \brief
   double mCurrentTime;
+
+  std::vector<double> mTime;
+  std::vector<double> mAngVelocityNorms;
+  std::vector<double> mAngMomentumNorms;
 };
 
 #endif  // APPS_BIOLOID_CONTROLLER_H_
