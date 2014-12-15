@@ -34,86 +34,83 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APPS_BIOLOID_CONTROLLER_H_
-#define APPS_BIOLOID_CONTROLLER_H_
+#ifndef APPS_BIOLOIDMOTIONOPTIMIZATION_MANUALCONTROLLER_H_
+#define APPS_BIOLOIDMOTIONOPTIMIZATION_MANUALCONTROLLER_H_
 
 #include <Eigen/Dense>
 
 #include "dart/dart.h"
 
-#include "apps/bioloidMotionOptimization/Motion.h"
+#include "apps/bioloidMotionOptimization/Controller.h"
 
-/*
-rootJoint(6)
-
-l_hip(1)
-l_thigh(1)
-l_shin(1)
-l_heel(1)
-l_foot(1)
-
-r_hip(1)
-r_thigh(1)
-r_shin(1)
-r_heel(1)
-r_foot(1)
-
-l_shoulder(1)
-l_arm(1)
-l_hand(1)
-
-r_shoulder(1)
-r_arm(1)
-r_hand(1)
- */
-
-/// \brief Base c
-class Controller
+/// \brief
+class ManualController : public Controller
 {
 public:
   /// \brief Constructor
-  Controller(dart::dynamics::Skeleton* _skel,
-             dart::simulation::World* _world);
+  ManualController(dart::dynamics::Skeleton* _skel,
+                   dart::simulation::World* _world);
 
   /// \brief Destructor
-  virtual ~Controller();
+  virtual ~ManualController();
 
-  /// \brief Called once before the simulation.
+  //------------------------- class Controller ---------------------------------
+  // Documentation inherited.
   virtual void prestep(double _currentTime);
 
-  /// \brief
+  // Documentation inherited.
   virtual void activate(double _currentTime);
 
-  /// \brief
+  // Documentation inherited.
   virtual void deactivate(double _currentTime);
 
-  /// \brief Called before every simulation time step in MyWindow class.
+  // Documentation inherited.
   virtual void update(double _time);
 
-  /// \brief
-  virtual const Eigen::VectorXd& getTorques() {}// const = 0;
+  // Documentation inherited.
+  virtual const Eigen::VectorXd& getTorques() const;
 
-  /// \brief
-  virtual double getTorque(int _index) {}// const = 0;
+  // Documentation inherited.
+  virtual double getTorque(int _index) const;
 
-  /// \brief
+  // Documentation inherited.
   virtual void keyboard(unsigned char _key);
 
+  //----------------------------------------------------------------------------
   /// \brief
-  virtual dart::dynamics::Skeleton* getSkeleton();
+  void setZeroDesiredDofs();
 
   /// \brief
-  void printDebugInfo() const;
+  void setHomeDesiredDofs();
+
+  /// \brief
+  void setDesiredDof(int _index, double _val);
+
+  /// \brief
+  const Eigen::VectorXd& getDesiredDofs() const;
+
+  /// \brief
+  const Eigen::VectorXd& getKp() const;
+
+  /// \brief
+  const Eigen::VectorXd& getKd() const;
 
 protected:
   /// \brief
-  dart::dynamics::Skeleton* mSkel;
+  void evalTorques();
+
+protected:
+  /// \brief
+  Eigen::VectorXd mTorques;
 
   /// \brief
-  dart::simulation::World* mWorld;
+  Eigen::VectorXd mDesiredDofs;
 
   /// \brief
-  double mCurrentTime;
+  Eigen::MatrixXd mKp;
+
+  /// \brief
+  Eigen::MatrixXd mKd;
 };
 
-#endif  // APPS_BIOLOID_CONTROLLER_H_
+#endif  // APPS_BIOLOIDMOTIONOPTIMIZATION_MANUALCONTROLLER_H_

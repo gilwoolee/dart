@@ -34,8 +34,8 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APPS_BIOLOID_CONTROLLER_H_
-#define APPS_BIOLOID_CONTROLLER_H_
+#ifndef APPS_BIOLOIDMOTIONOPTIMIZATION_MOTIONOPTIMIZER_H_
+#define APPS_BIOLOIDMOTIONOPTIMIZATION_MOTIONOPTIMIZER_H_
 
 #include <Eigen/Dense>
 
@@ -43,77 +43,78 @@
 
 #include "apps/bioloidMotionOptimization/Motion.h"
 
-/*
-rootJoint(6)
-
-l_hip(1)
-l_thigh(1)
-l_shin(1)
-l_heel(1)
-l_foot(1)
-
-r_hip(1)
-r_thigh(1)
-r_shin(1)
-r_heel(1)
-r_foot(1)
-
-l_shoulder(1)
-l_arm(1)
-l_hand(1)
-
-r_shoulder(1)
-r_arm(1)
-r_hand(1)
- */
-
 /// \brief Base c
-class Controller
+class MotionOptimizer
 {
 public:
   /// \brief Constructor
-  Controller(dart::dynamics::Skeleton* _skel,
-             dart::simulation::World* _world);
+  MotionOptimizer(dart::dynamics::Skeleton* _robot);
 
   /// \brief Destructor
-  virtual ~Controller();
+  virtual ~MotionOptimizer();
 
-  /// \brief Called once before the simulation.
-  virtual void prestep(double _currentTime);
-
-  /// \brief
-  virtual void activate(double _currentTime);
-
-  /// \brief
-  virtual void deactivate(double _currentTime);
-
-  /// \brief Called before every simulation time step in MyWindow class.
-  virtual void update(double _time);
-
-  /// \brief
-  virtual const Eigen::VectorXd& getTorques() {}// const = 0;
-
-  /// \brief
-  virtual double getTorque(int _index) {}// const = 0;
-
-  /// \brief
-  virtual void keyboard(unsigned char _key);
-
-  /// \brief
-  virtual dart::dynamics::Skeleton* getSkeleton();
-
-  /// \brief
-  void printDebugInfo() const;
+  void optimize();
 
 protected:
-  /// \brief
+
+  class ObjFunc : public dart::optimizer::Function
+  {
+  public:
+    /// \brief Constructor
+    ObjFunc() : Function() {}
+
+    /// \brief Destructor
+    virtual ~ObjFunc() {}
+
+    /// \copydoc Function::eval
+    virtual double eval(Eigen::Map<const Eigen::VectorXd>& _x)
+    {
+      return std::sqrt(_x[1]);
+    }
+
+    /// \copydoc Function::evalGradient
+    virtual void evalGradient(Eigen::Map<const Eigen::VectorXd>& _x,
+                              Eigen::Map<Eigen::VectorXd> _grad)
+    {
+      _grad[0] = 0.0;
+      _grad[1] = 0.5 / std::sqrt(_x[1]);
+    }
+  };
+
+  class ConstFunc : public dart::optimizer::Function
+  {
+  public:
+    /// \brief Constructor
+    ConstFunc(double _a, double _b) : Function(), mA(_a), mB(_b) {}
+
+    /// \brief Destructor
+    virtual ~ConstFunc() {}
+
+    /// \copydoc Function::eval
+    virtual double eval(Eigen::Map<const Eigen::VectorXd>& _x)
+    {
+      return ((mA*_x[0] + mB) * (mA*_x[0] + mB) * (mA*_x[0] + mB) - _x[1]);
+    }
+
+    /// \copydoc Function::evalGradient
+    virtual void evalGradient(Eigen::Map<const Eigen::VectorXd>& _x,
+                              Eigen::Map<Eigen::VectorXd> _grad)
+    {
+      _grad[0] = 3 * mA * (mA*_x[0] + mB) * (mA*_x[0] + mB);
+      _grad[1] = -1.0;
+    }
+
+  private:
+    /// \brief Data
+    double mA;
+
+    /// \brief Data
+    double mB;
+  };
+
   dart::dynamics::Skeleton* mSkel;
 
-  /// \brief
-  dart::simulation::World* mWorld;
-
-  /// \brief
-  double mCurrentTime;
+  BezierCurveMotion mMotion;
 };
 
-#endif  // APPS_BIOLOID_CONTROLLER_H_
+#endif  // APPS_BIOLOIDMOTIONOPTIMIZATION_MOTIONOPTIMIZER_H_

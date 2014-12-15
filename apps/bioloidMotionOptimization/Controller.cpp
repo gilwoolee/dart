@@ -34,86 +34,79 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APPS_BIOLOID_CONTROLLER_H_
-#define APPS_BIOLOID_CONTROLLER_H_
+#include "apps/bioloidMotionOptimization/Controller.h"
 
-#include <Eigen/Dense>
+#include <iostream>
 
-#include "dart/dart.h"
+using namespace std;
 
-#include "apps/bioloidMotionOptimization/Motion.h"
+using namespace Eigen;
 
-/*
-rootJoint(6)
+using namespace dart;
+using namespace constraint;
+using namespace dynamics;
+using namespace simulation;
 
-l_hip(1)
-l_thigh(1)
-l_shin(1)
-l_heel(1)
-l_foot(1)
-
-r_hip(1)
-r_thigh(1)
-r_shin(1)
-r_heel(1)
-r_foot(1)
-
-l_shoulder(1)
-l_arm(1)
-l_hand(1)
-
-r_shoulder(1)
-r_arm(1)
-r_hand(1)
- */
-
-/// \brief Base c
-class Controller
+Controller::Controller(Skeleton* _skel,
+                       World* _world)
+  : mSkel(_skel),
+    mWorld(_world)
 {
-public:
-  /// \brief Constructor
-  Controller(dart::dynamics::Skeleton* _skel,
-             dart::simulation::World* _world);
+}
 
-  /// \brief Destructor
-  virtual ~Controller();
+Controller::~Controller()
+{
+}
 
-  /// \brief Called once before the simulation.
-  virtual void prestep(double _currentTime);
+void Controller::prestep(double _currentTime)
+{
+}
 
-  /// \brief
-  virtual void activate(double _currentTime);
+void Controller::activate(double _currentTime)
+{
+}
 
-  /// \brief
-  virtual void deactivate(double _currentTime);
+void Controller::deactivate(double _currentTime)
+{
+}
 
-  /// \brief Called before every simulation time step in MyWindow class.
-  virtual void update(double _time);
+void Controller::update(double _time)
+{
+  mCurrentTime = _time;
+}
 
-  /// \brief
-  virtual const Eigen::VectorXd& getTorques() {}// const = 0;
+void Controller::keyboard(unsigned char _key)
+{
+}
 
-  /// \brief
-  virtual double getTorque(int _index) {}// const = 0;
+Skeleton* Controller::getSkeleton()
+{
+  return mSkel;
+}
 
-  /// \brief
-  virtual void keyboard(unsigned char _key);
+void Controller::printDebugInfo() const
+{
+  std::cout << "[BioloidGP]"  << std::endl
+            << " NUM NODES : " << mSkel->getNumBodyNodes() << std::endl
+            << " NUM DOF   : " << mSkel->getNumDofs() << std::endl
+            << " NUM JOINTS: " << mSkel->getNumBodyNodes() << std::endl;
 
-  /// \brief
-  virtual dart::dynamics::Skeleton* getSkeleton();
+  for(size_t i = 0; i < mSkel->getNumBodyNodes(); ++i)
+  {
+    Joint* joint = mSkel->getJoint(i);
+    BodyNode* body = mSkel->getBodyNode(i);
+    BodyNode* parentBody = mSkel->getBodyNode(i)->getParentBodyNode();
 
-  /// \brief
-  void printDebugInfo() const;
+    std::cout << "  Joint [" << i << "]: "
+              << joint->getName()
+              << " (" << joint->getNumDofs() << ")"
+              << std::endl;
+    if (parentBody != NULL)
+    {
+      std::cout << "    Parent body: " << parentBody->getName() << std::endl;
+    }
 
-protected:
-  /// \brief
-  dart::dynamics::Skeleton* mSkel;
+    std::cout << "    Child body : " << body->getName() << std::endl;
+  }
+}
 
-  /// \brief
-  dart::simulation::World* mWorld;
-
-  /// \brief
-  double mCurrentTime;
-};
-
-#endif  // APPS_BIOLOID_CONTROLLER_H_

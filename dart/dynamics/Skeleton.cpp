@@ -2213,7 +2213,7 @@ Eigen::Vector3d Skeleton::getWorldCOM() const
   const int nNodes = getNumBodyNodes();
   for (int i = 0; i < nNodes; i++)
   {
-    BodyNode* bodyNode = getBodyNode(i);
+    const BodyNode* bodyNode = getBodyNode(i);
     com += bodyNode->getMass() * bodyNode->getWorldCOM();
   }
 

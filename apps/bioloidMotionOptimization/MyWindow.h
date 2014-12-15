@@ -19,6 +19,12 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
+ *   * This code incorporates portions of Open Dynamics Engine
+ *     (Copyright (c) 2001-2004, Russell L. Smith. All rights
+ *     reserved.) and portions of FCL (Copyright (c) 2011, Willow
+ *     Garage, Inc. All rights reserved.), which were released under
+ *     the same BSD license as below
+ *
  *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
  *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
  *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -34,86 +40,51 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APPS_BIOLOID_CONTROLLER_H_
-#define APPS_BIOLOID_CONTROLLER_H_
-
-#include <Eigen/Dense>
+#ifndef APPS_BIOLOIDMOTIONOPTIMIZATION_MYWINDOW_H_
+#define APPS_BIOLOIDMOTIONOPTIMIZATION_MYWINDOW_H_
 
 #include "dart/dart.h"
 
-#include "apps/bioloidMotionOptimization/Motion.h"
+#include "apps/bioloidMotionOptimization/Controller.h"
 
-/*
-rootJoint(6)
-
-l_hip(1)
-l_thigh(1)
-l_shin(1)
-l_heel(1)
-l_foot(1)
-
-r_hip(1)
-r_thigh(1)
-r_shin(1)
-r_heel(1)
-r_foot(1)
-
-l_shoulder(1)
-l_arm(1)
-l_hand(1)
-
-r_shoulder(1)
-r_arm(1)
-r_hand(1)
- */
-
-/// \brief Base c
-class Controller
+/// \brief
+class MyWindow : public dart::gui::SoftSimWindow
 {
 public:
-  /// \brief Constructor
-  Controller(dart::dynamics::Skeleton* _skel,
-             dart::simulation::World* _world);
-
-  /// \brief Destructor
-  virtual ~Controller();
-
-  /// \brief Called once before the simulation.
-  virtual void prestep(double _currentTime);
+  /// \brief
+  MyWindow();
 
   /// \brief
-  virtual void activate(double _currentTime);
+  virtual ~MyWindow();
 
   /// \brief
-  virtual void deactivate(double _currentTime);
-
-  /// \brief Called before every simulation time step in MyWindow class.
-  virtual void update(double _time);
+  virtual void timeStepping();
 
   /// \brief
-  virtual const Eigen::VectorXd& getTorques() {}// const = 0;
+  virtual void keyboard(unsigned char key, int x, int y);
 
   /// \brief
-  virtual double getTorque(int _index) {}// const = 0;
+  virtual void drawSkels();
+
+  ///
+  void setController(Controller* _controller);
+
+private:
+  /// \brief
+  Eigen::Vector3d mForceOnRigidBody;
+
+  /// \brief Number of frames for applying external force
+  int mImpulseDuration;
 
   /// \brief
-  virtual void keyboard(unsigned char _key);
+  Eigen::Vector3d mForceOnVertex;
 
-  /// \brief
-  virtual dart::dynamics::Skeleton* getSkeleton();
+  ///
+  Controller* mController;
 
-  /// \brief
-  void printDebugInfo() const;
+  int mCurrentJointId;
 
-protected:
-  /// \brief
-  dart::dynamics::Skeleton* mSkel;
-
-  /// \brief
-  dart::simulation::World* mWorld;
-
-  /// \brief
-  double mCurrentTime;
+//  int mDof;
 };
 
-#endif  // APPS_BIOLOID_CONTROLLER_H_
+#endif  // APPS_BIOLOIDMOTIONOPTIMIZATION_MYWINDOW_H_

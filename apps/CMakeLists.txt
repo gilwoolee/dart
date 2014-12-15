@@ -6,6 +6,7 @@ foreach(APPDIR
     addDeleteSkels
     atlasSimbicon
     bioloid
+    bioloidMotionOptimization
     bipedStand
     cubli
     hardcodedDesign

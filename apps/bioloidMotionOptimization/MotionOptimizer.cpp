@@ -34,86 +34,59 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef APPS_BIOLOID_CONTROLLER_H_
-#define APPS_BIOLOID_CONTROLLER_H_
+#include "apps/bioloidMotionOptimization/MotionOptimizer.h"
 
-#include <Eigen/Dense>
+#include <iostream>
 
-#include "dart/dart.h"
+using namespace std;
 
-#include "apps/bioloidMotionOptimization/Motion.h"
+using namespace Eigen;
 
-/*
-rootJoint(6)
+using namespace dart;
+using namespace constraint;
+using namespace dynamics;
+using namespace simulation;
+using namespace optimizer;
 
-l_hip(1)
-l_thigh(1)
-l_shin(1)
-l_heel(1)
-l_foot(1)
-
-r_hip(1)
-r_thigh(1)
-r_shin(1)
-r_heel(1)
-r_foot(1)
-
-l_shoulder(1)
-l_arm(1)
-l_hand(1)
-
-r_shoulder(1)
-r_arm(1)
-r_hand(1)
- */
-
-/// \brief Base c
-class Controller
+//==============================================================================
+MotionOptimizer::MotionOptimizer(Skeleton* _robot)
+  : mSkel(_robot),
+    mMotion(_robot)
 {
-public:
-  /// \brief Constructor
-  Controller(dart::dynamics::Skeleton* _skel,
-             dart::simulation::World* _world);
+  assert(_robot != nullptr);
+}
 
-  /// \brief Destructor
-  virtual ~Controller();
+//==============================================================================
+MotionOptimizer::~MotionOptimizer()
+{
 
-  /// \brief Called once before the simulation.
-  virtual void prestep(double _currentTime);
+}
 
-  /// \brief
-  virtual void activate(double _currentTime);
+//==============================================================================
+void MotionOptimizer::optimize()
+{
+  Problem prob(16);
 
-  /// \brief
-  virtual void deactivate(double _currentTime);
+  Eigen::Matrix<double, 16, 1> lb;
+  Eigen::Matrix<double, 16, 1> ub;
+//  lb << -DART_PI, -DART_PI, -DART_PI, -DART_PI;
+//  ub << +DART_PI, +DART_PI, +DART_PI, +DART_PI;
+  for (int i = 0; i < 16; ++i)
+  {
+    lb[i] = -DART_PI*0.5;
+    ub[i] = +DART_PI*0.5;
+  }
 
-  /// \brief Called before every simulation time step in MyWindow class.
-  virtual void update(double _time);
+  prob.setLowerBounds(lb);
+  prob.setUpperBounds(ub);
 
-  /// \brief
-  virtual const Eigen::VectorXd& getTorques() {}// const = 0;
+  ObjFunc obj;
+  prob.setObjective(&obj);
 
-  /// \brief
-  virtual double getTorque(int _index) {}// const = 0;
+  NloptSolver solver(&prob, NLOPT_LN_COBYLA);
+  solver.solve();
 
-  /// \brief
-  virtual void keyboard(unsigned char _key);
-
-  /// \brief
-  virtual dart::dynamics::Skeleton* getSkeleton();
-
-  /// \brief
-  void printDebugInfo() const;
-
-protected:
-  /// \brief
-  dart::dynamics::Skeleton* mSkel;
-
-  /// \brief
-  dart::simulation::World* mWorld;
-
-  /// \brief
-  double mCurrentTime;
-};
-
-#endif  // APPS_BIOLOID_CONTROLLER_H_
+  double minFunc = prob.getOptimumValue();
+  Eigen::VectorXd optX = prob.getOptimalSolution();
+  assert(optX.size() == 16);
+}
