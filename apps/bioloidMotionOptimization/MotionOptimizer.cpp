@@ -34,7 +34,7 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "apps/bioloidMotionOptimization/MotionOptimizer.h"
+#include "MotionOptimizer.h"
 
 #include <iostream>
 
@@ -51,7 +51,7 @@ using namespace optimizer;
 //==============================================================================
 MotionOptimizer::MotionOptimizer(Skeleton* _robot)
   : mSkel(_robot),
-    mMotion(_robot)
+    mMotion(new BezierCurveMotion(_robot))
 {
   assert(_robot != nullptr);
 }
@@ -59,7 +59,7 @@ MotionOptimizer::MotionOptimizer(Skeleton* _robot)
 //==============================================================================
 MotionOptimizer::~MotionOptimizer()
 {
-
+  delete mMotion;
 }
 
 //==============================================================================
@@ -80,7 +80,7 @@ void MotionOptimizer::optimize()
   prob.setLowerBounds(lb);
   prob.setUpperBounds(ub);
 
-  ObjFunc obj;
+  ObjFunc obj(this);
   prob.setObjective(&obj);
 
   NloptSolver solver(&prob, NLOPT_LN_COBYLA);
@@ -89,4 +89,123 @@ void MotionOptimizer::optimize()
   double minFunc = prob.getOptimumValue();
   Eigen::VectorXd optX = prob.getOptimalSolution();
   assert(optX.size() == 16);
+
+  std::cout << "minFunc: " << minFunc << std::endl;
+}
+
+//==============================================================================
+void MotionOptimizer::resetMotion()
+{
+  mTime = 0.0;
+}
+
+//==============================================================================
+void MotionOptimizer::playback()
+{
+  if (mTime > 1.0)
+    return;
+
+  int dof = mSkel->getNumDofs();
+  Eigen::VectorXd q = Eigen::VectorXd::Zero(dof);
+
+  q[6] = mMotion->getPoint(0, mTime);
+  q[8] = mMotion->getPoint(1, mTime);
+  q[11] = mMotion->getPoint(2, mTime);
+  q[13] = mMotion->getPoint(3, mTime);
+
+  mSkel->setPositions(q);
+
+  mTime += 0.001;
+}
+
+//==============================================================================
+MotionOptimizer::ObjFunc::ObjFunc(MotionOptimizer* _motionOptimizer)
+  : Function(),
+    mMotionOptimizer(_motionOptimizer)
+{
+  assert(mMotionOptimizer != nullptr);
+}
+
+//==============================================================================
+MotionOptimizer::ObjFunc::~ObjFunc()
+{}
+
+//==============================================================================
+double MotionOptimizer::ObjFunc::eval(Eigen::Map<const VectorXd>& _x)
+{
+  double eval = 0.0;
+
+  // Generate motion given _x
+  BezierCurveMotion* motion = mMotionOptimizer->getMotion();
+
+  for (int i = 0; i < 4; ++i)
+  {
+    for (int j = 0; j < 4; ++j)
+    {
+      motion->setControlPoint(i, j, _x[i*4 + j]);
+    }
+  }
+
+  double time = 0.0;
+
+  // Simulate the motion evaluating the total effort
+  for (int i = 0; i < 1000; ++i)
+  {
+    dart::dynamics::Skeleton* skel = mMotionOptimizer->getSkeleton();
+
+    int dof = skel->getNumDofs();
+    Eigen::VectorXd q = Eigen::VectorXd::Zero(dof);
+
+    q[6] = motion->getPoint(0, time);
+    q[8] = motion->getPoint(1, time);
+    q[11] = motion->getPoint(2, time);
+    q[13] = motion->getPoint(3, time);
+
+    skel->setPositions(q);
+
+    skel->computeForwardDynamics();
+    skel->integrateVelocities(skel->getTimeStep());
+    skel->integratePositions(skel->getTimeStep());
+
+    Eigen::VectorXd tau = skel->getForces();
+
+    eval += tau.norm();
+
+    time += 0.001;
+  }
+
+  // Evaluate cost with the total effort
+
+  return eval;
+}
+
+//==============================================================================
+void MotionOptimizer::ObjFunc::evalGradient(Eigen::Map<const VectorXd>& _x,
+                                            Eigen::Map<VectorXd> _grad)
+{
+}
+
+//==============================================================================
+MotionOptimizer::ConstFunc::ConstFunc(MotionOptimizer* _motionOptimizer)
+  : Function(),
+    mMotionOptimizer(_motionOptimizer)
+{
+  assert(mMotionOptimizer != nullptr);
+}
+
+//==============================================================================
+MotionOptimizer::ConstFunc::~ConstFunc()
+{
+}
+
+//==============================================================================
+double MotionOptimizer::ConstFunc::eval(Eigen::Map<const VectorXd>& _x)
+{
+  return 0;
+}
+
+//==============================================================================
+void MotionOptimizer::ConstFunc::evalGradient(Eigen::Map<const VectorXd>& _x,
+                                              Eigen::Map<VectorXd> _grad)
+{
 }

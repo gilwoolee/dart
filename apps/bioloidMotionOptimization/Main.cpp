@@ -44,9 +44,9 @@
 
 #include "dart/dart.h"
 
-#include "apps/bioloidMotionOptimization/MyWindow.h"
-#include "apps/bioloidMotionOptimization/Controller.h"
-#include "apps/bioloidMotionOptimization/ManualController.h"
+#include "MyWindow.h"
+#include "Controller.h"
+#include "ManualController.h"
 
 using namespace Eigen;
 using namespace dart;

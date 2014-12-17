@@ -41,7 +41,7 @@
 
 #include "dart/dart.h"
 
-#include "apps/bioloidMotionOptimization/Motion.h"
+#include "Motion.h"
 
 /// \brief Base c
 class MotionOptimizer
@@ -54,6 +54,12 @@ public:
   virtual ~MotionOptimizer();
 
   void optimize();
+  void resetMotion();
+  void playback();
+
+  dart::dynamics::Skeleton* getSkeleton() { return mSkel; }
+
+  BezierCurveMotion* getMotion() { return mMotion; }
 
 protected:
 
@@ -61,60 +67,47 @@ protected:
   {
   public:
     /// \brief Constructor
-    ObjFunc() : Function() {}
+    ObjFunc(MotionOptimizer* _motionOptimizer);
 
     /// \brief Destructor
-    virtual ~ObjFunc() {}
+    virtual ~ObjFunc();
 
     /// \copydoc Function::eval
-    virtual double eval(Eigen::Map<const Eigen::VectorXd>& _x)
-    {
-      return std::sqrt(_x[1]);
-    }
+    virtual double eval(Eigen::Map<const Eigen::VectorXd>& _x);
 
     /// \copydoc Function::evalGradient
     virtual void evalGradient(Eigen::Map<const Eigen::VectorXd>& _x,
-                              Eigen::Map<Eigen::VectorXd> _grad)
-    {
-      _grad[0] = 0.0;
-      _grad[1] = 0.5 / std::sqrt(_x[1]);
-    }
+                              Eigen::Map<Eigen::VectorXd> _grad);
+
+  protected:
+    MotionOptimizer* mMotionOptimizer;
   };
 
   class ConstFunc : public dart::optimizer::Function
   {
   public:
     /// \brief Constructor
-    ConstFunc(double _a, double _b) : Function(), mA(_a), mB(_b) {}
+    ConstFunc(MotionOptimizer* _motionOptimizer);
 
     /// \brief Destructor
-    virtual ~ConstFunc() {}
+    virtual ~ConstFunc();
 
     /// \copydoc Function::eval
-    virtual double eval(Eigen::Map<const Eigen::VectorXd>& _x)
-    {
-      return ((mA*_x[0] + mB) * (mA*_x[0] + mB) * (mA*_x[0] + mB) - _x[1]);
-    }
+    virtual double eval(Eigen::Map<const Eigen::VectorXd>& _x);
 
     /// \copydoc Function::evalGradient
     virtual void evalGradient(Eigen::Map<const Eigen::VectorXd>& _x,
-                              Eigen::Map<Eigen::VectorXd> _grad)
-    {
-      _grad[0] = 3 * mA * (mA*_x[0] + mB) * (mA*_x[0] + mB);
-      _grad[1] = -1.0;
-    }
+                              Eigen::Map<Eigen::VectorXd> _grad);
 
   private:
-    /// \brief Data
-    double mA;
-
-    /// \brief Data
-    double mB;
+    MotionOptimizer* mMotionOptimizer;
   };
 
   dart::dynamics::Skeleton* mSkel;
 
-  BezierCurveMotion mMotion;
+  BezierCurveMotion* mMotion;
+
+  double mTime;
 };
 
 #endif  // APPS_BIOLOIDMOTIONOPTIMIZATION_MOTIONOPTIMIZER_H_

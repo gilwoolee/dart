@@ -45,7 +45,8 @@
 
 #include "dart/dart.h"
 
-#include "apps/bioloidMotionOptimization/Controller.h"
+#include "Controller.h"
+#include "MotionOptimizer.h"
 
 /// \brief
 class MyWindow : public dart::gui::SoftSimWindow
@@ -82,8 +83,11 @@ private:
   ///
   Controller* mController;
 
+  MotionOptimizer* mMotionOptimizer;
+
   int mCurrentJointId;
 
+  bool mPlayback;
 //  int mDof;
 };
 

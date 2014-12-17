@@ -41,7 +41,7 @@
 
 #include "dart/dart.h"
 
-#include "apps/bioloidMotionOptimization/Controller.h"
+#include "Controller.h"
 
 /// \brief
 class ManualController : public Controller

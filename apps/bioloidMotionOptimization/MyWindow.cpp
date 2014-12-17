@@ -40,7 +40,7 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "apps/bioloidMotionOptimization/MyWindow.h"
+#include "MyWindow.h"
 
 #define FORCE_ON_RIGIDBODY (25.0)
 #define FORCE_ON_VERTEX (1.00)
@@ -48,7 +48,8 @@
 
 MyWindow::MyWindow()
   : SoftSimWindow(),
-    mCurrentJointId(0)
+    mCurrentJointId(0),
+    mPlayback(false)
 {
   mForceOnRigidBody = Eigen::Vector3d::Zero();
   mForceOnVertex = Eigen::Vector3d::Zero();
@@ -57,28 +58,20 @@ MyWindow::MyWindow()
 
 MyWindow::~MyWindow()
 {
+  delete mMotionOptimizer;
 }
 
 void MyWindow::timeStepping()
 {
-//  dart::dynamics::Skeleton* Skeleton =
-//      static_cast<dart::dynamics::Skeleton*>(mWorld->getSkeleton(1));
-//  dart::dynamics::SoftBodyNode* softBodyNode = Skeleton->getSoftBodyNode(0);
-//  softBodyNode->addExtForce(mForceOnRigidBody);
-
   mController->update(mWorld->getTime());
 
-  mWorld->step();
+  if (mPlayback)
+    mMotionOptimizer->playback();
 
-  // for perturbation test
-  mImpulseDuration--;
-  if (mImpulseDuration <= 0)
-  {
-    mImpulseDuration = 0;
-    mForceOnRigidBody.setZero();
-  }
+  mWorld->getSkeleton(0)->computeForwardKinematics(true, true, true);
+  mWorld->getSkeleton(1)->computeForwardKinematics(true, true, true);
 
-  mForceOnVertex /= 2.0;
+//  mWorld->step();
 }
 
 void MyWindow::drawSkels()
@@ -219,6 +212,22 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
 
       break;
     }
+    case 'o':
+    {
+      assert(mMotionOptimizer != nullptr);
+      mMotionOptimizer->optimize();
+      std::cout << "Motion optimized is done." << std::endl;
+    }
+    case 'l':
+    {
+      mPlayback = !mPlayback;
+
+      if (mPlayback)
+      {
+        std::cout << "Playback optimized motion..." << std::endl;
+        mMotionOptimizer->resetMotion();
+      }
+    }
     default:
       Win3D::keyboard(key, x, y);
   }
@@ -231,5 +240,9 @@ void MyWindow::keyboard(unsigned char key, int x, int y)
 void MyWindow::setController(Controller* _controller)
 {
   mController = _controller;
+
+  delete mMotionOptimizer;
+
+  mMotionOptimizer = new MotionOptimizer(mController->getSkeleton());
 }
 

@@ -41,7 +41,7 @@
 
 #include "dart/dart.h"
 
-#include "apps/bioloidMotionOptimization/Motion.h"
+#include "Motion.h"
 
 /*
 rootJoint(6)

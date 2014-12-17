@@ -34,7 +34,7 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "apps/bioloidMotionOptimization/Controller.h"
+#include "Controller.h"
 
 #include <iostream>
 
