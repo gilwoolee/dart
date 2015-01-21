@@ -85,6 +85,14 @@ else()
   message(SEND_ERROR "Looking for FCL - NOT found, please install libfcl-dev")
 endif()
 
+# CCD
+find_package(CCD QUIET)
+if(CCD_FOUND)
+  message(STATUS "Looking for CCD - ${CCD_VERSION} found")
+else()
+  message(SEND_ERROR "Looking for CCD - NOT found, please install libccd-dev")
+endif()
+
 # Assimp
 find_package(Assimp QUIET)
 if(ASSIMP_FOUND)

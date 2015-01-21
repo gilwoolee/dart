@@ -56,7 +56,7 @@ int collide(const dynamics::Shape* _shape0, const Eigen::Isometry3d& _T0,
             const dynamics::Shape* _shape1, const Eigen::Isometry3d& _T1,
             std::vector<Contact>* _result);
 
-int collideBoxBox(const Eigen::Vector3d& size0, const Eigen::Isometry3d& T0,
+int odeBoxBox(const Eigen::Vector3d& size0, const Eigen::Isometry3d& T0,
                   const Eigen::Vector3d& size1, const Eigen::Isometry3d& T1,
                   std::vector<Contact>* result);
 

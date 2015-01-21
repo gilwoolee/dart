@@ -37,13 +37,221 @@
 #ifndef  DART_COLLISION_DART_DARTCOLLISIONDETECTOR_H_
 #define  DART_COLLISION_DART_DARTCOLLISIONDETECTOR_H_
 
+#include <array>
+
+#include "dart/common/Console.h"
+#include "dart/common/Singletone.h"
 #include "dart/collision/CollisionDetector.h"
 
 namespace dart {
 namespace collision {
 
+using common::Singleton;
+
+/// Geometry type
+enum GeometryType
+{
+  GT_UNKNOWN = 0,
+  GT_BOX,
+  GT_SPHERE,
+  GT_CAPSULE,
+  GT_CONE,
+  GT_CYLINDER,
+  GT_CONVEX,
+  GT_PLANE,
+  GT_HALFSPACE,
+  GT_TRIANGLE,
+  GT_OCTREE,
+  GT_COUNT
+};
+
+//==============================================================================
+class CollisionObject
+{
+public:
+  CollisionObject() {}
+  ~CollisionObject() {}
+private:
+};
+
+//==============================================================================
+class CollisionGeometry
+{
+public:
+  virtual ~CollisionGeometry() {}
+
+  GeometryType getGeometryType() const { return mGeometryType; }
+
+protected:
+  CollisionGeometry() : mGeometryType(GT_UNKNOWN) {}
+
+  GeometryType mGeometryType;
+private:
+};
+
+//==============================================================================
+class Box : public CollisionGeometry
+{
+public:
+  Box()
+    : CollisionGeometry(),
+      mSize(Eigen::Vector3d(1.0, 1.0, 1.0))
+  { mGeometryType = GT_BOX; }
+
+  virtual ~Box() {}
+
+  void setSize(const Eigen::Vector3d& _size) { mSize = _size; }
+
+  const Eigen::Vector3d& getSize() const { return mSize; }
+
+protected:
+  Eigen::Vector3d mSize;
+};
+
+//==============================================================================
+class Sphere : public CollisionGeometry
+{
+public:
+  Sphere() : CollisionGeometry() { mGeometryType = GT_SPHERE; }
+  virtual ~Sphere() {}
+};
+
+//==============================================================================
+class Mesh : public CollisionGeometry
+{
+public:
+  Mesh() : CollisionGeometry() { mGeometryType = GT_CONVEX; }
+  virtual ~Mesh() {}
+};
+
+//==============================================================================
+class CollisionOptions
+{
+public:
+  CollisionOptions() {}
+  ~CollisionOptions() {}
+private:
+};
+
+//==============================================================================
+class CollisionResult
+{
+public:
+  CollisionResult() {}
+  ~CollisionResult() {}
+
+  void addContact(const Contact& _contact)
+  {
+    mContacts.push_back(_contact);
+  }
+
+  const Contact& getContact(size_t _index)
+  {
+    return mContacts[_index];
+  }
+
+  void removeAllContacts()
+  {
+    mContacts.clear();
+  }
+
+  std::size_t getNumContacts() { return mContacts.size(); }
+private:
+
+  std::vector<Contact> mContacts;
+};
+
+//==============================================================================
+using CollisionFunction = std::function<
+    size_t(const CollisionGeometry* _geom1,
+           const Eigen::Isometry3d& _transf1,
+           const CollisionGeometry* _geom2,
+           const Eigen::Isometry3d& _transf2,
+           const CollisionOptions& _options,
+           CollisionResult& _result)>;
+
+//==============================================================================
+///
+class CollisionFunctionMatrix : public Singleton<CollisionFunctionMatrix>
+{
+public:
+
+  friend class Singleton;
+
+  const CollisionFunction& getCollisionFunction(GeometryType _geom1,
+                                                GeometryType _geom2) const;
+
+protected:
+
+  CollisionFunctionMatrix();
+  ~CollisionFunctionMatrix();
+
+private:
+  std::array<std::array<CollisionFunction, GT_COUNT>, GT_COUNT> mCollisionMatrix;
+};
+
+//==============================================================================
+std::size_t collide(const CollisionGeometry* _geom1,
+                    const Eigen::Isometry3d& _transf1,
+                    const CollisionGeometry* _geom2,
+                    const Eigen::Isometry3d& _transf2,
+                    const CollisionOptions& _options,
+                    CollisionResult& result);
+
+//==============================================================================
+class JSCollisionDetector
+{
+public:
+  JSCollisionDetector() {}
+  ~JSCollisionDetector() {}
+
+
+private:
+};
+
+//==============================================================================
+template<typename S1, typename S2>
+std::size_t shapeIntersect(const CollisionGeometry* _geom1,
+                           const Eigen::Isometry3d& _transf1,
+                           const CollisionGeometry* _geom2,
+                           const Eigen::Isometry3d& _transf2,
+                           const CollisionOptions& _options,
+                           CollisionResult& result)
+{
+  dtmsg << "Unsupported shape combination." << std::endl;
+
+  return 0;
+}
+
+//==============================================================================
+template <>
+std::size_t shapeIntersect<Box, Box>(const CollisionGeometry* _geom1,
+                                     const Eigen::Isometry3d& _transf1,
+                                     const CollisionGeometry* _geom2,
+                                     const Eigen::Isometry3d& _transf2,
+                                     const CollisionOptions& _options,
+                                     CollisionResult& result);
+
+//==============================================================================
+size_t collideBoxBox(const CollisionGeometry* _geom1,
+                     const Eigen::Isometry3d& _transf1,
+                     const CollisionGeometry* _geom2,
+                     const Eigen::Isometry3d& _transf2,
+                     const CollisionOptions& _options,
+                     CollisionResult& _result);
+
+//==============================================================================
+size_t collideConvexConvexLibccd(const CollisionGeometry* _geom1,
+                                 const Eigen::Isometry3d& _transf1,
+                                 const CollisionGeometry* _geom2,
+                                 const Eigen::Isometry3d& _transf2,
+                                 const CollisionOptions& _options,
+                                 CollisionResult& _result);
+
+//==============================================================================
 /// \brief
-class DARTCollisionDetector : public CollisionDetector {
+class DARTCollisionDetector : public CollisionDetector
+{
 public:
   /// \brief Default constructor
   DARTCollisionDetector();

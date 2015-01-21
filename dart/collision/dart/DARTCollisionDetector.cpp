@@ -38,6 +38,7 @@
 
 #include <vector>
 
+#include "dart/common/Console.h"
 #include "dart/dynamics/Shape.h"
 #include "dart/dynamics/BodyNode.h"
 #include "dart/collision/dart/DARTCollide.h"
@@ -45,10 +46,111 @@
 namespace dart {
 namespace collision {
 
+//==============================================================================
+const CollisionFunction& CollisionFunctionMatrix::getCollisionFunction(
+    GeometryType _geom1, GeometryType _geom2) const
+{
+  return mCollisionMatrix[_geom1][_geom2];
+}
+
+//==============================================================================
+CollisionFunctionMatrix::CollisionFunctionMatrix()
+{
+  dtmsg << "CollisionFunctionMatrix is initilizing..." << std::endl;
+
+  // Fill all the element with nullptr
+  for (auto& collFuncArray : mCollisionMatrix)
+    collFuncArray.fill(nullptr);
+
+  // Assign collision functions
+  mCollisionMatrix[GT_BOX][GT_BOX   ] = shapeIntersect<Box, Box   >;
+  mCollisionMatrix[GT_BOX][GT_SPHERE] = shapeIntersect<Box, Sphere>;
+
+  mCollisionMatrix[GT_SPHERE][GT_BOX   ] = shapeIntersect<Sphere, Box   >;
+  mCollisionMatrix[GT_SPHERE][GT_SPHERE] = shapeIntersect<Sphere, Sphere>;
+
+  mCollisionMatrix[GT_CONVEX][GT_CONVEX] = collideConvexConvexLibccd;
+
+//  mCollisionMatrix[GT_CYLINDER][GT_CYLINDER] = collideCy
+}
+
+//==============================================================================
+CollisionFunctionMatrix::~CollisionFunctionMatrix()
+{
+
+}
+
+//==============================================================================
+std::size_t collide(const CollisionGeometry* _geom1,
+                    const Eigen::Isometry3d& _transf1,
+                    const CollisionGeometry* _geom2,
+                    const Eigen::Isometry3d& _transf2,
+                    const CollisionOptions& _options,
+                    CollisionResult& _result)
+{
+  _result.removeAllContacts();
+
+  const GeometryType& type1 = _geom1->getGeometryType();
+  const GeometryType& type2 = _geom2->getGeometryType();
+
+  const CollisionFunction& func
+      = CollisionFunctionMatrix::getSingleton().getCollisionFunction(
+          type1, type2);
+
+  if (func == nullptr)
+  {
+    dtwarn << "Unsupported collision shapes." << std::endl;
+    return 0;
+  }
+
+  func(_geom1, _transf1, _geom2, _transf2, _options, _result);
+
+  return _result.getNumContacts();
+}
+
+//==============================================================================
+template <>
+std::size_t shapeIntersect<Box, Box>(const CollisionGeometry* _geom1,
+                                     const Eigen::Isometry3d& _transf1,
+                                     const CollisionGeometry* _geom2,
+                                     const Eigen::Isometry3d& _transf2,
+                                     const CollisionOptions& _options,
+                                     CollisionResult& _result)
+{
+  return collideBoxBox(_geom1, _transf1, _geom2, _transf2, _options, _result);
+}
+
+//==============================================================================
+size_t collideBoxBox(const CollisionGeometry* _geom1,
+                     const Eigen::Isometry3d& _transf1,
+                     const CollisionGeometry* _geom2,
+                     const Eigen::Isometry3d& _transf2,
+                     const CollisionOptions& _options,
+                     CollisionResult& _result)
+{
+  std::vector<Contact> contacts;
+
+  dtmsg << "collideBoxBox() is called." << std::endl;
+
+  const Box* box1 = static_cast<const Box*>(_geom1);
+  const Box* box2 = static_cast<const Box*>(_geom2);
+
+  odeBoxBox(box1->getSize(), _transf1,
+            box2->getSize(), _transf2,
+            &contacts);
+
+  for (const auto& contact : contacts)
+    _result.addContact(contact);
+
+  return _result.getNumContacts();
+}
+
+//==============================================================================
 DARTCollisionDetector::DARTCollisionDetector()
   : CollisionDetector() {
 }
 
+//==============================================================================
 DARTCollisionDetector::~DARTCollisionDetector() {
 }
 
@@ -57,6 +159,7 @@ CollisionNode* DARTCollisionDetector::createCollisionNode(
   return new CollisionNode(_bodyNode);
 }
 
+//==============================================================================
 bool DARTCollisionDetector::detectCollision(bool /*_checkAllCollisions*/,
                                             bool /*_calculateContactPoints*/) {
   clearAllContacts();
@@ -136,6 +239,7 @@ bool DARTCollisionDetector::detectCollision(bool /*_checkAllCollisions*/,
   return !mContacts.empty();
 }
 
+//==============================================================================
 bool DARTCollisionDetector::detectCollision(CollisionNode* _collNode1,
                                             CollisionNode* _collNode2,
                                             bool /*_calculateContactPoints*/) {
@@ -157,6 +261,17 @@ bool DARTCollisionDetector::detectCollision(CollisionNode* _collNode1,
 
   return contacts.size() > 0 ? true : false;
 }
+
+size_t collideConvexConvexLibccd(const CollisionGeometry* _geom1,
+                                 const Eigen::Isometry3d& _transf1,
+                                 const CollisionGeometry* _geom2,
+                                 const Eigen::Isometry3d& _transf2,
+                                 const CollisionOptions& _options,
+                                 CollisionResult& _result)
+{
+
+}
+
 
 }  // namespace collision
 }  // namespace dart
