@@ -43,7 +43,6 @@
 
 #include <Eigen/Dense>
 
-#include "dart/common/Deprecated.h"
 #include "dart/math/Geometry.h"
 #include "dart/common/NameManager.h"
 
@@ -62,13 +61,6 @@ class PointMass;
 class Joint;
 class Marker;
 class DegreeOfFreedom;
-
-/// struct GenCoordInfo
-struct GenCoordInfo
-{
-  Joint* joint;
-  size_t localIndex;
-} DEPRECATED(4.3);
 
 /// class Skeleton
 class Skeleton
@@ -221,19 +213,7 @@ public:
   //----------------------------------------------------------------------------
 
   /// Return degrees of freedom of this skeleton
-  DEPRECATED(4.1)
-  size_t getDof() const;
-
-  /// Return degrees of freedom of this skeleton
   size_t getNumDofs() const;
-
-  /// \brief Return _index-th GenCoordInfo
-  /// \warning GenCoordInfo is deprecated so this function is not necessary
-  /// anymore. Please use DegreeOfFreedom by calling getDof(). We will keep this
-  /// function until the next major version up only for backward compatibility
-  /// in minor version ups.
-  DEPRECATED(4.3)
-  GenCoordInfo getGenCoordInfo(size_t _index) const;
 
   //----------------------------------------------------------------------------
   /// \{ \name Command
@@ -390,16 +370,8 @@ public:
   // Constraint impulse
   //----------------------------------------------------------------------------
 
-  ///
-  DEPRECATED(4.2)
-  void setConstraintImpulses(const Eigen::VectorXd& _impulses);
-
   /// Set constraint impulses applying to joint
   void setJointConstraintImpulses(const Eigen::VectorXd& _impulses);
-
-  ///
-  DEPRECATED(4.2)
-  Eigen::VectorXd getConstraintImpulses() const;
 
   /// Return constraint impulses applied to joint
   Eigen::VectorXd getJointConstraintImpulses() const;
@@ -451,10 +423,6 @@ public:
   /// Clear constraint impulses: (a) spatial constraints on BodyNode and
   /// (b) generalized constraints on Joint
   void clearConstraintImpulses();
-
-  /// Set constraint force vector.
-  DEPRECATED(4.2)
-  void setConstraintForceVector(const Eigen::VectorXd& _Fc);
 
   /// Update bias impulses
   void updateBiasImpulse(BodyNode* _bodyNode);
@@ -515,44 +483,19 @@ public:
   const Eigen::MatrixXd& getInvAugMassMatrix();
 
   /// Get Coriolis force vector of the skeleton.
-  /// \remarks Please use getCoriolisForces() instead.
-  DEPRECATED(4.2)
-  const Eigen::VectorXd& getCoriolisForceVector();
-
-  /// Get Coriolis force vector of the skeleton.
   const Eigen::VectorXd& getCoriolisForces();
-
-  /// Get gravity force vector of the skeleton.
-  /// \remarks Please use getGravityForces() instead.
-  DEPRECATED(4.2)
-  const Eigen::VectorXd& getGravityForceVector();
 
   /// Get gravity force vector of the skeleton.
   const Eigen::VectorXd& getGravityForces();
 
   /// Get combined vector of Coriolis force and gravity force of the skeleton.
-  /// \remarks Please use getCoriolisAndGravityForces() instead.
-  DEPRECATED(4.2)
-  const Eigen::VectorXd& getCombinedVector();
-
-  /// Get combined vector of Coriolis force and gravity force of the skeleton.
   const Eigen::VectorXd& getCoriolisAndGravityForces();
-
-  /// Get external force vector of the skeleton.
-  /// \remarks Please use getExternalForces() instead.
-  DEPRECATED(4.2)
-  const Eigen::VectorXd& getExternalForceVector();
 
   /// Get external force vector of the skeleton.
   const Eigen::VectorXd& getExternalForces();
 
   /// Get damping force of the skeleton.
 //  const Eigen::VectorXd& getDampingForceVector();
-
-  /// Get constraint force vector.
-  /// \remarks Please use getConstraintForces() instead.
-  DEPRECATED(4.2)
-  const Eigen::VectorXd& getConstraintForceVector();
 
   /// Get constraint force vector.
   const Eigen::VectorXd& getConstraintForces();
@@ -646,33 +589,13 @@ protected:
   void updateInvAugMassMatrix();
 
   /// Update Coriolis force vector of the skeleton.
-  /// \remarks Please use updateCoriolisForces() instead.
-  DEPRECATED(4.2)
-  virtual void updateCoriolisForceVector();
-
-  /// Update Coriolis force vector of the skeleton.
   void updateCoriolisForces();
-
-  /// Update gravity force vector of the skeleton.
-  /// \remarks Please use updateGravityForces() instead.
-  DEPRECATED(4.2)
-  virtual void updateGravityForceVector();
 
   /// Update gravity force vector of the skeleton.
   void updateGravityForces();
 
   /// Update combined vector of the skeletong.
-  /// \remarks Please use updateCoriolisAndGravityForces() instead.
-  DEPRECATED(4.2)
-  virtual void updateCombinedVector();
-
-  /// Update combined vector of the skeletong.
   void updateCoriolisAndGravityForces();
-
-  /// update external force vector to generalized forces.
-  /// \remarks Please use updateExternalForces() instead.
-  DEPRECATED(4.2)
-  virtual void updateExternalForceVector();
 
   // TODO(JS): Not implemented yet
   /// update external force vector to generalized forces.
@@ -708,12 +631,6 @@ protected:
 
   /// Number of degrees of freedom (aka generalized coordinates)
   size_t mNumDofs;
-
-  /// \brief Array of GenCoordInfo objects
-  /// \warning GenCoordInfo is deprecated because the functionality is replaced
-  /// by DegreeOfFreedom.
-  DEPRECATED(4.3)
-  std::vector<GenCoordInfo> mGenCoordInfos;
 
   /// Array of DegreeOfFreedom objects within all the joints in this Skeleton
   std::vector<DegreeOfFreedom*> mDofs;

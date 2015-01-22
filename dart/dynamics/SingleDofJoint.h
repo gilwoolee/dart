@@ -59,10 +59,6 @@ public:
   virtual ~SingleDofJoint();
 
   // Documentation inherited
-  DEPRECATED(4.1)
-  virtual size_t getDof() const;
-
-  // Documentation inherited
   virtual size_t getNumDofs() const;
 
   // Documentation inherited

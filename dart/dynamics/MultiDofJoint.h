@@ -70,10 +70,6 @@ public:
   //----------------------------------------------------------------------------
 
   // Documentation inherited
-  DEPRECATED(4.1)
-  virtual size_t getDof() const;
-
-  // Documentation inherited
   virtual DegreeOfFreedom* getDof(size_t index);
 
   // Documentation inherited
@@ -715,13 +711,6 @@ MultiDofJoint<DOF>::~MultiDofJoint()
 {
   for (size_t i = 0; i < DOF; ++i)
     delete mDofs[i];
-}
-
-//==============================================================================
-template <size_t DOF>
-size_t MultiDofJoint<DOF>::getDof() const
-{
-  return getNumDofs();
 }
 
 //==============================================================================

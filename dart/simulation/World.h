@@ -48,7 +48,6 @@
 
 #include <Eigen/Dense>
 
-#include "dart/common/Deprecated.h"
 #include "dart/common/Timer.h"
 #include "dart/common/NameManager.h"
 #include "dart/simulation/Recording.h"
@@ -192,10 +191,6 @@ protected:
 
   /// Current simulation frame number
   int mFrame;
-
-  /// The integrator
-  DEPRECATED(4.3)
-  integration::Integrator* mIntegrator;
 
   /// Constraint solver
   constraint::ConstraintSolver* mConstraintSolver;

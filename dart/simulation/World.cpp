@@ -61,7 +61,6 @@ World::World()
     mTimeStep(0.001),
     mTime(0.0),
     mFrame(0),
-    mIntegrator(NULL),
     mConstraintSolver(new constraint::ConstraintSolver(mTimeStep)),
     mRecording(new Recording(mSkeletons))
 {

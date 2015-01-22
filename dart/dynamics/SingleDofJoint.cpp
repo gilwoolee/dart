@@ -89,12 +89,6 @@ SingleDofJoint::~SingleDofJoint()
 }
 
 //==============================================================================
-size_t SingleDofJoint::getDof() const
-{
-  return getNumDofs();
-}
-
-//==============================================================================
 size_t SingleDofJoint::getNumDofs() const
 {
   return 1;

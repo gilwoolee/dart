@@ -56,12 +56,6 @@ ZeroDofJoint::~ZeroDofJoint()
 }
 
 //==============================================================================
-size_t ZeroDofJoint::getDof() const
-{
-  return getNumDofs();
-}
-
-//==============================================================================
 DegreeOfFreedom* ZeroDofJoint::getDof(size_t)
 {
   return NULL;

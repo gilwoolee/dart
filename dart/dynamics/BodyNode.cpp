@@ -986,12 +986,6 @@ void BodyNode::updatePartialAcceleration()
 }
 
 //==============================================================================
-void BodyNode::updateAcceleration()
-{
-  updateAccelerationID();
-}
-
-//==============================================================================
 void BodyNode::updateAccelerationID()
 {
   // Transmit acceleration of parent body to this body
@@ -1010,13 +1004,6 @@ void BodyNode::updateAccelerationID()
 
   // Verification
   assert(!math::isNan(mA));
-}
-
-//==============================================================================
-void BodyNode::updateBodyWrench(const Eigen::Vector3d& _gravity,
-                                bool _withExternalForces)
-{
-  updateTransmittedForceID(_gravity, _withExternalForces);
 }
 
 //==============================================================================
@@ -1057,12 +1044,6 @@ void BodyNode::updateTransmittedForceID(const Eigen::Vector3d& _gravity,
 
   // Verification
   assert(!math::isNan(mF));
-}
-
-//==============================================================================
-void BodyNode::updateGeneralizedForce(bool _withDampingForces)
-{
-  updateJointForceID(0.001, _withDampingForces, false);
 }
 
 //==============================================================================
@@ -1155,36 +1136,12 @@ void BodyNode::updateBiasImpulse()
 }
 
 //==============================================================================
-void BodyNode::updateJointAndBodyAcceleration()
-{
-  updateAccelerationFD();
-}
-
-//==============================================================================
-void BodyNode::updateJointVelocityChange()
-{
-  updateVelocityChangeFD();
-}
-
-//==============================================================================
-void BodyNode::updateTransmittedWrench()
-{
-  updateTransmittedForceFD();
-}
-
-//==============================================================================
 void BodyNode::updateTransmittedForceFD()
 {
   mF = mBiasForce;
   mF.noalias() += mArtInertiaImplicit * mA;
 
   assert(!math::isNan(mF));
-}
-
-//==============================================================================
-void BodyNode::updateBodyImpForceFwdDyn()
-{
-  updateTransmittedImpulse();
 }
 
 //==============================================================================
@@ -1396,12 +1353,6 @@ Eigen::Vector3d BodyNode::getAngularMomentum(const Eigen::Vector3d& _pivot)
 }
 
 //==============================================================================
-bool BodyNode::isImpulseReponsible() const
-{
-  return isReactive();
-}
-
-//==============================================================================
 bool BodyNode::isReactive() const
 {
   if (mSkeleton->isMobile() && getNumDependentGenCoords() > 0)
@@ -1425,29 +1376,6 @@ bool BodyNode::isReactive() const
   {
     return false;
   }
-}
-
-//==============================================================================
-void BodyNode::updateConstrainedJointAndBodyAcceleration(double /*_timeStep*/)
-{
-  // 1. dq = dq + del_dq
-  // mParentJoint->updateVelocityWithVelocityChange();
-
-  // 2. ddq = ddq + del_dq / dt
-  // mParentJoint->updateAccelerationWithVelocityChange(_timeStep);
-
-  // 3. tau = tau + imp / dt
-  // mParentJoint->updateForceWithImpulse(_timeStep);
-}
-
-//==============================================================================
-void BodyNode::updateConstrainedTransmittedForce(double _timeStep)
-{
-  ///
-  mA += mDelV / _timeStep;
-
-  ///
-  mF += mImpF / _timeStep;
 }
 
 //==============================================================================

@@ -41,7 +41,6 @@
 #include <string>
 #include <vector>
 
-#include "dart/common/Deprecated.h"
 #include "dart/math/Geometry.h"
 
 namespace dart {
@@ -209,10 +208,6 @@ public:
 
   /// Get an unique index in skeleton of a generalized coordinate in this joint
   virtual size_t getIndexInSkeleton(size_t _index) const = 0;
-
-  /// Get number of generalized coordinates
-  DEPRECATED(4.1)
-  virtual size_t getDof() const = 0;
 
   /// Get an object to access the _index-th degree of freedom (generalized
   /// coordinate) of this Joint
@@ -668,20 +663,6 @@ protected:
   /// Update constrained terms for forward dynamics
   virtual void updateConstrainedTerms(double _timeStep) = 0;
 
-  //- DEPRECATED ---------------------------------------------------------------
-
-  /// updateVelocityWithVelocityChange
-  DEPRECATED(4.3)
-  virtual void updateVelocityWithVelocityChange() {}
-
-  /// updateAccelerationWithVelocityChange
-  DEPRECATED(4.3)
-  virtual void updateAccelerationWithVelocityChange(double _timeStep) {}
-
-  /// updateForceWithImpulse
-  DEPRECATED(4.3)
-  virtual void updateForceWithImpulse(double _timeStep) {}
-
   /// \}
 
   //----------------------------------------------------------------------------
@@ -750,10 +731,6 @@ protected:
   /// Relative spatial velocity from parent body to child body where the
   /// velocity is expressed in child body frame
   Eigen::Vector6d mSpatialVelocity;
-
-  /// Transmitting wrench from parent body to child body expressed in child body
-  DEPRECATED(4.3)
-  Eigen::Vector6d mWrench;
 
 protected:
   /// True if the joint limits are enforced in dynamic simulation

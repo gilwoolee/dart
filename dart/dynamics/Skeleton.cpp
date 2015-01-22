@@ -495,23 +495,9 @@ void Skeleton::init(double _timeStep, const Eigen::Vector3d& _gravity)
 }
 
 //==============================================================================
-size_t Skeleton::getDof() const
-{
-  return getNumDofs();
-}
-
-//==============================================================================
 size_t Skeleton::getNumDofs() const
 {
   return mNumDofs;
-}
-
-//==============================================================================
-GenCoordInfo Skeleton::getGenCoordInfo(size_t _index) const
-{
-  assert(_index < getNumDofs());
-
-  return mGenCoordInfos[_index];
 }
 
 //==============================================================================
@@ -959,12 +945,6 @@ Eigen::VectorXd Skeleton::getVelocityChanges() const
 }
 
 //==============================================================================
-void Skeleton::setConstraintImpulses(const Eigen::VectorXd& _impulses)
-{
-  setJointConstraintImpulses(_impulses);
-}
-
-//==============================================================================
 void Skeleton::setJointConstraintImpulses(const Eigen::VectorXd& _impulses)
 {
   const size_t dof = getNumDofs();
@@ -979,12 +959,6 @@ void Skeleton::setJointConstraintImpulses(const Eigen::VectorXd& _impulses)
   }
 
   assert(index == dof);
-}
-
-//==============================================================================
-Eigen::VectorXd Skeleton::getConstraintImpulses() const
-{
-  return getJointConstraintImpulses();
 }
 
 //==============================================================================
@@ -1223,41 +1197,11 @@ const Eigen::VectorXd& Skeleton::getConstraintForces()
 }
 
 //==============================================================================
-const Eigen::VectorXd& Skeleton::getCoriolisForceVector()
-{
-  return getCoriolisForces();
-}
-
-//==============================================================================
-const Eigen::VectorXd& Skeleton::getGravityForceVector()
-{
-  return getGravityForces();
-}
-
-//==============================================================================
-const Eigen::VectorXd& Skeleton::getCombinedVector()
-{
-  return getCoriolisAndGravityForces();
-}
-
-//==============================================================================
-const Eigen::VectorXd& Skeleton::getExternalForceVector()
-{
-  return getExternalForces();
-}
-
-//==============================================================================
 //const Eigen::VectorXd& Skeleton::getDampingForceVector() {
 //  if (mIsDampingForceVectorDirty)
 //    updateDampingForceVector();
 //  return mFd;
 //}
-
-//==============================================================================
-const Eigen::VectorXd& Skeleton::getConstraintForceVector()
-{
-  return getConstraintForces();
-}
 
 //==============================================================================
 void Skeleton::draw(renderer::RenderInterface* _ri,
@@ -1539,12 +1483,6 @@ void Skeleton::updateInvAugMassMatrix()
 }
 
 //==============================================================================
-void Skeleton::updateCoriolisForceVector()
-{
-  updateCoriolisForces();
-}
-
-//==============================================================================
 void Skeleton::updateCoriolisForces()
 {
   if (getNumDofs() == 0)
@@ -1570,12 +1508,6 @@ void Skeleton::updateCoriolisForces()
 }
 
 //==============================================================================
-void Skeleton::updateGravityForceVector()
-{
-  updateGravityForces();
-}
-
-//==============================================================================
 void Skeleton::updateGravityForces()
 {
   if (getNumDofs() == 0)
@@ -1592,12 +1524,6 @@ void Skeleton::updateGravityForces()
   }
 
   mIsGravityForcesDirty = false;
-}
-
-//==============================================================================
-void Skeleton::updateCombinedVector()
-{
-  updateCoriolisAndGravityForces();
 }
 
 //==============================================================================
@@ -1622,12 +1548,6 @@ void Skeleton::updateCoriolisAndGravityForces()
   }
 
   mIsCoriolisAndGravityForcesDirty = false;
-}
-
-//==============================================================================
-void Skeleton::updateExternalForceVector()
-{
-  updateExternalForces();
 }
 
 //==============================================================================
@@ -2042,12 +1962,6 @@ void Skeleton::computeImpulseForwardDynamics()
     bodyNode->updateJointImpulseFD();
     bodyNode->updateConstrainedTerms(mTimeStep);
   }
-}
-
-//==============================================================================
-void Skeleton::setConstraintForceVector(const Eigen::VectorXd& _Fc)
-{
-  mFc = _Fc;
 }
 
 //==============================================================================

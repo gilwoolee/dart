@@ -45,7 +45,6 @@
 #include <Eigen/StdVector>
 
 #include "dart/config.h"
-#include "dart/common/Deprecated.h"
 #include "dart/math/Geometry.h"
 
 namespace dart {
@@ -424,10 +423,6 @@ public:
   //   - Following functions are managed by constraint solver.
   //----------------------------------------------------------------------------
 
-  /// Deprecated in 4.2. Please use isReactive().
-  DEPRECATED(4.2)
-  bool isImpulseReponsible() const;
-
   /// Return true if the body can react to force or constraint impulse.
   ///
   /// A body node is reactive if the skeleton is mobile and the number of
@@ -577,64 +572,6 @@ protected:
   /// Update constrained terms due to the constraint impulses for foward
   /// dynamics.
   virtual void updateConstrainedTerms(double _timeStep);
-
-  //- DEPRECATED ---------------------------------------------------------------
-
-  /// Update spatial body acceleration with the partial spatial body
-  /// acceleration.
-  /// \warning Please use updateAccelerationID().
-  DEPRECATED(4.3)
-  virtual void updateAcceleration();
-
-  /// Update the joint acceleration and body acceleration
-  /// \warning Please use updateAccelerationFD().
-  DEPRECATED(4.3)
-  virtual void updateJointAndBodyAcceleration();
-
-  /// Update joint velocity change for impulse-based forward dynamics algorithm
-  /// \warning Please use updateVelocityChangeFD().
-  DEPRECATED(4.3)
-  virtual void updateJointVelocityChange();
-
-  /// Update the spatial body force transmitted to this BodyNode from the
-  /// parent body through the connecting joint. The spatial body force is
-  /// expressed in this BodyNode's frame.
-  /// \warning Please use updateTransmittedForceFD().
-  DEPRECATED(4.3)
-  virtual void updateTransmittedWrench();
-
-  /// Update spatial body force. Inverse dynamics routine.
-  ///
-  /// The spatial body force is transmitted to this BodyNode from the parent
-  /// body through the connecting joint. It is expressed in this BodyNode's
-  /// frame.
-  ///
-  /// \warning Please use updateTransmittedForceID().
-  DEPRECATED(4.3)
-  virtual void updateBodyWrench(const Eigen::Vector3d& _gravity,
-                                bool _withExternalForces = false);
-
-  /// updateBodyImpForceFwdDyn
-  /// \warning Please use updateTransmittedImpulse().
-  DEPRECATED(4.3)
-  virtual void updateBodyImpForceFwdDyn();
-
-  /// Update the joint force
-  /// \warning Please use updateJointForceID().
-  DEPRECATED(4.3)
-  virtual void updateGeneralizedForce(bool _withDampingForces = false);
-
-  /// updateConstrainedJointAndBodyAcceleration
-  /// \warning Deprecated. Please do not use.
-  DEPRECATED(4.3)
-  virtual void updateConstrainedJointAndBodyAcceleration(double _timeStep);
-
-  /// updateConstrainedTransmittedForce
-  /// \warning Deprecated. Please do not use.
-  DEPRECATED(4.3)
-  virtual void updateConstrainedTransmittedForce(double _timeStep);
-
-  /// \}
 
   //----------------------------------------------------------------------------
   /// \{ \name Equations of motion related routines
