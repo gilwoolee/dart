@@ -95,17 +95,16 @@ class Box : public CollisionGeometry
 public:
   Box()
     : CollisionGeometry(),
-      mSize(Eigen::Vector3d(1.0, 1.0, 1.0))
+      size(Eigen::Vector3d(1.0, 1.0, 1.0))
   { mGeometryType = GT_BOX; }
 
   virtual ~Box() {}
 
-  void setSize(const Eigen::Vector3d& _size) { mSize = _size; }
+  void setSize(const Eigen::Vector3d& _size) { size = _size; }
 
-  const Eigen::Vector3d& getSize() const { return mSize; }
+  const Eigen::Vector3d& getSize() const { return size; }
 
-protected:
-  Eigen::Vector3d mSize;
+  Eigen::Vector3d size;
 };
 
 //==============================================================================
@@ -114,14 +113,83 @@ class Sphere : public CollisionGeometry
 public:
   Sphere() : CollisionGeometry() { mGeometryType = GT_SPHERE; }
   virtual ~Sphere() {}
+  double radius;
 };
 
 //==============================================================================
-class Mesh : public CollisionGeometry
+class Capsule : public CollisionGeometry
 {
 public:
-  Mesh() : CollisionGeometry() { mGeometryType = GT_CONVEX; }
-  virtual ~Mesh() {}
+  Capsule() : CollisionGeometry() { mGeometryType = GT_CAPSULE; }
+  virtual ~Capsule() {}
+  double radius;
+  double height;
+};
+
+//==============================================================================
+class Cone : public CollisionGeometry
+{
+public:
+  Cone() : CollisionGeometry() { mGeometryType = GT_CONE; }
+  virtual ~Cone() {}
+  double radius;
+  double height;
+};
+
+//==============================================================================
+class Cylinder : public CollisionGeometry
+{
+public:
+  Cylinder() : CollisionGeometry() { mGeometryType = GT_CYLINDER; }
+  virtual ~Cylinder() {}
+  double radius;
+  double height;
+};
+
+//==============================================================================
+class Convex : public CollisionGeometry
+{
+public:
+  Convex() : CollisionGeometry() { mGeometryType = GT_CONVEX; }
+  virtual ~Convex() {}
+
+  Eigen::Vector3d* plane_normals;
+  double* plane_dis;
+
+  /// @brief An array of indices to the points of each polygon, it should be the number of vertices
+  /// followed by that amount of indices to "points" in counter clockwise order
+  int* polygons;
+
+  Eigen::Vector3d* points;
+  int num_points;
+  int num_edges;
+  int num_planes;
+
+  struct Edge
+  {
+    int first, second;
+  };
+
+  Edge* edges;
+
+  /// @brief center of the convex polytope, this is used for collision: center is guaranteed in the internal of the polytope (as it is convex)
+  Eigen::Vector3d center;
+};
+
+//==============================================================================
+class HalfSpace : public CollisionGeometry
+{
+public:
+  HalfSpace() : CollisionGeometry() { mGeometryType = GT_HALFSPACE; }
+  virtual ~HalfSpace() {}
+};
+
+//==============================================================================
+class Plane : public CollisionGeometry
+{
+public:
+  Plane() : CollisionGeometry() { mGeometryType = GT_PLANE; }
+  virtual ~Plane() {}
 };
 
 //==============================================================================
@@ -164,9 +232,9 @@ private:
 //==============================================================================
 using CollisionFunction = std::function<
     size_t(const CollisionGeometry* _geom1,
-           const Eigen::Isometry3d& _transf1,
+           const Eigen::Isometry3d& _tf1,
            const CollisionGeometry* _geom2,
-           const Eigen::Isometry3d& _transf2,
+           const Eigen::Isometry3d& _tf2,
            const CollisionOptions& _options,
            CollisionResult& _result)>;
 
@@ -192,9 +260,9 @@ private:
 
 //==============================================================================
 std::size_t collide(const CollisionGeometry* _geom1,
-                    const Eigen::Isometry3d& _transf1,
+                    const Eigen::Isometry3d& _tf1,
                     const CollisionGeometry* _geom2,
-                    const Eigen::Isometry3d& _transf2,
+                    const Eigen::Isometry3d& _tf2,
                     const CollisionOptions& _options,
                     CollisionResult& result);
 
@@ -212,13 +280,20 @@ private:
 //==============================================================================
 template<typename S1, typename S2>
 std::size_t shapeIntersect(const CollisionGeometry* _geom1,
-                           const Eigen::Isometry3d& _transf1,
+                           const Eigen::Isometry3d& _tf1,
                            const CollisionGeometry* _geom2,
-                           const Eigen::Isometry3d& _transf2,
+                           const Eigen::Isometry3d& _tf2,
                            const CollisionOptions& _options,
                            CollisionResult& result)
 {
-  dtmsg << "Unsupported shape combination." << std::endl;
+  assert(_geom1 != nullptr);
+  assert(_geom2 != nullptr);
+
+  dtmsg << "Unsupported shape combination ["
+        << _geom1->getGeometryType()
+        << ", "
+        << _geom2->getGeometryType()
+        << "." << std::endl;
 
   return 0;
 }
@@ -226,27 +301,46 @@ std::size_t shapeIntersect(const CollisionGeometry* _geom1,
 //==============================================================================
 template <>
 std::size_t shapeIntersect<Box, Box>(const CollisionGeometry* _geom1,
-                                     const Eigen::Isometry3d& _transf1,
+                                     const Eigen::Isometry3d& _tf1,
                                      const CollisionGeometry* _geom2,
-                                     const Eigen::Isometry3d& _transf2,
+                                     const Eigen::Isometry3d& _tf2,
                                      const CollisionOptions& _options,
-                                     CollisionResult& result);
+                                     CollisionResult& _result);
 
 //==============================================================================
-size_t collideBoxBox(const CollisionGeometry* _geom1,
-                     const Eigen::Isometry3d& _transf1,
-                     const CollisionGeometry* _geom2,
-                     const Eigen::Isometry3d& _transf2,
+template <>
+std::size_t shapeIntersect<Sphere, Sphere>(const CollisionGeometry* _geom1,
+                                           const Eigen::Isometry3d& _tf1,
+                                           const CollisionGeometry* _geom2,
+                                           const Eigen::Isometry3d& _tf2,
+                                           const CollisionOptions& _options,
+                                           CollisionResult& _result);
+
+//==============================================================================
+template <>
+std::size_t shapeIntersect<Convex, Convex>(const CollisionGeometry* _geom1,
+                                           const Eigen::Isometry3d& _tf1,
+                                           const CollisionGeometry* _geom2,
+                                           const Eigen::Isometry3d& _tf2,
+                                           const CollisionOptions& _options,
+                                           CollisionResult& _result);
+
+//==============================================================================
+//template <>
+//std::size_t shapeIntersect<Box, Box>(const Box& _geom1,
+//                                     const Eigen::Isometry3d& _tf1,
+//                                     const Box& _geom2,
+//                                     const Eigen::Isometry3d& _tf2,
+//                                     const CollisionOptions& _options,
+//                                     CollisionResult& result);
+
+//==============================================================================
+size_t collideBoxBox(const Box& _box1,
+                     const Eigen::Isometry3d& _tf1,
+                     const Box& _box2,
+                     const Eigen::Isometry3d& _tf2,
                      const CollisionOptions& _options,
                      CollisionResult& _result);
-
-//==============================================================================
-size_t collideConvexConvexLibccd(const CollisionGeometry* _geom1,
-                                 const Eigen::Isometry3d& _transf1,
-                                 const CollisionGeometry* _geom2,
-                                 const Eigen::Isometry3d& _transf2,
-                                 const CollisionOptions& _options,
-                                 CollisionResult& _result);
 
 //==============================================================================
 /// \brief

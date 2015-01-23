@@ -94,9 +94,9 @@ TEST(CollisionDetector, BoxBox)
   tf2.translation() << 0, 0, 0;
 
   //
-  //    +---+
-  //    |   |   Box1
-  //    +---+
+  //    +---+             ^
+  //    |   |   Box1      |  normal direction (into box1)
+  //    +---+            ---
   //  +-------+
   //  |       | Box2
   //  |       |
@@ -112,6 +112,80 @@ TEST(CollisionDetector, BoxBox)
     EXPECT_EQ(contact.point[2], 0.5);
     EXPECT_EQ(contact.penetrationDepth, 0.0);
   }
+}
+
+//==============================================================================
+TEST(CollisionDetector, ConvexConvex)
+{
+  CollisionOptions options;
+  CollisionResult result;
+
+  Convex convex1;
+  Convex convex2;
+
+//  convex1.setSize(Eigen::Vector3d(1.0, 1.0, 1.0));
+//  convex2.setSize(Eigen::Vector3d(1.0, 1.0, 1.0));
+
+  Eigen::Isometry3d tf1(Eigen::Isometry3d::Identity());
+  Eigen::Isometry3d tf2(Eigen::Isometry3d::Identity());
+
+  tf1.translation() << 0, 0, 2;
+  tf2.translation() << 0, 0, 0;
+
+  collide(&convex1, tf1, &convex2, tf2, options, result);
+  EXPECT_EQ(result.getNumContacts(), 0);
+
+  tf1.translation() << 0, 0, 1;
+  tf2.translation() << 0, 0, 0;
+
+  //
+  collide(&convex1, tf1, &convex2, tf2, options, result);
+//  EXPECT_EQ(result.getNumContacts(), 4);
+//  for (size_t i = 0; i < result.getNumContacts(); ++i)
+//  {
+//    Contact contact = result.getContact(i);
+
+//    EXPECT_EQ(contact.normal, Eigen::Vector3d::UnitZ());
+//    EXPECT_EQ(contact.point[2], 0.5);
+//    EXPECT_EQ(contact.penetrationDepth, 0.0);
+//  }
+}
+
+//==============================================================================
+TEST(CollisionDetector, SphereSphere)
+{
+  CollisionOptions options;
+  CollisionResult result;
+
+  Sphere s1;
+  Sphere s2;
+
+  s1.radius = 0.5;
+  s2.radius = 0.5;
+
+  Eigen::Isometry3d tf1(Eigen::Isometry3d::Identity());
+  Eigen::Isometry3d tf2(Eigen::Isometry3d::Identity());
+
+  tf1.translation() << 0, 0, 0.5;
+  tf2.translation() << 0, 0, 0;
+
+  collide(&s1, tf1, &s2, tf2, options, result);
+  EXPECT_EQ(result.getNumContacts(), 0);
+
+  tf1.translation() << 0, 0, 0.99;
+  tf2.translation() << 0, 0, 0;
+
+  //
+  collide(&s1, tf1, &s2, tf2, options, result);
+//  EXPECT_EQ(result.getNumContacts(), 4);
+//  for (size_t i = 0; i < result.getNumContacts(); ++i)
+//  {
+//    Contact contact = result.getContact(i);
+
+//    EXPECT_EQ(contact.normal, Eigen::Vector3d::UnitZ());
+//    EXPECT_EQ(contact.point[2], 0.5);
+//    EXPECT_EQ(contact.penetrationDepth, 0.0);
+//  }
 }
 
 //==============================================================================
