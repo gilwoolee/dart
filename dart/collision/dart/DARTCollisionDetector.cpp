@@ -41,169 +41,46 @@
 #include "dart/common/Console.h"
 #include "dart/dynamics/Shape.h"
 #include "dart/dynamics/BodyNode.h"
-#include "dart/collision/dart/DARTCollide.h"
-#include "dart/collision/dart/DARTCollideCCD.h"
+#include "dart/collision/dart/NarrowPhase.h"
 
 namespace dart {
 namespace collision {
 
 //==============================================================================
-const CollisionFunction& CollisionFunctionMatrix::getCollisionFunction(
-    GeometryType _geom1, GeometryType _geom2) const
-{
-  return mCollisionMatrix[_geom1][_geom2];
-}
-
-//==============================================================================
-CollisionFunctionMatrix::CollisionFunctionMatrix()
-{
-  dtmsg << "CollisionFunctionMatrix is initilizing..." << std::endl;
-
-  // Fill all the element with nullptr
-  for (auto& collFuncArray : mCollisionMatrix)
-    collFuncArray.fill(nullptr);
-
-  // Assign collision functions
-  mCollisionMatrix[GT_BOX][GT_BOX   ] = shapeIntersect<Box, Box   >;
-//  mCollisionMatrix[GT_BOX][GT_SPHERE] = shapeIntersect<Box, Sphere>;
-
-//  mCollisionMatrix[GT_SPHERE][GT_BOX   ] = shapeIntersect<Sphere, Box   >;
-  mCollisionMatrix[GT_SPHERE][GT_SPHERE] = shapeIntersect<Sphere, Sphere>;
-
-  mCollisionMatrix[GT_CONVEX][GT_CONVEX] = shapeIntersect<Convex, Convex>;
-
-//  mCollisionMatrix[GT_CYLINDER][GT_CYLINDER] = collideCy
-}
-
-//==============================================================================
-CollisionFunctionMatrix::~CollisionFunctionMatrix()
-{
-
-}
-
-//==============================================================================
-std::size_t collide(const CollisionGeometry* _geom1,
-                    const Eigen::Isometry3d& _tf1,
-                    const CollisionGeometry* _geom2,
-                    const Eigen::Isometry3d& _tf2,
-                    const CollisionOptions& _options,
-                    CollisionResult& _result)
-{
-  _result.removeAllContacts();
-
-  const GeometryType& type1 = _geom1->getGeometryType();
-  const GeometryType& type2 = _geom2->getGeometryType();
-
-  const CollisionFunction& func
-      = CollisionFunctionMatrix::getSingleton().getCollisionFunction(
-          type1, type2);
-
-  if (func == nullptr)
-  {
-    dtwarn << "Unsupported collision shapes. "
-           << "Collide function is null pointer." << std::endl;
-    return 0;
-  }
-
-  func(_geom1, _tf1, _geom2, _tf2, _options, _result);
-
-  return _result.getNumContacts();
-}
-
-//==============================================================================
-template <>
-std::size_t shapeIntersect<Box, Box>(const CollisionGeometry* _geom1,
-                                     const Eigen::Isometry3d& _tf1,
-                                     const CollisionGeometry* _geom2,
-                                     const Eigen::Isometry3d& _tf2,
-                                     const CollisionOptions& _options,
-                                     CollisionResult& _result)
-{
-  return collideBoxBox(*static_cast<const Box*>(_geom1), _tf1,
-                       *static_cast<const Box*>(_geom2), _tf2,
-                       _options, _result);
-}
-
-//==============================================================================
-template <>
-std::size_t shapeIntersect<Sphere, Sphere>(const CollisionGeometry* _geom1,
-                                           const Eigen::Isometry3d& _tf1,
-                                           const CollisionGeometry* _geom2,
-                                           const Eigen::Isometry3d& _tf2,
-                                           const CollisionOptions& _options,
-                                           CollisionResult& _result)
-{
-  std::cout << "shapeIntersect<Sphere, Sphere>()" << std::endl;
-
-  return collideSphereSphereLibccd(*static_cast<const Sphere*>(_geom1), _tf1,
-                                   *static_cast<const Sphere*>(_geom2), _tf2,
-                                   _options, _result);
-}
-
-//==============================================================================
-template <>
-std::size_t shapeIntersect<Convex, Convex>(const CollisionGeometry* _geom1,
-                                           const Eigen::Isometry3d& _tf1,
-                                           const CollisionGeometry* _geom2,
-                                           const Eigen::Isometry3d& _tf2,
-                                           const CollisionOptions& _options,
-                                           CollisionResult& _result)
-{
-  return collideConvexConvexLibccd(
-        *static_cast<const Convex*>(_geom1), _tf1,
-        *static_cast<const Convex*>(_geom2), _tf2,
-        _options, _result);
-}
-
-//==============================================================================
-size_t collideBoxBox(const Box& _box1,
-                     const Eigen::Isometry3d& _tf1,
-                     const Box& _box2,
-                     const Eigen::Isometry3d& _tf2,
-                     const CollisionOptions& _options,
-                     CollisionResult& _result)
-{
-  std::vector<Contact> contacts;
-
-  dtmsg << "collideBoxBox() is called." << std::endl;
-
-  odeBoxBox(_box1.getSize(), _tf1,
-            _box2.getSize(), _tf2,
-            &contacts);
-
-  for (const auto& contact : contacts)
-    _result.addContact(contact);
-
-  return _result.getNumContacts();
-}
-
-//==============================================================================
 DARTCollisionDetector::DARTCollisionDetector()
-  : CollisionDetector() {
+  : CollisionDetector()
+{
 }
 
 //==============================================================================
-DARTCollisionDetector::~DARTCollisionDetector() {
+DARTCollisionDetector::~DARTCollisionDetector()
+{
 }
 
+//==============================================================================
 CollisionNode* DARTCollisionDetector::createCollisionNode(
-    dynamics::BodyNode* _bodyNode) {
+    dynamics::BodyNode* _bodyNode)
+{
   return new CollisionNode(_bodyNode);
 }
 
 //==============================================================================
 bool DARTCollisionDetector::detectCollision(bool /*_checkAllCollisions*/,
-                                            bool /*_calculateContactPoints*/) {
+                                            bool /*_calculateContactPoints*/)
+{
   clearAllContacts();
 
   // Set all the body nodes are not in colliding
   for (size_t i = 0; i < mCollisionNodes.size(); i++)
     mCollisionNodes[i]->getBodyNode()->setColliding(false);
 
-  std::vector<Contact> contacts;
+  CollisionOptions options;
+  CollisionResult result;
 
-  for (size_t i = 0; i < mCollisionNodes.size(); i++) {
-    for (size_t j = i + 1; j < mCollisionNodes.size(); j++) {
+  for (size_t i = 0; i < mCollisionNodes.size(); i++)
+  {
+    for (size_t j = i + 1; j < mCollisionNodes.size(); j++)
+    {
       CollisionNode* collNode1 = mCollisionNodes[i];
       CollisionNode* collNode2 = mCollisionNodes[j];
       dynamics::BodyNode* BodyNode1 = collNode1->getBodyNode();
@@ -212,24 +89,30 @@ bool DARTCollisionDetector::detectCollision(bool /*_checkAllCollisions*/,
       if (!isCollidable(collNode1, collNode2))
         continue;
 
-      for (size_t k = 0; k < BodyNode1->getNumCollisionShapes(); k++) {
-        for (size_t l = 0; l < BodyNode2->getNumCollisionShapes(); l++) {
+      for (size_t k = 0; k < BodyNode1->getNumCollisionShapes(); k++)
+      {
+        for (size_t l = 0; l < BodyNode2->getNumCollisionShapes(); l++)
+        {
           int currContactNum = mContacts.size();
 
-          contacts.clear();
-          collide(BodyNode1->getCollisionShape(k),
-                  BodyNode1->getTransform()
-                  * BodyNode1->getCollisionShape(k)->getLocalTransform(),
-                  BodyNode2->getCollisionShape(l),
-                  BodyNode2->getTransform()
-                  * BodyNode2->getCollisionShape(l)->getLocalTransform(),
-                  &contacts);
+          result.removeAllContacts();
 
-          size_t numContacts = contacts.size();
+          NarrowPhase::collide(
+                BodyNode1->getCollisionShape(k),
+                BodyNode1->getTransform()
+                * BodyNode1->getCollisionShape(k)->getLocalTransform(),
+                BodyNode2->getCollisionShape(l),
+                BodyNode2->getTransform()
+                * BodyNode2->getCollisionShape(l)->getLocalTransform(),
+                options,
+                result);
 
-          for (unsigned int m = 0; m < numContacts; ++m) {
+          size_t numContacts = result.getNumContacts();
+
+          for (unsigned int m = 0; m < numContacts; ++m)
+          {
             Contact contactPair;
-            contactPair = contacts[m];
+            contactPair = result.getContact(m);
             contactPair.bodyNode1 = BodyNode1;
             contactPair.bodyNode2 = BodyNode2;
             assert(contactPair.bodyNode1 != NULL);
@@ -239,12 +122,16 @@ bool DARTCollisionDetector::detectCollision(bool /*_checkAllCollisions*/,
           }
 
           std::vector<bool> markForDeletion(numContacts, false);
-          for (size_t m = 0; m < numContacts; m++) {
-            for (size_t n = m + 1; n < numContacts; n++) {
+          for (size_t m = 0; m < numContacts; m++)
+          {
+            for (size_t n = m + 1; n < numContacts; n++)
+            {
               Eigen::Vector3d diff =
                   mContacts[currContactNum + m].point -
                   mContacts[currContactNum + n].point;
-              if (diff.dot(diff) < 1e-6) {
+
+              if (diff.dot(diff) < 1e-6)
+              {
                 markForDeletion[m] = true;
                 break;
               }
@@ -274,24 +161,32 @@ bool DARTCollisionDetector::detectCollision(bool /*_checkAllCollisions*/,
 //==============================================================================
 bool DARTCollisionDetector::detectCollision(CollisionNode* _collNode1,
                                             CollisionNode* _collNode2,
-                                            bool /*_calculateContactPoints*/) {
+                                            bool /*_calculateContactPoints*/)
+{
   std::vector<Contact> contacts;
   dynamics::BodyNode* BodyNode1 = _collNode1->getBodyNode();
   dynamics::BodyNode* BodyNode2 = _collNode2->getBodyNode();
 
-  for (size_t i = 0; i < BodyNode1->getNumCollisionShapes(); i++) {
-    for (size_t j = 0; j < BodyNode2->getNumCollisionShapes(); j++) {
-      collide(BodyNode1->getCollisionShape(i),
-              BodyNode1->getTransform()
-              * BodyNode1->getCollisionShape(i)->getLocalTransform(),
-              BodyNode2->getCollisionShape(j),
-              BodyNode2->getTransform()
-              * BodyNode2->getCollisionShape(j)->getLocalTransform(),
-              &contacts);
+  CollisionOptions options;
+  CollisionResult result;
+
+  for (size_t i = 0; i < BodyNode1->getNumCollisionShapes(); i++)
+  {
+    for (size_t j = 0; j < BodyNode2->getNumCollisionShapes(); j++)
+    {
+      NarrowPhase::collide(
+            BodyNode1->getCollisionShape(i),
+            BodyNode1->getTransform()
+            * BodyNode1->getCollisionShape(i)->getLocalTransform(),
+            BodyNode2->getCollisionShape(j),
+            BodyNode2->getTransform()
+            * BodyNode2->getCollisionShape(j)->getLocalTransform(),
+            options,
+            result);
     }
   }
 
-  return contacts.size() > 0 ? true : false;
+  return result.getNumContacts() > 0;
 }
 
 }  // namespace collision

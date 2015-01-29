@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015, Georgia Tech Research Corporation
+ * Copyright (c) 2015, Georgia Tech Research Corporation
  * All rights reserved.
  *
  * Author(s): Jeongseok Lee <jslee02@gmail.com>
@@ -34,51 +34,80 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef  DART_COLLISION_DART_DARTCOLLISIONDETECTOR_H_
-#define  DART_COLLISION_DART_DARTCOLLISIONDETECTOR_H_
+#include "dart/dynamics/SphereShape.h"
 
-#include <array>
-
-#include "dart/common/Console.h"
-#include "dart/common/Singletone.h"
-#include "dart/collision/CollisionDetector.h"
+#include "dart/renderer/RenderInterface.h"
 
 namespace dart {
-
 namespace dynamics {
-class Shape;
-}  // namespace dynamics
-
-namespace collision {
-
-using common::Singleton;
 
 //==============================================================================
-/// \brief
-class DARTCollisionDetector : public CollisionDetector
+SphereShape::SphereShape(double _radius)
+  : Shape(SPHERE)
 {
-public:
-  /// \brief Default constructor
-  DARTCollisionDetector();
+  setRadius(_radius);
+  initMeshes();
+}
 
-  /// \brief Default destructor
-  virtual ~DARTCollisionDetector();
+//==============================================================================
+SphereShape::~SphereShape()
+{
+}
 
-  // Documentation inherited
-  virtual CollisionNode* createCollisionNode(dynamics::BodyNode* _bodyNode);
+//==============================================================================
+void SphereShape::setRadius(double _radius)
+{
+  assert(_radius > 0.0);
 
-  // Documentation inherited
-  virtual bool detectCollision(bool _checkAllCollisions,
-                               bool _calculateContactPoints);
+  mRadius = _radius;
+//  mBoundingBoxDim = _radius;
+  // TODO:
 
-protected:
-  // Documentation inherited
-  virtual bool detectCollision(CollisionNode* _collNode1,
-                               CollisionNode* _collNode2,
-                               bool _calculateContactPoints);
-};
+  computeVolume();
+}
 
-}  // namespace collision
+//==============================================================================
+double SphereShape::getRadius() const
+{
+  return mRadius;
+}
+
+//==============================================================================
+void SphereShape::draw(renderer::RenderInterface* _ri,
+                          const Eigen::Vector4d& _color,
+                          bool _useDefaultColor) const
+{
+  if (!_ri)
+    return;
+  if (!_useDefaultColor)
+    _ri->setPenColor(_color);
+  else
+    _ri->setPenColor(mColor);
+  _ri->pushMatrix();
+  _ri->transform(mTransform);
+  _ri->drawEllipsoid(Eigen::Vector3d(mRadius*2.0, mRadius*2.0, mRadius*2.0));
+  // TODO:
+  _ri->popMatrix();
+}
+
+//==============================================================================
+Eigen::Matrix3d SphereShape::computeInertia(double _mass) const
+{
+  Eigen::Matrix3d inertia = Eigen::Matrix3d::Identity();
+
+  // TODO:
+
+  return inertia;
+}
+
+//==============================================================================
+void SphereShape::computeVolume()
+{
+  // 4/3* Pi* a/2* b/2* c/2
+//  mVolume = DART_PI * mRadius(0) * mRadius(1) *mRadius(2) / 6;
+
+  // TODO:
+}
+
+}  // namespace dynamics
 }  // namespace dart
-
-#endif  // DART_COLLISION_DART_DARTCOLLISIONDETECTOR_H_

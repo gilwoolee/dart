@@ -85,6 +85,35 @@ public:
   // Documentation inherited.
   virtual Eigen::Matrix3d computeInertia(double _mass) const;
 
+  //============================================================================
+  // TODO: TEST CODE
+  //============================================================================
+
+  Eigen::Vector3d* plane_normals;
+  double* plane_dis;
+
+  /// @brief An array of indices to the points of each polygon, it should be the number of vertices
+  /// followed by that amount of indices to "points" in counter clockwise order
+  int* polygons;
+
+  Eigen::Vector3d* points;
+  int num_points;
+  int num_edges;
+  int num_planes;
+
+  struct Edge
+  {
+    int first, second;
+  };
+
+  Edge* edges;
+
+  /// @brief center of the convex polytope, this is used for collision: center is guaranteed in the internal of the polytope (as it is convex)
+  Eigen::Vector3d center;
+
+  //============================================================================
+
+
 protected:
   // Documentation inherited.
   virtual void computeVolume();

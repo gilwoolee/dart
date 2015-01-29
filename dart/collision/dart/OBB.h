@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2013-2015, Georgia Tech Research Corporation
+ * Copyright (c) 2015, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>,
- *            Tobias Kunz <tobias@gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
  * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -35,56 +34,32 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_COLLISION_COLLISIONNODE_H_
-#define DART_COLLISION_COLLISIONNODE_H_
+#ifndef  DART_COLLISION_DART_OBB_H_
+#define  DART_COLLISION_DART_OBB_H_
 
-#include <cstddef>
 #include <Eigen/Eigen>
 
-namespace dart {
-namespace dynamics {
-class BodyNode;
-class Shape;
-}  // namespace dynamics
-}  // namespace dart
+#include "dart/common/Console.h"
 
 namespace dart {
 namespace collision {
 
-///
-class CollisionNode {
+class OBB
+{
 public:
-  /// Default constructor
-  explicit CollisionNode(dynamics::BodyNode* _bodyNode);
-
-  /// Default destructor
-  virtual ~CollisionNode();
-
-  ///
-  dynamics::BodyNode* getBodyNode() const;
-
-  ///
-  void setIndex(size_t _idx);
-
-  ///
-  size_t getIndex() const;
-
-  const dynamics::Shape* getShape() const { return mShape; }
-  const Eigen::Isometry3d& getTransform() const { return mTransform; }
-
 protected:
-  ///
-  dynamics::BodyNode* mBodyNode;
-  // TODO: Change to parent Frame
+  /// Orientation of OBB
+  Eigen::Matrix3d mOrientation;
 
-  ///
-  size_t mIndex;
+  /// Center of OBB
+  Eigen::Vector3d mCenter;
 
-  const dynamics::Shape* mShape;
-  const Eigen::Isometry3d mTransform;
+  /// Half dimensions of OBB
+  Eigen::Vector3d mHalfSize;
+private:
 };
 
 }  // namespace collision
 }  // namespace dart
 
-#endif  // DART_COLLISION_COLLISIONNODE_H_
+#endif  // DART_COLLISION_DART_OBB_H_

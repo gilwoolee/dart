@@ -10,6 +10,7 @@ foreach(APPDIR
     hybridDynamics
     jointConstraints
     mixedChain
+    multipleShapes
     operationalSpaceControl
     rigidChain
     rigidCubes

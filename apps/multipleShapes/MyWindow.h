@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2013-2015, Georgia Tech Research Corporation
+ * Copyright (c) 2015, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>,
- *            Tobias Kunz <tobias@gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
  * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -35,56 +34,35 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_COLLISION_COLLISIONNODE_H_
-#define DART_COLLISION_COLLISIONNODE_H_
+#ifndef APPS_CUBES_MYWINDOW_H_
+#define APPS_CUBES_MYWINDOW_H_
 
-#include <cstddef>
-#include <Eigen/Eigen>
+#include "dart/dart.h"
 
-namespace dart {
-namespace dynamics {
-class BodyNode;
-class Shape;
-}  // namespace dynamics
-}  // namespace dart
-
-namespace dart {
-namespace collision {
-
-///
-class CollisionNode {
+/// \brief
+class MyWindow : public dart::gui::SimWindow {
 public:
-  /// Default constructor
-  explicit CollisionNode(dynamics::BodyNode* _bodyNode);
+  /// \brief
+  MyWindow();
 
-  /// Default destructor
-  virtual ~CollisionNode();
+  /// \brief
+  virtual ~MyWindow();
 
-  ///
-  dynamics::BodyNode* getBodyNode() const;
+  /// \brief
+  virtual void timeStepping();
 
-  ///
-  void setIndex(size_t _idx);
+  /// \brief
+  virtual void drawSkels();
 
-  ///
-  size_t getIndex() const;
+  /// \brief
+  virtual void keyboard(unsigned char _key, int _x, int _y);
 
-  const dynamics::Shape* getShape() const { return mShape; }
-  const Eigen::Isometry3d& getTransform() const { return mTransform; }
+private:
+  /// \brief
+  Eigen::Vector3d mForce;
 
-protected:
-  ///
-  dynamics::BodyNode* mBodyNode;
-  // TODO: Change to parent Frame
-
-  ///
-  size_t mIndex;
-
-  const dynamics::Shape* mShape;
-  const Eigen::Isometry3d mTransform;
+  /// \brief Number of frames for applying external force
+  int mImpulseDuration;
 };
 
-}  // namespace collision
-}  // namespace dart
-
-#endif  // DART_COLLISION_COLLISIONNODE_H_
+#endif  // APPS_CUBES_MYWINDOW_H_

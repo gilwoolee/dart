@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2013-2015, Georgia Tech Research Corporation
+ * Copyright (c) 2015, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>,
- *            Tobias Kunz <tobias@gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
  * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -35,56 +34,66 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_COLLISION_COLLISIONNODE_H_
-#define DART_COLLISION_COLLISIONNODE_H_
+#ifndef  DART_COLLISION_DART_AABB_H_
+#define  DART_COLLISION_DART_AABB_H_
 
-#include <cstddef>
 #include <Eigen/Eigen>
-
-namespace dart {
-namespace dynamics {
-class BodyNode;
-class Shape;
-}  // namespace dynamics
-}  // namespace dart
 
 namespace dart {
 namespace collision {
 
-///
-class CollisionNode {
+class AABB
+{
 public:
-  /// Default constructor
-  explicit CollisionNode(dynamics::BodyNode* _bodyNode);
+  /// Constructor
+  AABB();
 
-  /// Default destructor
-  virtual ~CollisionNode();
+  /// Constructor
+  AABB(const Eigen::Vector3d& _min,
+       const Eigen::Vector3d& _max);
 
-  ///
-  dynamics::BodyNode* getBodyNode() const;
+  /// Destructor
+  virtual ~AABB();
 
-  ///
-  void setIndex(size_t _idx);
+  /// Return the center point
+  Eigen::Vector3d getCenter() const;
 
-  ///
-  size_t getIndex() const;
+  /// Return the minimum coordinates of the AABB
+  const Eigen::Vector3d& getMin() const;
 
-  const dynamics::Shape* getShape() const { return mShape; }
-  const Eigen::Isometry3d& getTransform() const { return mTransform; }
+  /// Set the minimum coordinates of the AABB
+  void setMin(const Eigen::Vector3d& _min);
+
+  /// Return the maximum coordinates of the AABB
+  const Eigen::Vector3d& getMax() const;
+
+  /// Set the maximum coordinates of the AABB
+  void setMax(const Eigen::Vector3d& _max);
+
+  /// Return true if the current AABB is overlapping with the AABB in argument
+  bool isCollidingWith(const AABB& _aabb) const;
 
 protected:
-  ///
-  dynamics::BodyNode* mBodyNode;
-  // TODO: Change to parent Frame
+  /// Minimum world coordinates of the AABB on the x, y, and z axis
+  Eigen::Vector3d mMin;
 
-  ///
-  size_t mIndex;
+  /// Maximum world coordinates of the AABB on the x, y, and z axis
+  Eigen::Vector3d mMax;
 
-  const dynamics::Shape* mShape;
-  const Eigen::Isometry3d mTransform;
+private:
+  /// Private copy-constructor
+  AABB(const AABB& aabb) = delete;
+
+  /// Private assignment operator
+  AABB& operator=(const AABB& aabb) = delete;
+
+  /// Constructor
+  AABB(const Eigen::Isometry3d& transform,
+       const Eigen::Vector3d& extents) = delete;
+
 };
 
 }  // namespace collision
 }  // namespace dart
 
-#endif  // DART_COLLISION_COLLISIONNODE_H_
+#endif  // DART_COLLISION_DART_AABB_H_

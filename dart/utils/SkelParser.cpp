@@ -58,6 +58,7 @@
 #include "dart/dynamics/PlaneShape.h"
 #include "dart/dynamics/MeshShape.h"
 #include "dart/dynamics/SoftMeshShape.h"
+#include "dart/dynamics/SphereShape.h"
 #include "dart/dynamics/WeldJoint.h"
 #include "dart/dynamics/PrismaticJoint.h"
 #include "dart/dynamics/RevoluteJoint.h"
@@ -772,44 +773,62 @@ SkelParser::SkelBodyNode SkelParser::readSoftBodyNode(
   return softBodyNode;
 }
 
-dynamics::Shape* SkelParser::readShape(tinyxml2::XMLElement* vizEle) {
+//==============================================================================
+dynamics::Shape* SkelParser::readShape(tinyxml2::XMLElement* vizEle)
+{
   dynamics::Shape* newShape = NULL;
 
   // Geometry
   assert(hasElement(vizEle, "geometry"));
   tinyxml2::XMLElement* geometryEle = getElement(vizEle, "geometry");
 
-  if (hasElement(geometryEle, "box")) {
+  if (hasElement(geometryEle, "box"))
+  {
     tinyxml2::XMLElement* boxEle       = getElement(geometryEle, "box");
     Eigen::Vector3d       size         = getValueVector3d(boxEle, "size");
     newShape = new dynamics::BoxShape(size);
-  } else if (hasElement(geometryEle, "ellipsoid")) {
+  }
+  else if (hasElement(geometryEle, "sphere"))
+  {
+    tinyxml2::XMLElement* ellipsoidEle = getElement(geometryEle, "sphere");
+    double                radius       = getValueDouble(ellipsoidEle, "radius");
+    newShape = new dynamics::SphereShape(radius);
+  }
+  else if (hasElement(geometryEle, "ellipsoid"))
+  {
     tinyxml2::XMLElement* ellipsoidEle = getElement(geometryEle, "ellipsoid");
     Eigen::Vector3d       size         = getValueVector3d(ellipsoidEle, "size");
     newShape = new dynamics::EllipsoidShape(size);
-  } else if (hasElement(geometryEle, "cylinder")) {
+  }
+  else if (hasElement(geometryEle, "cylinder"))
+  {
     tinyxml2::XMLElement* cylinderEle  = getElement(geometryEle, "cylinder");
     double                radius       = getValueDouble(cylinderEle, "radius");
     double                height       = getValueDouble(cylinderEle, "height");
     newShape = new dynamics::CylinderShape(radius, height);
-  } else if (hasElement(geometryEle, "plane")) {
+  }
+  else if (hasElement(geometryEle, "plane"))
+  {
     tinyxml2::XMLElement* planeEle     = getElement(geometryEle, "plane");
     Eigen::Vector3d       normal       = getValueVector3d(planeEle, "normal");
     Eigen::Vector3d       point        = getValueVector3d(planeEle, "point");
     newShape = new dynamics::PlaneShape(normal, point);
-  } else if (hasElement(geometryEle, "mesh")) {
+  }
+  else if (hasElement(geometryEle, "mesh"))
+  {
     tinyxml2::XMLElement* meshEle      = getElement(geometryEle, "mesh");
     std::string           filename     = getValueString(meshEle, "file_name");
     Eigen::Vector3d       scale        = getValueVector3d(meshEle, "scale");
     // TODO(JS): Do we assume that all mesh files place at DART_DATA_PATH?
     const aiScene* model = dynamics::MeshShape::loadMesh(DART_DATA_PATH +
                                                          filename);
-    if (model) {
+    if (model)
       newShape = new dynamics::MeshShape(scale, model);
-    } else {
+    else
       dterr << "Fail to load model[" << filename << "]." << std::endl;
-    }
-  } else {
+  }
+  else
+  {
     dterr << "Unknown visualization shape.\n";
     assert(0);
   }

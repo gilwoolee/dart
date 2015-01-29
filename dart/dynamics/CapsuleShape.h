@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2013-2015, Georgia Tech Research Corporation
+ * Copyright (c) 2015, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>,
- *            Tobias Kunz <tobias@gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
  * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -35,56 +34,59 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_COLLISION_COLLISIONNODE_H_
-#define DART_COLLISION_COLLISIONNODE_H_
+#ifndef DART_DYNAMICS_CAPSULESHAPE_H_
+#define DART_DYNAMICS_CAPSULESHAPE_H_
 
-#include <cstddef>
-#include <Eigen/Eigen>
+#include "dart/dynamics/Shape.h"
 
 namespace dart {
 namespace dynamics {
-class BodyNode;
-class Shape;
+
+class CapsuleShape : public Shape
+{
+public:
+  // To get byte-aligned Eigen vectors
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  /// Constructor.
+  CapsuleShape(double _radius, double _height);
+
+  ///
+  double getRadius() const;
+
+  ///
+  void setRadius(double _radius);
+
+  ///
+  double getHeight() const;
+
+  ///
+  void setHeight(double _height);
+
+  // Documentation inherited.
+  void draw(renderer::RenderInterface* _ri = NULL,
+            const Eigen::Vector4d& _color = Eigen::Vector4d::Ones(),
+            bool _useDefaultColor = true) const;
+
+  // Documentation inherited.
+  virtual Eigen::Matrix3d computeInertia(double _mass) const;
+
+protected:
+  // Documentation inherited.
+  virtual void computeVolume();
+
+private:
+  /// \brief
+  void _updateBoundingBoxDim();
+
+  /// \brief
+  double mRadius;
+
+  /// \brief Height along z-axis.
+  double mHeight;
+};
+
 }  // namespace dynamics
 }  // namespace dart
 
-namespace dart {
-namespace collision {
-
-///
-class CollisionNode {
-public:
-  /// Default constructor
-  explicit CollisionNode(dynamics::BodyNode* _bodyNode);
-
-  /// Default destructor
-  virtual ~CollisionNode();
-
-  ///
-  dynamics::BodyNode* getBodyNode() const;
-
-  ///
-  void setIndex(size_t _idx);
-
-  ///
-  size_t getIndex() const;
-
-  const dynamics::Shape* getShape() const { return mShape; }
-  const Eigen::Isometry3d& getTransform() const { return mTransform; }
-
-protected:
-  ///
-  dynamics::BodyNode* mBodyNode;
-  // TODO: Change to parent Frame
-
-  ///
-  size_t mIndex;
-
-  const dynamics::Shape* mShape;
-  const Eigen::Isometry3d mTransform;
-};
-
-}  // namespace collision
-}  // namespace dart
-
-#endif  // DART_COLLISION_COLLISIONNODE_H_
+#endif  // DART_DYNAMICS_CAPSULESHAPE_H_

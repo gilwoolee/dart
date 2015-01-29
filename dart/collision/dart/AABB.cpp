@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2013-2015, Georgia Tech Research Corporation
+ * Copyright (c) 2015, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>,
- *            Tobias Kunz <tobias@gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
  * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -35,56 +34,55 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_COLLISION_COLLISIONNODE_H_
-#define DART_COLLISION_COLLISIONNODE_H_
-
-#include <cstddef>
-#include <Eigen/Eigen>
-
-namespace dart {
-namespace dynamics {
-class BodyNode;
-class Shape;
-}  // namespace dynamics
-}  // namespace dart
+#include "dart/collision/dart/AABB.h"
 
 namespace dart {
 namespace collision {
 
-///
-class CollisionNode {
-public:
-  /// Default constructor
-  explicit CollisionNode(dynamics::BodyNode* _bodyNode);
+//==============================================================================
+Eigen::Vector3d AABB::getCenter() const
+{
+  return (mMin + mMax) * 0.5;
+}
 
-  /// Default destructor
-  virtual ~CollisionNode();
+//==============================================================================
+const Eigen::Vector3d&AABB::getMin() const
+{
+  return mMin;
+}
 
-  ///
-  dynamics::BodyNode* getBodyNode() const;
+//==============================================================================
+void AABB::setMin(const Eigen::Vector3d& _min)
+{
+  mMin = _min;
+}
 
-  ///
-  void setIndex(size_t _idx);
+//==============================================================================
+const Eigen::Vector3d&AABB::getMax() const
+{
+  return mMax;
+}
 
-  ///
-  size_t getIndex() const;
+//==============================================================================
+void AABB::setMax(const Eigen::Vector3d& _max)
+{
+  mMax= _max;
+}
 
-  const dynamics::Shape* getShape() const { return mShape; }
-  const Eigen::Isometry3d& getTransform() const { return mTransform; }
+//==============================================================================
+bool AABB::isCollidingWith(const AABB& _aabb) const
+{
+  if (mMax[0] < _aabb.mMin[0] || _aabb.mMax[0] < mMin[0])
+    return false;
 
-protected:
-  ///
-  dynamics::BodyNode* mBodyNode;
-  // TODO: Change to parent Frame
+  if (mMax[1] < _aabb.mMin[1] || _aabb.mMax[1] < mMin[1])
+    return false;
 
-  ///
-  size_t mIndex;
+  if (mMax[2] < _aabb.mMin[2] || _aabb.mMax[2] < mMin[2])
+    return false;
 
-  const dynamics::Shape* mShape;
-  const Eigen::Isometry3d mTransform;
-};
+  return true;
+}
 
 }  // namespace collision
 }  // namespace dart
-
-#endif  // DART_COLLISION_COLLISIONNODE_H_

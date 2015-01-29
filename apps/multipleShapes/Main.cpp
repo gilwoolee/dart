@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2013-2015, Georgia Tech Research Corporation
+ * Copyright (c) 2015, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Jeongseok Lee <jslee02@gmail.com>,
- *            Tobias Kunz <tobias@gatech.edu>
+ * Author(s): Jeongseok Lee <jslee02@gmail.com>
  *
  * Georgia Tech Graphics Lab and Humanoid Robotics Lab
  *
@@ -35,56 +34,35 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DART_COLLISION_COLLISIONNODE_H_
-#define DART_COLLISION_COLLISIONNODE_H_
+#include <iostream>
 
-#include <cstddef>
-#include <Eigen/Eigen>
+#include "dart/dart.h"
 
-namespace dart {
-namespace dynamics {
-class BodyNode;
-class Shape;
-}  // namespace dynamics
-}  // namespace dart
+#include "MyWindow.h"
 
-namespace dart {
-namespace collision {
+int main(int argc, char* argv[])
+{
+  // create and initialize the world
+  dart::simulation::World *myWorld
+      = dart::utils::SkelParser::readWorld(
+          DART_DATA_PATH"/skel/multiple_shapes.skel");
+  assert(myWorld != NULL);
+  Eigen::Vector3d gravity(0.0, -9.81, 0.0);
+  myWorld->setGravity(gravity);
 
-///
-class CollisionNode {
-public:
-  /// Default constructor
-  explicit CollisionNode(dynamics::BodyNode* _bodyNode);
+  // create a window and link it to the world
+  MyWindow window;
+  window.setWorld(myWorld);
 
-  /// Default destructor
-  virtual ~CollisionNode();
+  std::cout << "space bar: simulation on/off" << std::endl;
+  std::cout << "'p': playback/stop" << std::endl;
+  std::cout << "'[' and ']': play one frame backward and forward" << std::endl;
+  std::cout << "'v': visualization on/off" << std::endl;
+  std::cout << "'1'--'4': programmed interaction" << std::endl;
 
-  ///
-  dynamics::BodyNode* getBodyNode() const;
+  glutInit(&argc, argv);
+  window.initWindow(640, 480, "Multiple Shapes");
+  glutMainLoop();
 
-  ///
-  void setIndex(size_t _idx);
-
-  ///
-  size_t getIndex() const;
-
-  const dynamics::Shape* getShape() const { return mShape; }
-  const Eigen::Isometry3d& getTransform() const { return mTransform; }
-
-protected:
-  ///
-  dynamics::BodyNode* mBodyNode;
-  // TODO: Change to parent Frame
-
-  ///
-  size_t mIndex;
-
-  const dynamics::Shape* mShape;
-  const Eigen::Isometry3d mTransform;
-};
-
-}  // namespace collision
-}  // namespace dart
-
-#endif  // DART_COLLISION_COLLISIONNODE_H_
+  return 0;
+}
