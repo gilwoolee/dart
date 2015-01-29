@@ -63,6 +63,7 @@ MeshShape::MeshShape(const Eigen::Vector3d& _scale, const aiScene* _mesh)
   _updateBoundingBoxDim();
   computeVolume();
   initMeshes();
+  computeCenter();
 }
 
 MeshShape::~MeshShape() {
@@ -97,6 +98,12 @@ int MeshShape::getDisplayList() const {
 
 void MeshShape::setDisplayList(int _index) {
   mDisplayList = _index;
+}
+
+//==============================================================================
+const Eigen::Vector3d& MeshShape::getCenter() const
+{
+  return mCenter;
 }
 
 void MeshShape::draw(renderer::RenderInterface* _ri,
@@ -166,6 +173,28 @@ void MeshShape::_updateBoundingBoxDim() {
   mBoundingBoxDim[0] = max_X - min_X;
   mBoundingBoxDim[1] = max_Y - min_Y;
   mBoundingBoxDim[2] = max_Z - min_Z;
+}
+
+//==============================================================================
+void MeshShape::computeCenter()
+{
+  mCenter.setZero();
+
+  size_t numVertices = 0;
+
+  for (unsigned int i = 0; i < mMesh->mNumMeshes; i++)
+  {
+    for (unsigned int j = 0; j < mMesh->mMeshes[i]->mNumVertices; j++)
+    {
+      mCenter[0] += mMesh->mMeshes[i]->mVertices[j].x;
+      mCenter[1] += mMesh->mMeshes[i]->mVertices[j].y;
+      mCenter[2] += mMesh->mMeshes[i]->mVertices[j].z;
+    }
+
+    numVertices += mMesh->mMeshes[i]->mNumVertices;
+  }
+
+  mCenter /= numVertices;
 }
 
 const aiScene* MeshShape::loadMesh(const std::string& _fileName) {

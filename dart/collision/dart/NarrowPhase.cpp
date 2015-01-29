@@ -173,23 +173,31 @@ CollisionFunctionMatrix::CollisionFunctionMatrix()
   mCollisionMatrix[dynamics::Shape::BOX      ][dynamics::Shape::SPHERE   ] = collideShapeShape<dynamics::BoxShape      , dynamics::SphereShape   , CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::BOX      ][dynamics::Shape::ELLIPSOID] = collideShapeShape<dynamics::BoxShape      , dynamics::EllipsoidShape, CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::BOX      ][dynamics::Shape::CYLINDER ] = collideShapeShape<dynamics::BoxShape      , dynamics::CylinderShape , CCDAlgorithmSet>;
+  mCollisionMatrix[dynamics::Shape::BOX      ][dynamics::Shape::MESH     ] = collideShapeShape<dynamics::BoxShape      , dynamics::MeshShape     , CCDAlgorithmSet>;
 
   mCollisionMatrix[dynamics::Shape::SPHERE   ][dynamics::Shape::BOX      ] = collideShapeShape<dynamics::SphereShape   , dynamics::BoxShape      , CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::SPHERE   ][dynamics::Shape::SPHERE   ] = collideShapeShape<dynamics::SphereShape   , dynamics::SphereShape   , CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::SPHERE   ][dynamics::Shape::ELLIPSOID] = collideShapeShape<dynamics::SphereShape   , dynamics::EllipsoidShape, CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::SPHERE   ][dynamics::Shape::CYLINDER ] = collideShapeShape<dynamics::SphereShape   , dynamics::CylinderShape , CCDAlgorithmSet>;
+  mCollisionMatrix[dynamics::Shape::SPHERE   ][dynamics::Shape::MESH     ] = collideShapeShape<dynamics::SphereShape   , dynamics::MeshShape     , CCDAlgorithmSet>;
 
   mCollisionMatrix[dynamics::Shape::ELLIPSOID][dynamics::Shape::BOX      ] = collideShapeShape<dynamics::EllipsoidShape, dynamics::BoxShape      , CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::ELLIPSOID][dynamics::Shape::SPHERE   ] = collideShapeShape<dynamics::EllipsoidShape, dynamics::SphereShape   , CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::ELLIPSOID][dynamics::Shape::ELLIPSOID] = collideShapeShape<dynamics::EllipsoidShape, dynamics::EllipsoidShape, CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::ELLIPSOID][dynamics::Shape::CYLINDER ] = collideShapeShape<dynamics::EllipsoidShape, dynamics::CylinderShape , CCDAlgorithmSet>;
+  mCollisionMatrix[dynamics::Shape::ELLIPSOID][dynamics::Shape::MESH     ] = collideShapeShape<dynamics::EllipsoidShape, dynamics::MeshShape     , CCDAlgorithmSet>;
 
   mCollisionMatrix[dynamics::Shape::CYLINDER ][dynamics::Shape::BOX      ] = collideShapeShape<dynamics::CylinderShape , dynamics::BoxShape      , CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::CYLINDER ][dynamics::Shape::SPHERE   ] = collideShapeShape<dynamics::CylinderShape , dynamics::SphereShape   , CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::CYLINDER ][dynamics::Shape::ELLIPSOID] = collideShapeShape<dynamics::CylinderShape , dynamics::EllipsoidShape, CCDAlgorithmSet>;
   mCollisionMatrix[dynamics::Shape::CYLINDER ][dynamics::Shape::CYLINDER ] = collideShapeShape<dynamics::CylinderShape , dynamics::CylinderShape , CCDAlgorithmSet>;
+  mCollisionMatrix[dynamics::Shape::CYLINDER ][dynamics::Shape::MESH     ] = collideShapeShape<dynamics::CylinderShape , dynamics::MeshShape     , CCDAlgorithmSet>;
 
-//  mCollisionMatrix[dynamics::Shape::MESH][dynamics::Shape::MESH] = collideShapeShape<dynamics::MeshShape, dynamics::MeshShape, CCD>;
+  mCollisionMatrix[dynamics::Shape::MESH     ][dynamics::Shape::BOX      ] = collideShapeShape<dynamics::MeshShape     , dynamics::BoxShape      , CCDAlgorithmSet>;
+  mCollisionMatrix[dynamics::Shape::MESH     ][dynamics::Shape::SPHERE   ] = collideShapeShape<dynamics::MeshShape     , dynamics::SphereShape   , CCDAlgorithmSet>;
+  mCollisionMatrix[dynamics::Shape::MESH     ][dynamics::Shape::ELLIPSOID] = collideShapeShape<dynamics::MeshShape     , dynamics::EllipsoidShape, CCDAlgorithmSet>;
+  mCollisionMatrix[dynamics::Shape::MESH     ][dynamics::Shape::CYLINDER ] = collideShapeShape<dynamics::MeshShape     , dynamics::CylinderShape , CCDAlgorithmSet>;
+  mCollisionMatrix[dynamics::Shape::MESH     ][dynamics::Shape::MESH     ] = collideShapeShape<dynamics::MeshShape     , dynamics::MeshShape     , CCDAlgorithmSet>;
 }
 
 //==============================================================================

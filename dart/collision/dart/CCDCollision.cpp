@@ -336,26 +336,39 @@ void supportCylinder(const void* obj, const ccd_vec3_t* dir_, ccd_vec3_t* v)
 void supportConvex(const void* obj, const ccd_vec3_t* dir_, ccd_vec3_t* v)
 {
   const ccd_convex_t* c = static_cast<const ccd_convex_t*>(obj);
+
+  const dynamics::MeshShape* convex = c->convex;
+
+  const aiScene*         mesh   = convex->getMesh();
+  const Eigen::Vector3d& center = convex->getCenter();
+  const Eigen::Vector3d& scale  = convex->getScale();
+
   ccd_vec3_t dir, p;
-  ccd_real_t maxdot, dot;
-  int i;
-  Eigen::Vector3d* curp;
-  const Eigen::Vector3d& center = c->convex->center;
+  ccd_real_t maxdot = -CCD_REAL_MAX;
+  ccd_real_t dot;
 
   ccdVec3Copy(&dir, dir_);
   ccdQuatRotVec(&dir, &c->rot_inv);
 
-  maxdot = -CCD_REAL_MAX;
-  curp = c->convex->points;
-
-  for(i = 0; i < c->convex->num_points; ++i, curp += 1)
+  for (unsigned int i = 0; i < mesh->mNumMeshes; i++)
   {
-    ccdVec3Set(&p, (*curp)[0] - center[0], (*curp)[1] - center[1], (*curp)[2] - center[2]);
-    dot = ccdVec3Dot(&dir, &p);
-    if(dot > maxdot)
+    for (unsigned int j = 0; j < mesh->mMeshes[i]->mNumVertices; j++)
     {
-      ccdVec3Set(v, (*curp)[0], (*curp)[1], (*curp)[2]);
-      maxdot = dot;
+      const aiVector3D vertex(
+          mesh->mMeshes[i]->mVertices[j].x * scale[0],
+          mesh->mMeshes[i]->mVertices[j].y * scale[1],
+          mesh->mMeshes[i]->mVertices[j].z * scale[2]);
+
+      ccdVec3Set(&p, vertex.x - center[0], vertex.y - center[1],
+          vertex.z - center[2]);
+
+      dot = ccdVec3Dot(&dir, &p);
+
+      if (dot > maxdot)
+      {
+        ccdVec3Set(v, vertex.x, vertex.y, vertex.z);
+        maxdot = dot;
+      }
     }
   }
 
@@ -375,7 +388,7 @@ void centerShape(const void* obj, ccd_vec3_t* c)
 void centerConvex(const void* obj, ccd_vec3_t* c)
 {
   const ccd_convex_t *o = static_cast<const ccd_convex_t*>(obj);
-  ccdVec3Set(c, o->convex->center[0], o->convex->center[1], o->convex->center[2]);
+  ccdVec3Set(c, o->convex->mCenter[0], o->convex->mCenter[1], o->convex->mCenter[2]);
   ccdQuatRotVec(c, &o->rot);
   ccdVec3Add(c, &o->pos);
 }
@@ -390,7 +403,7 @@ void centerTriangle(const void* obj, ccd_vec3_t* c)
 }
 
 //==============================================================================
-void* CCDBlah<dynamics::BoxShape>::createCCDObject(
+void* CCDConvexShapeUtils<dynamics::BoxShape>::createCCDObject(
     const dynamics::BoxShape& s, const Eigen::Isometry3d& tf)
 {
   ccd_box_t* o = new ccd_box_t;
@@ -399,7 +412,7 @@ void* CCDBlah<dynamics::BoxShape>::createCCDObject(
 }
 
 //==============================================================================
-void* CCDBlah<dynamics::SphereShape>::createCCDObject(
+void* CCDConvexShapeUtils<dynamics::SphereShape>::createCCDObject(
     const dynamics::SphereShape& s, const Eigen::Isometry3d& tf)
 {
   ccd_sphere_t* o = new ccd_sphere_t;
@@ -408,7 +421,7 @@ void* CCDBlah<dynamics::SphereShape>::createCCDObject(
 }
 
 //==============================================================================
-void* CCDBlah<dynamics::EllipsoidShape>::createCCDObject(
+void* CCDConvexShapeUtils<dynamics::EllipsoidShape>::createCCDObject(
     const dynamics::EllipsoidShape& s, const Eigen::Isometry3d& tf)
 {
   ccd_ellip_t* o = new ccd_ellip_t;
@@ -417,7 +430,7 @@ void* CCDBlah<dynamics::EllipsoidShape>::createCCDObject(
 }
 
 //==============================================================================
-void* CCDBlah<dynamics::CylinderShape>::createCCDObject(
+void* CCDConvexShapeUtils<dynamics::CylinderShape>::createCCDObject(
     const dynamics::CylinderShape& s, const Eigen::Isometry3d& tf)
 {
   ccd_cyl_t* o = new ccd_cyl_t;
@@ -426,7 +439,7 @@ void* CCDBlah<dynamics::CylinderShape>::createCCDObject(
 }
 
 //==============================================================================
-void* CCDBlah<dynamics::CapsuleShape>::createCCDObject(
+void* CCDConvexShapeUtils<dynamics::CapsuleShape>::createCCDObject(
     const dynamics::CapsuleShape& s, const Eigen::Isometry3d& tf)
 {
   ccd_cap_t* o = new ccd_cap_t;
@@ -435,7 +448,7 @@ void* CCDBlah<dynamics::CapsuleShape>::createCCDObject(
 }
 
 //==============================================================================
-void* CCDBlah<dynamics::ConeShape>::createCCDObject(
+void* CCDConvexShapeUtils<dynamics::ConeShape>::createCCDObject(
     const dynamics::ConeShape& s, const Eigen::Isometry3d& tf)
 {
   ccd_cone_t* o = new ccd_cone_t;
@@ -444,7 +457,7 @@ void* CCDBlah<dynamics::ConeShape>::createCCDObject(
 }
 
 //==============================================================================
-void* CCDBlah<dynamics::MeshShape>::createCCDObject(
+void* CCDConvexShapeUtils<dynamics::MeshShape>::createCCDObject(
     const dynamics::MeshShape& s, const Eigen::Isometry3d& tf)
 {
   ccd_convex_t* o = new ccd_convex_t;
@@ -453,134 +466,134 @@ void* CCDBlah<dynamics::MeshShape>::createCCDObject(
 }
 
 //==============================================================================
-void CCDBlah<dynamics::BoxShape>::destroyCCDObject(void* _obj)
+void CCDConvexShapeUtils<dynamics::BoxShape>::destroyCCDObject(void* _obj)
 {
   ccd_box_t* obj = static_cast<ccd_box_t*>(_obj);
   delete obj;
 }
 
 //==============================================================================
-void CCDBlah<dynamics::SphereShape>::destroyCCDObject(void* _obj)
+void CCDConvexShapeUtils<dynamics::SphereShape>::destroyCCDObject(void* _obj)
 {
   ccd_sphere_t* obj = static_cast<ccd_sphere_t*>(_obj);
   delete obj;
 }
 
 //==============================================================================
-void CCDBlah<dynamics::EllipsoidShape>::destroyCCDObject(void* _obj)
+void CCDConvexShapeUtils<dynamics::EllipsoidShape>::destroyCCDObject(void* _obj)
 {
   ccd_ellip_t* obj = static_cast<ccd_ellip_t*>(_obj);
   delete obj;
 }
 
 //==============================================================================
-void CCDBlah<dynamics::CapsuleShape>::destroyCCDObject(void* _obj)
+void CCDConvexShapeUtils<dynamics::CapsuleShape>::destroyCCDObject(void* _obj)
 {
   ccd_cap_t* obj = static_cast<ccd_cap_t*>(_obj);
   delete obj;
 }
 
 //==============================================================================
-void CCDBlah<dynamics::ConeShape>::destroyCCDObject(void* _obj)
+void CCDConvexShapeUtils<dynamics::ConeShape>::destroyCCDObject(void* _obj)
 {
   ccd_cone_t* obj = static_cast<ccd_cone_t*>(_obj);
   delete obj;
 }
 
 //==============================================================================
-void CCDBlah<dynamics::CylinderShape>::destroyCCDObject(void* _obj)
+void CCDConvexShapeUtils<dynamics::CylinderShape>::destroyCCDObject(void* _obj)
 {
   ccd_cyl_t* obj = static_cast<ccd_cyl_t*>(_obj);
   delete obj;
 }
 
 //==============================================================================
-void CCDBlah<dynamics::MeshShape>::destroyCCDObject(void* _obj)
+void CCDConvexShapeUtils<dynamics::MeshShape>::destroyCCDObject(void* _obj)
 {
   ccd_convex_t* obj = static_cast<ccd_convex_t*>(_obj);
   delete obj;
 }
 
 //==============================================================================
-ccd_center_fn CCDBlah<dynamics::BoxShape>::getCenterFunction()
+ccd_center_fn CCDConvexShapeUtils<dynamics::BoxShape>::getCenterFunction()
 {
   return &centerShape;
 }
 
 //==============================================================================
-ccd_center_fn CCDBlah<dynamics::SphereShape>::getCenterFunction()
+ccd_center_fn CCDConvexShapeUtils<dynamics::SphereShape>::getCenterFunction()
 {
   return &centerShape;
 }
 
 //==============================================================================
-ccd_center_fn CCDBlah<dynamics::EllipsoidShape>::getCenterFunction()
+ccd_center_fn CCDConvexShapeUtils<dynamics::EllipsoidShape>::getCenterFunction()
 {
   return &centerShape;
 }
 
 //==============================================================================
-ccd_center_fn CCDBlah<dynamics::CapsuleShape>::getCenterFunction()
+ccd_center_fn CCDConvexShapeUtils<dynamics::CapsuleShape>::getCenterFunction()
 {
   return &centerShape;
 }
 
 //==============================================================================
-ccd_center_fn CCDBlah<dynamics::ConeShape>::getCenterFunction()
+ccd_center_fn CCDConvexShapeUtils<dynamics::ConeShape>::getCenterFunction()
 {
   return &centerShape;
 }
 
 //==============================================================================
-ccd_center_fn CCDBlah<dynamics::CylinderShape>::getCenterFunction()
+ccd_center_fn CCDConvexShapeUtils<dynamics::CylinderShape>::getCenterFunction()
 {
   return &centerShape;
 }
 
 //==============================================================================
-ccd_center_fn CCDBlah<dynamics::MeshShape>::getCenterFunction()
+ccd_center_fn CCDConvexShapeUtils<dynamics::MeshShape>::getCenterFunction()
 {
   return &centerConvex;
 }
 
 //==============================================================================
-ccd_support_fn CCDBlah<dynamics::BoxShape>::getSupportFunction()
+ccd_support_fn CCDConvexShapeUtils<dynamics::BoxShape>::getSupportFunction()
 {
   return &supportBox;
 }
 
 //==============================================================================
-ccd_support_fn CCDBlah<dynamics::SphereShape>::getSupportFunction()
+ccd_support_fn CCDConvexShapeUtils<dynamics::SphereShape>::getSupportFunction()
 {
   return &supportSphere;
 }
 
 //==============================================================================
-ccd_support_fn CCDBlah<dynamics::EllipsoidShape>::getSupportFunction()
+ccd_support_fn CCDConvexShapeUtils<dynamics::EllipsoidShape>::getSupportFunction()
 {
   return &supportEllipsoid;
 }
 
 //==============================================================================
-ccd_support_fn CCDBlah<dynamics::CapsuleShape>::getSupportFunction()
+ccd_support_fn CCDConvexShapeUtils<dynamics::CapsuleShape>::getSupportFunction()
 {
   return &supportCapsule;
 }
 
 //==============================================================================
-ccd_support_fn CCDBlah<dynamics::ConeShape>::getSupportFunction()
+ccd_support_fn CCDConvexShapeUtils<dynamics::ConeShape>::getSupportFunction()
 {
   return &supportCone;
 }
 
 //==============================================================================
-ccd_support_fn CCDBlah<dynamics::CylinderShape>::getSupportFunction()
+ccd_support_fn CCDConvexShapeUtils<dynamics::CylinderShape>::getSupportFunction()
 {
   return &supportCylinder;
 }
 
 //==============================================================================
-ccd_support_fn CCDBlah<dynamics::MeshShape>::getSupportFunction()
+ccd_support_fn CCDConvexShapeUtils<dynamics::MeshShape>::getSupportFunction()
 {
   return &supportConvex;
 }

@@ -67,7 +67,7 @@
             </joint>
         </skeleton>	
         
-        <skeleton name="sphere skeleton">
+        <!--skeleton name="sphere skeleton">
             <body name="sphere">
                 <gravity>1</gravity>
                 <transformation>-0.2 -0.0 0 1 2 3</transformation>
@@ -98,7 +98,7 @@
                 <parent>world</parent>
                 <child>sphere</child>
             </joint>
-        </skeleton>
+        </skeleton-->
         
         <skeleton name="ellipsoid skeleton">
             <body name="ellipsoid">
@@ -165,6 +165,41 @@
             <joint type="free" name="joint 1">
                 <parent>world</parent>
                 <child>cylinder</child>
+            </joint>
+        </skeleton>	
+
+        <skeleton name="mesh skeleton">
+            <body name="mesh">
+                <gravity>1</gravity>
+                <transformation>0.4 -0.0 0 1 2 3</transformation>
+                <inertia>
+                    <mass>1</mass>
+                    <offset>0 0 0</offset>
+                </inertia>
+                <visualization_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <mesh>
+                            <file_name>obj/foot.obj</file_name>
+                            <scale>1.0 1.0 1.0</scale>
+                        </mesh>
+                    </geometry>
+                    <color>0.6 0.6 0.8</color>
+                </visualization_shape>
+                <collision_shape>
+                    <transformation>0 0 0 0 0 0</transformation>
+                    <geometry>
+                        <mesh>
+                            <file_name>obj/foot.obj</file_name>
+                            <scale>1.0 1.0 1.0</scale>
+                        </mesh>
+                    </geometry>
+                </collision_shape>                                
+            </body>
+            
+            <joint type="free" name="joint 1">
+                <parent>world</parent>
+                <child>mesh</child>
             </joint>
         </skeleton>	
 

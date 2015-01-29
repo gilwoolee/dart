@@ -42,6 +42,7 @@
 namespace dart {
 namespace collision {
 
+/// AABB represents aligned axis box bounding.
 class AABB
 {
 public:

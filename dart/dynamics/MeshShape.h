@@ -74,6 +74,9 @@ public:
   /// \brief
   void setDisplayList(int _index);
 
+  /// Return average point of mesh's vertices
+  const Eigen::Vector3d& getCenter() const;
+
   // Documentation inherited.
   void draw(renderer::RenderInterface* _ri = NULL,
             const Eigen::Vector4d& _col = Eigen::Vector4d::Ones(),
@@ -89,27 +92,31 @@ public:
   // TODO: TEST CODE
   //============================================================================
 
-  Eigen::Vector3d* plane_normals;
-  double* plane_dis;
+//  Eigen::Vector3d* plane_normals;
+//  double* plane_dis;
 
-  /// @brief An array of indices to the points of each polygon, it should be the number of vertices
-  /// followed by that amount of indices to "points" in counter clockwise order
-  int* polygons;
+  /// @brief An array of indices to the points of each polygon, it should be the
+  /// number of vertices followed by that amount of indices to "points" in
+  /// counter clockwise order
+//  int* polygons;
 
   Eigen::Vector3d* points;
   int num_points;
-  int num_edges;
-  int num_planes;
+//  int num_edges;
+//  int num_planes;
 
-  struct Edge
-  {
-    int first, second;
-  };
+//  struct Edge
+//  {
+//    int first, second;
+//  };
 
-  Edge* edges;
+//  Edge* edges;
 
-  /// @brief center of the convex polytope, this is used for collision: center is guaranteed in the internal of the polytope (as it is convex)
-  Eigen::Vector3d center;
+  /// Center of the convex polytope.
+  ///
+  /// This is used for collision. Center is guaranteed in the internal of the
+  /// polytope (as it is convex).
+  Eigen::Vector3d mCenter;
 
   //============================================================================
 
@@ -121,6 +128,9 @@ protected:
 private:
   /// \brief
   void _updateBoundingBoxDim();
+
+  ///
+  void computeCenter();
 
   /// \brief
   const aiScene* mMesh;

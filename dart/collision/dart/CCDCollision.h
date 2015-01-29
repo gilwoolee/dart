@@ -57,7 +57,7 @@ namespace collision {
 ///
 //==============================================================================
 template <typename ShapeT>
-class CCDBlah
+class CCDConvexShapeUtils
 {
 public:
   ///
@@ -90,7 +90,7 @@ public:
 ///
 //==============================================================================
 template <>
-class CCDBlah<dynamics::BoxShape>
+class CCDConvexShapeUtils<dynamics::BoxShape>
 {
 public:
   // Documentation inherited.
@@ -111,7 +111,7 @@ public:
 ///
 //==============================================================================
 template <>
-class CCDBlah<dynamics::SphereShape>
+class CCDConvexShapeUtils<dynamics::SphereShape>
 {
 public:
   // Documentation inherited.
@@ -132,7 +132,7 @@ public:
 ///
 //==============================================================================
 template <>
-class CCDBlah<dynamics::EllipsoidShape>
+class CCDConvexShapeUtils<dynamics::EllipsoidShape>
 {
 public:
   // Documentation inherited.
@@ -153,7 +153,7 @@ public:
 ///
 //==============================================================================
 template <>
-class CCDBlah<dynamics::CapsuleShape>
+class CCDConvexShapeUtils<dynamics::CapsuleShape>
 {
 public:
   // Documentation inherited.
@@ -174,7 +174,7 @@ public:
 ///
 //==============================================================================
 template <>
-class CCDBlah<dynamics::ConeShape>
+class CCDConvexShapeUtils<dynamics::ConeShape>
 {
 public:
   // Documentation inherited.
@@ -195,7 +195,7 @@ public:
 ///
 //==============================================================================
 template <>
-class CCDBlah<dynamics::CylinderShape>
+class CCDConvexShapeUtils<dynamics::CylinderShape>
 {
 public:
   // Documentation inherited.
@@ -216,7 +216,7 @@ public:
 ///
 //==============================================================================
 template <>
-class CCDBlah<dynamics::MeshShape>
+class CCDConvexShapeUtils<dynamics::MeshShape>
 {
 public:
   // Documentation inherited.
@@ -249,17 +249,17 @@ public:
       const CollisionOptions& _options,
       CollisionResult& _result)
   {
-    void* o1 = CCDBlah<S1>::createCCDObject(_geom1, _tf1);
-    void* o2 = CCDBlah<S2>::createCCDObject(_geom2, _tf2);
+    void* o1 = CCDConvexShapeUtils<S1>::createCCDObject(_geom1, _tf1);
+    void* o2 = CCDConvexShapeUtils<S2>::createCCDObject(_geom2, _tf2);
 
-    ccd_support_fn supp1 = CCDBlah<S1>::getSupportFunction();
-    ccd_support_fn supp2 = CCDBlah<S2>::getSupportFunction();
+    ccd_support_fn supp1 = CCDConvexShapeUtils<S1>::getSupportFunction();
+    ccd_support_fn supp2 = CCDConvexShapeUtils<S2>::getSupportFunction();
 
     assert(supp1 != nullptr);
     assert(supp2 != nullptr);
 
-    ccd_center_fn cen1 = CCDBlah<S1>::getCenterFunction();
-    ccd_center_fn cen2 = CCDBlah<S2>::getCenterFunction();
+    ccd_center_fn cen1 = CCDConvexShapeUtils<S1>::getCenterFunction();
+    ccd_center_fn cen2 = CCDConvexShapeUtils<S2>::getCenterFunction();
 
     assert(cen1 != nullptr);
     assert(cen2 != nullptr);
@@ -283,8 +283,8 @@ public:
       _result.addContact(contact);
     }
 
-    CCDBlah<S1>::destroyCCDObject(o1);
-    CCDBlah<S2>::destroyCCDObject(o2);
+    CCDConvexShapeUtils<S1>::destroyCCDObject(o1);
+    CCDConvexShapeUtils<S2>::destroyCCDObject(o2);
 
     return res;
   }

@@ -37,20 +37,10 @@
 #ifndef  DART_COLLISION_DART_BROADPHASE_H_
 #define  DART_COLLISION_DART_BROADPHASE_H_
 
-#include "dart/common/Console.h"
-#include "dart/common/Singletone.h"
-#include "dart/collision/CollisionDetector.h"
+#include <vector>
 
-#include "dart/dynamics/Shape.h"
-#include "dart/dynamics/BoxShape.h"
-#include "dart/dynamics/CapsuleShape.h"
-#include "dart/dynamics/ConeShape.h"
-#include "dart/dynamics/CylinderShape.h"
-#include "dart/dynamics/EllipsoidShape.h"
-#include "dart/dynamics/PlaneShape.h"
-#include "dart/dynamics/MeshShape.h"
-#include "dart/dynamics/SoftMeshShape.h"
-#include "dart/dynamics/SphereShape.h"
+#include "dart/common/Console.h"
+#include "dart/collision/CollisionDetector.h"
 
 namespace dart {
 
@@ -65,6 +55,7 @@ class BroadPhase
 public:
 protected:
 private:
+  std::vector<CollisionNode*> mCollisionNodes;
 };
 
 }  // namespace collision
